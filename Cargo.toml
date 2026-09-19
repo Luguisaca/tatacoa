@@ -12,11 +12,17 @@ edition = "2024"
 rust-version = "1.98"
 
 [workspace.dependencies]
+aead-stream = { version = "0.6", features = ["alloc"] }
+aes-gcm = { version = "0.11", default-features = false, features = ["aes", "alloc", "zeroize"] }
+argon2 = { version = "0.6", default-features = false, features = ["alloc", "zeroize"] }
 clap = { version = "4", features = ["derive"] }
+getrandom = "0.4"
+hkdf = "0.13"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.11"
 uuid = { version = "1", features = ["v4"] }
+zeroize = { version = "1.9", features = ["derive"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

@@ -3,6 +3,9 @@
 mod bundle;
 mod capture;
 mod context;
+// Foundation criptográfica interna pendiente de integrar al envelope versionado.
+#[allow(dead_code)]
+mod crypto;
 mod error;
 mod ids;
 mod knowledge;

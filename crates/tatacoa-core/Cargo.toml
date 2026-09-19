@@ -5,10 +5,16 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+aead-stream.workspace = true
+aes-gcm.workspace = true
+argon2.workspace = true
+getrandom.workspace = true
+hkdf.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 uuid.workspace = true
+zeroize.workspace = true
 
 [lints]
 workspace = true
