@@ -49,7 +49,7 @@ Las referencias usan las clasificaciones aprobadas. Una tarjeta `SOURCE_REVIEWED
 - placeholders tipados como secretos/requeridos;
 - límites de autorización obligatorios.
 
-Los placeholders usan tokens `{{NAME}}`. La receta se registra y exporta, pero no se ejecuta automáticamente. No se almacenan valores/defaults de secretos en el modelo de placeholder.
+Los placeholders usan tokens `{{NAME}}`. Cada token del `argv_template` debe tener una declaración exacta y cada declaración debe estar usada; tokens sin declarar, declaraciones huérfanas y llaves mal formadas se rechazan. La receta se registra y exporta, pero no se ejecuta automáticamente. No se almacenan valores/defaults de secretos en el modelo de placeholder.
 
 ## Provenance y Evidence
 
@@ -86,7 +86,21 @@ Además de la regresión completa de Sprint 01, se cubren:
 - política Plain para Professional y High Sensitivity;
 - rechazo de Evidence validada sin revisión humana;
 - rechazo de ciclos de provenance;
-- compatibilidad de lectura/verificación con manifest v1.
+- compatibilidad de lectura/verificación con manifest v1;
+- ejecución paralela aislada dentro de una misma Session;
+- drenaje concurrente y truncamiento explícito de stdout/stderr voluminosos;
+- fallo cerrado cuando el almacenamiento del recorder no es un directorio válido;
+- rechazo de adapters no soportados, objetos no declarados y contenido en directorios reservados;
+- verificación read-only del bundle;
+- contrato de placeholders y frontera de valores secretos de Replay.
+
+## Hardening de filesystem y verificación
+
+Core valida cada componente de los subdirectorios internos de un Engagement, rechaza enlaces simbólicos/reparse points y comprueba por canonicalización que no abandonen su raíz. La protección se aplica a contexto, manifests, objetos, Knowledge y Replay.
+
+El verifier exige el inventario portable definido para el bundle actual. Rechaza entradas raíz inesperadas, objetos no declarados o no regulares y contenido dentro de `knowledge/`, `replay/` o `verification/`, que continúan reservados mientras Knowledge y Replay permanezcan embebidos en el manifest. También rechaza adapters distintos del adapter genérico implementado.
+
+Estas comprobaciones y pruebas son resultados de desarrollo; no sustituyen el QA humano ni amplían las garantías criptográficas del formato Plain.
 
 ## Límites
 
@@ -96,4 +110,5 @@ Además de la regresión completa de Sprint 01, se cubren:
 - Knowledge y Replay se incluyen dentro del manifest portable; sus directorios del bundle permanecen reservados.
 - Replay no ejecuta recetas ni autoriza operaciones.
 - Evidence promotion y registro de revisor humano quedan fuera de este incremento.
-- Se conservan las limitaciones filesystem/TOCTOU documentadas en Sprint 01.
+- La canonicalización y el rechazo de enlaces reducen escapes de directorio, pero no eliminan completamente carreras TOCTOU del filesystem.
+- La prueba de symlink del workspace se ejecuta en plataformas Unix; la cobertura específica de reparse points en Windows permanece como QA de plataforma.
