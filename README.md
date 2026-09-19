@@ -45,11 +45,12 @@ El Alpha incluye perfiles de seguridad configurables y un Generic Execution Adap
 - [Decisiones congeladas](docs/DECISIONS.md)
 - [Trazabilidad y referencias](docs/TRACEABILITY.md)
 - [Roadmap Alpha](docs/ROADMAP.md)
+- [Implementación Alpha Foundation](docs/ALPHA-IMPLEMENTATION.md)
 
 Las reglas para agentes, contribución, seguridad y gobierno están en `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md` y `docs/GOVERNANCE.md`.
 
 ## Estado
 
-**Sprint 01 — Foundation / baseline documental.** La arquitectura está aprobada para iniciar implementación incremental; los controles concretos deberán demostrarse mediante pruebas y QA antes de realizar claims sobre ellos.
+**Sprint 01 — Alpha Foundation en implementación.** Existe una primera vertical funcional en Rust para evaluación de desarrollo. Sus controles todavía requieren QA independiente en los targets aprobados antes de realizar claims sobre ellos.
 
 A LUGUISACA project.
