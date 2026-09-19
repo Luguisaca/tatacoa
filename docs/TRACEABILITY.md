@@ -13,8 +13,8 @@ Esta matriz inicia la trazabilidad. No afirma conformidad integral con ninguna f
 | REF-ISO-27037 | ISO/IEC 27037:2012 | identificación, recolección, adquisición y preservación de evidencia digital | preservación y tratamiento explícito de originales | BASELINE |
 | REF-ISO-27041 | ISO/IEC 27041:2015 | métodos fit-for-purpose y evidencia de validación | requisitos verificables y QA demostrable | BASELINE |
 | REF-ISO-27042 | ISO/IEC 27042:2015 | continuidad, validez, reproducibilidad, repetibilidad y revisión independiente | replay, provenance y verifier independiente | BASELINE |
-| REF-OWASP-WSTG | OWASP WSTG | pruebas web, reporting y artifacts reproducibles | evidencia técnica y reproducción con datos sensibles protegidos | BASELINE |
-| REF-COL-MSPI | MinTIC Resolución 02277 de 2025 / MSPI | contexto colombiano de seguridad y privacidad; adopta lineamientos ISO/IEC 27001:2022 para sujetos aplicables | investigar mappings y diseñar controles trazables sin afirmar obligatoriedad universal | BASELINE |
+| REF-OWASP-WSTG | OWASP WSTG | metodología de pruebas web y documentación de resultados | conocimiento, evidencia técnica y reproducción cuando aplique | BASELINE |
+| REF-COL-MSPI | MinTIC Resolución 02277 de 2025 / Anexo MSPI | contexto colombiano de seguridad y privacidad para los sujetos a los que resulte aplicable | investigar mappings y diseñar controles trazables sin afirmar obligatoriedad universal | BASELINE |
 | REF-RFC3161 | RFC 3161 | trusted timestamp | post-V1; distinguir hora confiable de hora local | POST-V1 |
 
 ## Fuentes oficiales
@@ -25,17 +25,17 @@ Esta matriz inicia la trazabilidad. No afirma conformidad integral con ninguna f
 - ISO/IEC 27041:2015: https://www.iso.org/standard/44405.html
 - ISO/IEC 27042:2015: https://www.iso.org/standard/44406.html
 - OWASP WSTG: https://wstg.owasp.org/
-- MinTIC MSPI / Resolución 02277 de 2025: https://gobiernodigital.mintic.gov.co/portal/Politica-de-Gobierno-Digital/Normatividad/
+- MinTIC — Normatividad de Gobierno Digital (Resolución 02277 de 2025 y Anexo MSPI): https://gobiernodigital.mintic.gov.co/portal/Politica-de-Gobierno-Digital/Normatividad/
 - RFC 3161: https://www.rfc-editor.org/info/rfc3161/
 
 ## Notas de vigencia verificadas en septiembre de 2026
 
 - NIST publica SP 800-115 como Final.
 - NIST publica SSDF v1.1 (SP 800-218) como Final.
-- ISO muestra 27037:2012 publicada y bajo ciclo de revisión.
-- ISO muestra 27041:2015 publicada y bajo revisión sistemática en 2026.
-- ISO muestra 27042:2015 como edición publicada vigente en su ficha.
-- MinTIC lista Resolución 02277 de 2025 y su MSPI actualizado; MinTIC indica que adopta lineamientos ISO/IEC 27001:2022.
-- RFC 3161 continúa publicado y fue actualizado por RFC 5816.
+- ISO mantiene ISO/IEC 27037:2012 publicada; su ficha muestra que permanece vigente y que existe actividad de revisión.
+- ISO mantiene ISO/IEC 27041:2015 publicada; su revisión sistemática de 2026 cerró el 3-sep-2026 y la ficha aún la muestra como estándar vigente.
+- ISO mantiene ISO/IEC 27042:2015 publicada; su ficha la muestra como estándar vigente y describe continuidad, validez, reproducibilidad, repetibilidad y revisión independiente.
+- MinTIC lista oficialmente la Resolución 02277 de 2025 y su Anexo 1 de lineamientos MSPI. El mapping exacto de controles y referencias del Anexo debe verificarse contra el texto normativo antes de convertirlo en requisito.
+- RFC 3161 continúa publicado y el RFC Editor indica que fue actualizado por RFC 5816.
 
-Antes de convertir una referencia en requisito normativo obligatorio para un engagement concreto se debe verificar aplicabilidad, versión y jurisdicción.
+Antes de convertir una referencia en requisito normativo obligatorio para un engagement concreto se debe verificar aplicabilidad, versión, texto fuente y jurisdicción.
