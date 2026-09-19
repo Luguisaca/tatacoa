@@ -100,4 +100,15 @@ Integridad, manifest y procedencia permanecen activos. El cifrado puede ser opci
 
 ## Plataformas
 
-QA inicial: Kali Linux y Parrot OS. Arquitectura preparada para ampliar compatibilidad; Windows completo queda post-V1 salvo decisión posterior.
+El **Core V1 es multiplataforma para Windows y Linux desde el diseño**.
+
+Targets iniciales de desarrollo y validación:
+
+- Windows 11 x64: desarrollo y QA;
+- WSL2 Linux x64: desarrollo e integración temprana en Linux;
+- Kali Linux x64: QA objetivo;
+- Parrot OS x64: QA objetivo.
+
+WSL2 no sustituye la validación específica en Kali y Parrot.
+
+El Core debe evitar supuestos innecesarios de una plataforma o distribución. Las capacidades y adapters que dependan de herramientas exclusivas de un sistema operativo pueden declarar compatibilidad específica sin reducir la portabilidad del Core.
