@@ -51,6 +51,6 @@ Las reglas para agentes, contribución, seguridad y gobierno están en `AGENTS.m
 
 ## Estado
 
-**Sprint 01 — Alpha Foundation en implementación.** Existe una primera vertical funcional en Rust para evaluación de desarrollo. Sus controles todavía requieren QA independiente en los targets aprobados antes de realizar claims sobre ellos.
+**Sprint 01 — Alpha Foundation en implementación y QA.** La primera vertical funcional en Rust fue validada en Windows 11 x64 y en WSL2/Ubuntu x86_64 como integración Linux temprana, incluyendo verificación offline, controles negativos y portabilidad bidireccional de bundles entre ambos entornos. Kali Linux y Parrot OS continúan pendientes y WSL2 no los sustituye. El detalle y los límites de los resultados están en `docs/ALPHA-IMPLEMENTATION.md`.
 
 A LUGUISACA project.
