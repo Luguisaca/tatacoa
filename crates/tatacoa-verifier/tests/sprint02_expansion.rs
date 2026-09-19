@@ -112,6 +112,104 @@ fn knowledge_and_replay_are_exported_with_valid_context() -> Result<(), Box<dyn 
 }
 
 #[test]
+fn replay_rejects_undeclared_and_malformed_placeholders() -> Result<(), Box<dyn std::error::Error>>
+{
+    let root = TestDirectory::new("replay-placeholders-invalid")?;
+    let workspace = root.path().join("workspace");
+    let (engagement, session) = create_test_context(&workspace, SecurityProfile::LabLearning)?;
+    let (executable, argv) = test_command();
+    let manifest = execute(
+        &workspace,
+        &engagement.id,
+        &session.id,
+        executable.clone(),
+        argv,
+        None,
+    )?;
+
+    let base = ReplayRecipeInput {
+        executable: executable.clone(),
+        argv_template: vec!["--token={{SECRET_TOKEN}}".to_owned()],
+        placeholders: Vec::new(),
+        prerequisites: vec!["Confirmar el entorno autorizado".to_owned()],
+        authorization_limits: vec!["Solo el engagement actual".to_owned()],
+    };
+    assert!(
+        create_replay_recipe(&workspace, &engagement.id, &manifest.execution.id, base,).is_err()
+    );
+
+    assert!(
+        create_replay_recipe(
+            &workspace,
+            &engagement.id,
+            &manifest.execution.id,
+            ReplayRecipeInput {
+                executable,
+                argv_template: vec!["--token={{SECRET_TOKEN".to_owned()],
+                placeholders: vec![ReplayPlaceholder {
+                    name: "SECRET_TOKEN".to_owned(),
+                    description: "Token suministrado fuera de la receta".to_owned(),
+                    secret: true,
+                    required: true,
+                }],
+                prerequisites: vec!["Confirmar el entorno autorizado".to_owned()],
+                authorization_limits: vec!["Solo el engagement actual".to_owned()],
+            },
+        )
+        .is_err()
+    );
+    Ok(())
+}
+
+#[test]
+fn replay_exports_secret_metadata_without_secret_values() -> Result<(), Box<dyn std::error::Error>>
+{
+    let root = TestDirectory::new("replay-secret-boundary")?;
+    let workspace = root.path().join("workspace");
+    let bundle = root.path().join("bundle");
+    let (engagement, session) = create_test_context(&workspace, SecurityProfile::LabLearning)?;
+    let (executable, argv) = test_command();
+    let manifest = execute(
+        &workspace,
+        &engagement.id,
+        &session.id,
+        executable.clone(),
+        argv,
+        None,
+    )?;
+
+    create_replay_recipe(
+        &workspace,
+        &engagement.id,
+        &manifest.execution.id,
+        ReplayRecipeInput {
+            executable,
+            argv_template: vec!["--token={{SECRET_TOKEN}}".to_owned()],
+            placeholders: vec![ReplayPlaceholder {
+                name: "SECRET_TOKEN".to_owned(),
+                description: "Valor secreto suministrado al reproducir".to_owned(),
+                secret: true,
+                required: true,
+            }],
+            prerequisites: vec!["Obtener el secreto por un canal autorizado".to_owned()],
+            authorization_limits: vec!["No persistir el valor resuelto".to_owned()],
+        },
+    )?;
+    export_bundle(
+        &workspace,
+        &manifest,
+        &bundle,
+        PlainExportAuthorization::default(),
+    )?;
+
+    let serialized = fs::read_to_string(bundle.join("manifest.json"))?;
+    assert!(serialized.contains("{{SECRET_TOKEN}}"));
+    assert!(serialized.contains("\"secret\": true"));
+    assert!(!serialized.contains("tatacoa-secret-sentinel-value"));
+    Ok(())
+}
+
+#[test]
 fn professional_plain_requires_ack_and_high_sensitivity_denies_plain()
 -> Result<(), Box<dyn std::error::Error>> {
     let root = TestDirectory::new("profiles")?;

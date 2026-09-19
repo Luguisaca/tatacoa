@@ -107,24 +107,20 @@ pub(crate) fn validate_replay_recipe(
     for placeholder in &recipe.placeholders {
         if !valid_placeholder_name(&placeholder.name)
             || placeholder.description.trim().is_empty()
-            || !names.insert(placeholder.name.as_str())
+            || !names.insert(placeholder.name.clone())
         {
             return Err(Error::InvalidManifest(format!(
                 "replay recipe {} has an invalid or duplicate placeholder",
                 recipe.id
             )));
         }
-        let token = format!("{{{{{}}}}}", placeholder.name);
-        if !recipe
-            .argv_template
-            .iter()
-            .any(|argument| argument.contains(&token))
-        {
-            return Err(Error::InvalidManifest(format!(
-                "replay placeholder {} is not used in argv_template",
-                placeholder.name
-            )));
-        }
+    }
+    let referenced = template_placeholders(&recipe.argv_template)?;
+    if referenced != names {
+        return Err(Error::InvalidManifest(format!(
+            "replay recipe {} placeholder declarations do not match argv_template",
+            recipe.id
+        )));
     }
     Ok(())
 }
@@ -224,4 +220,41 @@ fn valid_placeholder_name(name: &str) -> bool {
         && name
             .bytes()
             .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit() || byte == b'_')
+}
+
+fn template_placeholders(arguments: &[String]) -> Result<HashSet<String>> {
+    let mut names = HashSet::new();
+    for argument in arguments {
+        let mut remainder = argument.as_str();
+        loop {
+            let Some(start) = remainder.find("{{") else {
+                if remainder.contains("}}") {
+                    return Err(Error::InvalidManifest(
+                        "replay argv_template contains an unmatched closing placeholder".to_owned(),
+                    ));
+                }
+                break;
+            };
+            if remainder[..start].contains("}}") {
+                return Err(Error::InvalidManifest(
+                    "replay argv_template contains an unmatched closing placeholder".to_owned(),
+                ));
+            }
+            let after_open = &remainder[start + 2..];
+            let end = after_open.find("}}").ok_or_else(|| {
+                Error::InvalidManifest(
+                    "replay argv_template contains an unclosed placeholder".to_owned(),
+                )
+            })?;
+            let name = &after_open[..end];
+            if !valid_placeholder_name(name) || name.contains("{{") {
+                return Err(Error::InvalidManifest(format!(
+                    "replay argv_template contains invalid placeholder: {name}"
+                )));
+            }
+            names.insert(name.to_owned());
+            remainder = &after_open[end + 2..];
+        }
+    }
+    Ok(names)
 }
