@@ -1,53 +1,53 @@
 ---
-name: Bug report
-about: Report a reproducible non-security defect in TATACOA
+name: Reporte de bug
+about: Reportar un defecto reproducible que no sea una vulnerabilidad de seguridad
 title: "[Bug] "
 labels: "bug"
 assignees: ""
 ---
 
-## Before submitting
+## Antes de enviar
 
-Do not disclose vulnerabilities, credentials, client data, secrets, or sensitive evidence in a public Issue. Security vulnerabilities must follow [SECURITY.md](../../SECURITY.md).
+No publiques vulnerabilidades, credenciales, datos de clientes, secretos ni evidencia sensible en un Issue público. Las vulnerabilidades de seguridad deben seguir el canal privado indicado en [SECURITY.md](../../SECURITY.md).
 
-## Summary
+## Resumen
 
-Describe the observed problem clearly and concisely.
+Describe el problema observado de forma clara y concisa.
 
-## Environment
+## Entorno
 
-- TATACOA commit/version:
-- Operating system and version:
-- Architecture:
-- Rust version (if building from source):
-- Execution environment (native / WSL2 / VM / other):
+- Commit/versión de TATACOA:
+- Sistema operativo y versión:
+- Arquitectura:
+- Versión de Rust (si compilas desde código fuente):
+- Entorno de ejecución (nativo / WSL2 / VM / otro):
 
-## Steps to reproduce
+## Pasos para reproducir
 
 1.
 2.
 3.
 
-Include the minimum safe command or workflow required to reproduce the problem. Redact secrets, personal data, client identifiers, targets, tokens, and sensitive evidence.
+Incluye únicamente el comando o flujo mínimo y seguro necesario para reproducir el problema. Elimina secretos, datos personales, identificadores de clientes, targets, tokens y evidencia sensible.
 
-## Expected behavior
+## Comportamiento esperado
 
-Describe what you expected to happen.
+Describe qué esperabas que ocurriera.
 
-## Actual behavior
+## Comportamiento observado
 
-Describe what happened instead. Include relevant exit codes or non-sensitive error output when useful.
+Describe qué ocurrió realmente. Incluye códigos de salida o mensajes de error no sensibles cuando aporten contexto.
 
-## Reproducibility
+## Reproducibilidad
 
-- [ ] Reproduces consistently
-- [ ] Reproduces intermittently
-- [ ] I have not been able to reproduce it again
+- [ ] Se reproduce consistentemente
+- [ ] Se reproduce de forma intermitente
+- [ ] No he podido reproducirlo nuevamente
 
-## Integrity / data impact
+## Impacto sobre integridad o datos
 
-State whether the problem appears to affect artifacts, manifests, verification, engagement isolation, replay, or other stored data. Do not publish sensitive evidence.
+Indica si el problema parece afectar artefactos, manifests, verificación, aislamiento entre engagements, replay u otros datos almacenados. No publiques evidencia sensible.
 
-## Additional context
+## Contexto adicional
 
-Add logs, screenshots, or other context only when they are safe to publish.
+Añade logs, capturas u otro contexto únicamente cuando sea seguro publicarlo.
