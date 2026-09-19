@@ -96,8 +96,50 @@ No se añadió runtime async, framework, base de datos, crate de tiempo ni cifra
 - La foundation de Knowledge/Replay se limita a directorios reservados y vínculos de ejecución; no incluye automatización ni validación por IA.
 - Provenance en este vertical cubre la relación directa `Execution → RAW Artifact`; el DAG de derivaciones avanzadas queda fuera de este incremento.
 - El workspace no está cifrado y no se implementa `Encrypted` ni `Public/Sanitized`.
-- WSL2, Kali y Parrot requieren QA separado. La CI propuesta cubre Windows y Ubuntu como señal temprana, no sustituye esos targets.
+- WSL2/Ubuntu fue validado manualmente como target de integración Linux temprana. Kali y Parrot requieren QA separado. WSL2 no sustituye esos targets.
 
 ## Pruebas de desarrollo
 
-Las pruebas automatizadas cubren el happy path, alteración de artifact, artifact faltante, límite/truncamiento, aislamiento entre engagements y rechazo de traversal/prefijos ambiguos. La matriz completa de QA permanece fuera del alcance de Codex para este Sprint.
+Las pruebas automatizadas cubren el happy path, alteración de artifact, artifact faltante, límite/truncamiento, aislamiento entre engagements y rechazo de traversal/prefijos ambiguos.
+
+## QA ejecutado — Windows 11 y WSL2/Ubuntu
+
+Validación humana ejecutada sobre la rama `feat/sprint-01-alpha-foundation`. Los resultados describen únicamente los entornos realmente probados y no sustituyen el QA pendiente en Kali o Parrot.
+
+### Windows 11 x64
+
+- toolchain Rust 1.98.1;
+- `cargo fmt --all -- --check`, `cargo check --workspace`, Clippy con warnings como error, tests y build: PASS;
+- vertical funcional completa: engagement, ejecución, captura RAW, manifest, bundle Plain y verificación: PASS;
+- verificador integrado e independiente sobre bundle válido: PASS;
+- detección de tampering, artifact faltante, traversal y referencias semánticas inválidas: PASS;
+- truncamiento explícito: PASS;
+- schema no soportado y manifests estructuralmente inválidos rechazados sin panic: PASS.
+
+### WSL2 — Ubuntu 24.04.5 LTS x86_64
+
+Entorno observado: WSL2, kernel `6.18.33.2-microsoft-standard-WSL2`, usuario no-root y Rust 1.98.1 mediante rustup.
+
+- fresh clone y checkout de la rama Alpha: PASS;
+- format/check/Clippy/tests/build: PASS;
+- superficie CLI y ayuda de `engagement-create`, `run` y `verify`: PASS;
+- ejecución real con stdout/stderr y bundle Plain: PASS;
+- verificador integrado e independiente sobre bundle válido: PASS;
+- alteración de artifact detectada por ambos verificadores: PASS;
+- sustitución hostil de artifact por symlink hacia fuera del bundle: rechazada por ambos verificadores;
+- truncamiento real con `--max-stream-bytes 16`: PASS; el bundle truncado permanece íntegro y verificable;
+- dos engagements independientes producen evidencia separada; el test E2E `cross_engagement_manifest_is_rejected` confirma el rechazo de referencias cruzadas;
+- fallo de spawn de un ejecutable inexistente: error explícito, exit distinto de cero, sin panic y sin bundle residual;
+- portabilidad bidireccional: bundle producido en Windows verificado en Linux y bundle producido en Linux verificado en Windows, con verificador integrado e independiente: PASS.
+
+### Pendientes antes de cerrar QA Alpha
+
+- QA específico en Kali Linux x64;
+- QA específico en Parrot OS x64;
+- parallel sessions/concurrencia manual;
+- malicious/huge output más allá del caso controlado de truncamiento;
+- revisión explícita de secret boundary, zero telemetry y AI isolation contra implementación y documentación;
+- recorder/adapter failure adicionales cuando exista una superficie distinta del Generic Execution Adapter;
+- redaction/provenance cuando esas capacidades entren en scope.
+
+WSL2 es evidencia de integración Linux temprana; no se declara como sustituto de Kali ni Parrot.
