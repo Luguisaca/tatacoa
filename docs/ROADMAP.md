@@ -90,6 +90,19 @@ El Core V1 se desarrolla como multiplataforma Windows + Linux desde Sprint 01.
 - AI isolation;
 - documentación actualizada.
 
+### Estado de QA ejecutado
+
+- Windows 11 x64: PASS para build/check/test y vertical funcional evaluada.
+- WSL2 Ubuntu 24.04.5 LTS x86_64, non-root: PASS para fresh clone, build/check/test, captura/export/verificación, tamper, symlink hostil, truncamiento, aislamiento funcional, fallo controlado de spawn y portabilidad bidireccional Windows ↔ Linux.
+- Kali Linux x64: pendiente.
+- Parrot OS x64: pendiente.
+- Parallel sessions/concurrencia manual: pendiente.
+- Malicious/huge output: parcialmente cubierto por truncamiento automatizado y manual; prueba ampliada pendiente.
+- Secret boundary, zero telemetry y AI isolation: revisión explícita pendiente antes del cierre Alpha.
+- Redaction/provenance: se valida cuando entre en scope; no se declara implementado en Sprint 01.
+
+El detalle reproducible de los controles ejecutados está en [ALPHA-IMPLEMENTATION.md](ALPHA-IMPLEMENTATION.md).
+
 WSL2 no sustituye el QA específico de Kali o Parrot.
 
 ## Definition of Alpha
