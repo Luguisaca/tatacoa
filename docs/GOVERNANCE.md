@@ -8,7 +8,7 @@ Definir las reglas de decisión y control que rigen el desarrollo de T·A·T·A�
 
 Para el trabajo cotidiano se aplica:
 
-1. decisión explícita del mantenedor humano;
+1. decisión explícita de la Validación Humana;
 2. políticas de seguridad y gobierno del repositorio;
 3. ADR y especificaciones aprobadas;
 4. documentación vigente del producto;
@@ -19,7 +19,7 @@ El código existente no convierte automáticamente una decisión accidental en r
 
 ## Protección de `main`
 
-`main` representa el estado integrado aprobado. El desarrollo se realiza en ramas. Ningún agente debe hacer merge a `main` sin autorización explícita.
+`main` representa el estado integrado aprobado. El desarrollo se realiza en ramas. Ningún agente debe hacer merge a `main` sin autorización explícita de la Validación Humana.
 
 Cuando las capacidades de GitHub lo permitan, estas reglas de proceso deberán reforzarse con controles técnicos de repositorio.
 
