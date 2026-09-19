@@ -1,6 +1,8 @@
 ## Estado
 
-**Sprint 01 — Alpha Foundation en implementación y QA.** La primera vertical funcional en Rust fue validada en Windows 11 x64 y en WSL2/Ubuntu x86_64 como integración Linux temprana, incluyendo verificación offline, controles negativos y portabilidad bidireccional de bundles entre ambos entornos.
+**Sprint 02 — Alpha Expansion en implementación.** Sobre la vertical aprobada de Sprint 01 se añadió contexto operacional completo, políticas Plain por Security Profile, Knowledge Card manual, Replay Recipe foundation y verificación de sus relaciones. El estado y sus límites están documentados en `docs/SPRINT-02-IMPLEMENTATION.md`.
+
+Sprint 01 fue validado en Windows 11 x64 y en WSL2/Ubuntu x86_64 como integración Linux temprana, incluyendo verificación offline, controles negativos y portabilidad bidireccional de bundles entre ambos entornos.
 
 La validación en WSL2 se considera una aprobación temprana de integración Linux para este Sprint. Kali Linux y Parrot OS continúan como targets de QA específicos y WSL2 no los sustituye. El detalle, alcance y límites de los resultados están documentados en `docs/ALPHA-IMPLEMENTATION.md`.
 
