@@ -17,12 +17,12 @@ Estas decisiones provienen del Discovery aprobado. Cambios sustanciales requiere
 | D-009 | SHA-256 baseline Alpha | APPROVED |
 | D-010 | Security Profiles y cifrado configurable por política | APPROVED |
 | D-011 | No custom crypto | APPROVED |
-| D-012 | Kali + Parrot como QA inicial | APPROVED |
+| D-012 | Kali + Parrot como QA objetivo; Windows 11 x64 como desarrollo y QA; WSL2 como desarrollo/integración Linux | APPROVED |
 | D-013 | No plugins arbitrarios de terceros V1 | APPROVED |
 | D-014 | Knowledge/Learning es parte del producto | APPROVED |
 | D-015 | Replay es capacidad central | APPROVED |
 | D-016 | Firma y RFC 3161 post-V1, arquitectura-ready | APPROVED |
-| D-017 | Windows completo post-V1, arquitectura portable | APPROVED |
+| D-017 | Core V1 multiplataforma Windows + Linux; compatibilidad de adapters/herramientas se declara por separado | APPROVED |
 | D-018 | Open specs para manifest/provenance/verifier | APPROVED |
 | D-019 | Claims de certificación solo con evidencia formal | APPROVED |
 | D-020 | IA puede asistir pero no validar automáticamente | APPROVED |
