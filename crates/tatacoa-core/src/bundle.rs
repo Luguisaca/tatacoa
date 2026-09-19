@@ -1,6 +1,8 @@
 use crate::{
-    Artifact, Engagement, EngagementId, Error, ExecutionId, ExportMode, MANIFEST_SCHEMA_VERSION,
-    Manifest, Result, SecurityProfile,
+    Artifact, Engagement, EngagementId, Error, ExecutionId, ExportMode,
+    LEGACY_MANIFEST_SCHEMA_VERSION, MANIFEST_SCHEMA_VERSION, Manifest, PlainExportAuthorization,
+    Result, SecurityProfile, authorize_plain_export, validate_artifact_provenance,
+    validate_knowledge_card, validate_replay_recipe,
 };
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -34,6 +36,7 @@ pub fn create_engagement(
     let engagements_root = workspace.join("engagements");
     fs::create_dir_all(&engagements_root)
         .map_err(|source| Error::io("create engagements directory", source))?;
+    reject_symlink(&engagements_root, "engagements directory")?;
 
     let engagement = Engagement {
         id: EngagementId::new(),
@@ -48,6 +51,17 @@ pub fn create_engagement(
         .map_err(|source| Error::io("create engagement objects directory", source))?;
     fs::create_dir(engagement_root.join("manifests"))
         .map_err(|source| Error::io("create engagement manifests directory", source))?;
+    for directory in [
+        "context/scopes",
+        "context/environments",
+        "context/targets",
+        "context/sessions",
+        "knowledge",
+        "replay",
+    ] {
+        fs::create_dir_all(engagement_root.join(directory))
+            .map_err(|source| Error::io("create engagement data directory", source))?;
+    }
     write_json_new_atomic(&engagement_root.join("engagement.json"), &engagement)?;
     Ok(engagement)
 }
@@ -115,8 +129,14 @@ pub fn read_bundle_manifest(bundle_root: &Path) -> Result<Manifest> {
     Ok(manifest)
 }
 
-pub fn export_bundle(workspace: &Path, manifest: &Manifest, destination: &Path) -> Result<()> {
+pub fn export_bundle(
+    workspace: &Path,
+    manifest: &Manifest,
+    destination: &Path,
+    authorization: PlainExportAuthorization,
+) -> Result<()> {
     validate_manifest_links(manifest)?;
+    authorize_plain_export(manifest.engagement.security_profile, authorization)?;
     if destination.exists() {
         return Err(Error::Conflict(format!(
             "bundle destination already exists: {}",
@@ -154,6 +174,17 @@ pub fn export_bundle(workspace: &Path, manifest: &Manifest, destination: &Path) 
 
     let mut exported = manifest.clone();
     exported.export_mode = ExportMode::Plain;
+    exported.knowledge_cards = crate::workspace::load_associated_knowledge(
+        workspace,
+        &manifest.engagement.id,
+        &manifest.execution.id,
+    )?;
+    exported.replay_recipes = crate::workspace::load_associated_replay(
+        workspace,
+        &manifest.engagement.id,
+        &manifest.execution.id,
+    )?;
+    validate_manifest_links(&exported)?;
     write_json_new_atomic(&staging.join("manifest.json"), &exported)?;
     fs::rename(&staging, destination)
         .map_err(|source| Error::io("commit portable bundle", source))?;
@@ -204,7 +235,9 @@ pub(crate) fn read_json_limited<T: DeserializeOwned>(path: &Path) -> Result<T> {
 }
 
 pub(crate) fn validate_manifest_links(manifest: &Manifest) -> Result<()> {
-    if manifest.schema_version != MANIFEST_SCHEMA_VERSION {
+    if manifest.schema_version != MANIFEST_SCHEMA_VERSION
+        && manifest.schema_version != LEGACY_MANIFEST_SCHEMA_VERSION
+    {
         return Err(Error::InvalidManifest(format!(
             "unsupported schema version: {}",
             manifest.schema_version
@@ -213,6 +246,28 @@ pub(crate) fn validate_manifest_links(manifest: &Manifest) -> Result<()> {
     if manifest.execution.engagement_id != manifest.engagement.id {
         return Err(Error::InvalidManifest(
             "execution belongs to a different engagement".to_owned(),
+        ));
+    }
+    if manifest.schema_version == MANIFEST_SCHEMA_VERSION {
+        let context = manifest.context.as_ref().ok_or_else(|| {
+            Error::InvalidManifest("alpha v2 manifest requires full execution context".to_owned())
+        })?;
+        context.validate(&manifest.engagement.id)?;
+        let execution_context = manifest.execution.context.as_ref().ok_or_else(|| {
+            Error::InvalidManifest("alpha v2 execution requires context IDs".to_owned())
+        })?;
+        if execution_context != &context.ids() {
+            return Err(Error::InvalidManifest(
+                "execution context IDs do not match embedded context".to_owned(),
+            ));
+        }
+    } else if manifest.context.is_some()
+        || manifest.execution.context.is_some()
+        || !manifest.knowledge_cards.is_empty()
+        || !manifest.replay_recipes.is_empty()
+    {
+        return Err(Error::InvalidManifest(
+            "alpha v1 manifest cannot claim Sprint 02 relationships".to_owned(),
         ));
     }
     let mut ids = std::collections::HashSet::new();
@@ -250,6 +305,33 @@ pub(crate) fn validate_manifest_links(manifest: &Manifest) -> Result<()> {
             return Err(Error::InvalidManifest(format!(
                 "artifact {} path must be {expected}",
                 artifact.id
+            )));
+        }
+    }
+    validate_artifact_provenance(&manifest.artifacts)?;
+    let mut knowledge_ids = std::collections::HashSet::new();
+    for card in &manifest.knowledge_cards {
+        if !knowledge_ids.insert(card.id.as_str()) {
+            return Err(Error::InvalidManifest(format!(
+                "duplicate knowledge card ID: {}",
+                card.id
+            )));
+        }
+        validate_knowledge_card(card, &manifest.engagement.id, &manifest.execution.id)?;
+    }
+    let mut replay_ids = std::collections::HashSet::new();
+    for recipe in &manifest.replay_recipes {
+        if !replay_ids.insert(recipe.id.as_str()) {
+            return Err(Error::InvalidManifest(format!(
+                "duplicate replay recipe ID: {}",
+                recipe.id
+            )));
+        }
+        validate_replay_recipe(recipe, &manifest.engagement.id, &manifest.execution.id)?;
+        if manifest.execution.context.as_ref() != Some(&recipe.context) {
+            return Err(Error::InvalidManifest(format!(
+                "replay recipe {} context differs from its source execution",
+                recipe.id
             )));
         }
     }
