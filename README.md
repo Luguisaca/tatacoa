@@ -50,6 +50,18 @@ Las reglas para agentes, contribución, seguridad y gobierno están en `AGENTS.m
 
 ## Estado
 
-**Sprint 01 — Foundation / baseline documental.** La arquitectura está aprobada para iniciar implementación incremental; los controles concretos deberán demostrarse mediante pruebas y QA antes de realizar claims sobre ellos.
+**Sprint 01 — Foundation / baseline documental.** `main` publica actualmente la base documental aprobada del proyecto. La implementación técnica de Sprint 01 se desarrolla y valida de forma separada antes de su integración. La presencia de diseños, requisitos o roadmap en este repositorio no implica que esas capacidades estén implementadas, soportadas o validadas.
+
+TATACOA es un proyecto en desarrollo activo, dirigido y revisado por personas. Herramientas basadas en inteligencia artificial pueden utilizarse como apoyo para investigación, documentación, pruebas y desarrollo; no sustituyen la Validación Humana ni convierten resultados en evidencia validada.
+
+Para bugs ordinarios pueden utilizarse GitHub Issues cuando estén habilitados. Las vulnerabilidades de seguridad no deben publicarse en Issues; deben seguir el canal privado indicado en `SECURITY.md`.
+
+## Licencia
+
+TATACOA está disponible bajo la **PolyForm Noncommercial License 1.0.0**. El texto jurídicamente aplicable se encuentra en `LICENSE` y el aviso de autoría en `NOTICE`.
+
+Es una licencia source-available para usos no comerciales. El acceso público al repositorio no concede derechos adicionales a los establecidos por la licencia. Cualquier permiso comercial, si se concede, requiere una licencia independiente otorgada por el licenciante.
+
+> **Nota sobre idioma:** `LICENSE` conserva el texto oficial de PolyForm Noncommercial License 1.0.0 en inglés. Esta explicación en español facilita la comprensión y no sustituye, modifica ni traduce jurídicamente sus términos.
 
 A LUGUISACA project.
