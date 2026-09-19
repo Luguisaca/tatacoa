@@ -101,4 +101,3 @@ No se añadió runtime async, framework, base de datos, crate de tiempo ni cifra
 ## Pruebas de desarrollo
 
 Las pruebas automatizadas cubren el happy path, alteración de artifact, artifact faltante, límite/truncamiento, aislamiento entre engagements y rechazo de traversal/prefijos ambiguos. La matriz completa de QA permanece fuera del alcance de Codex para este Sprint.
-
