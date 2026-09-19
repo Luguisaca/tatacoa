@@ -34,11 +34,13 @@ La alineación técnica con una referencia no equivale por sí sola a certificac
 
 ## Reporte de vulnerabilidades
 
-Mientras el repositorio sea privado, las vulnerabilidades deben comunicarse directamente a los mantenedores mediante un canal privado autorizado del proyecto.
+No publiques en un Issue, Pull Request o discusión detalles explotables de vulnerabilidades, credenciales, secretos, datos personales innecesarios, información de clientes ni evidencia sensible.
 
-No incluir secretos, datos personales innecesarios, información de clientes ni evidencia sensible en Issues, Pull Requests o discusiones.
+El canal preferido para vulnerabilidades es **Private Vulnerability Reporting de GitHub** cuando esté habilitado para el repositorio. Si ese mecanismo no está disponible para la persona reportante, inicia el contacto de forma privada mediante `contacto@luguisaca.com`.
 
-Antes de hacer público el repositorio se deberá definir y probar un canal formal de divulgación responsable.
+Los bugs ordinarios que no impliquen una vulnerabilidad de seguridad pueden reportarse mediante GitHub Issues cuando estén habilitados o a `bugs@luguisaca.com`.
+
+Incluye, cuando sea seguro compartirlo, el commit o versión afectada, condiciones de reproducción, impacto observado y una prueba mínima. Evita enviar secretos o datos de terceros que no sean necesarios para investigar el reporte.
 
 ## Qué reportar
 
