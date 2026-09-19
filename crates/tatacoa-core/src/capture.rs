@@ -1,5 +1,6 @@
 use crate::bundle::{
-    artifact_source_path, engagement_root, store_execution_manifest, unix_ms_observed,
+    artifact_source_path, engagement_existing_subdirectory, store_execution_manifest,
+    unix_ms_observed,
 };
 use crate::{
     Artifact, ArtifactClassification, ArtifactId, ArtifactProvenance, ArtifactRole, CaptureStatus,
@@ -51,7 +52,8 @@ pub fn execute(
     let context = crate::load_execution_context(workspace, engagement_id, session_id)?;
     let context_ids = context.ids();
     let execution_id = ExecutionId::new();
-    let objects_root = engagement_root(workspace, engagement_id)?.join("objects");
+    let objects_root =
+        engagement_existing_subdirectory(workspace, engagement_id, Path::new("objects"))?;
     let stdout_capture = prepare_capture(&objects_root, ArtifactRole::Stdout)?;
     let stderr_capture = prepare_capture(&objects_root, ArtifactRole::Stderr)?;
 

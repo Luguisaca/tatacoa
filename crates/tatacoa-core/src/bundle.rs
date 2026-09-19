@@ -8,7 +8,7 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::fs::{self, File, OpenOptions};
 use std::io::{BufReader, BufWriter, Read, Write};
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const MAX_METADATA_BYTES: u64 = 2 * 1024 * 1024;
@@ -96,10 +96,12 @@ pub fn engagement_root(workspace: &Path, id: &EngagementId) -> Result<PathBuf> {
 
 pub fn store_execution_manifest(workspace: &Path, manifest: &Manifest) -> Result<PathBuf> {
     validate_manifest_links(manifest)?;
-    let root = engagement_root(workspace, &manifest.engagement.id)?;
-    let path = root
-        .join("manifests")
-        .join(format!("{}.json", manifest.execution.id));
+    let manifests = engagement_existing_subdirectory(
+        workspace,
+        &manifest.engagement.id,
+        Path::new("manifests"),
+    )?;
+    let path = manifests.join(format!("{}.json", manifest.execution.id));
     write_json_new_atomic(&path, manifest)?;
     Ok(path)
 }
@@ -109,8 +111,9 @@ pub fn load_execution_manifest(
     engagement_id: &EngagementId,
     execution_id: &ExecutionId,
 ) -> Result<Manifest> {
-    let root = engagement_root(workspace, engagement_id)?;
-    let path = root.join("manifests").join(format!("{execution_id}.json"));
+    let manifests =
+        engagement_existing_subdirectory(workspace, engagement_id, Path::new("manifests"))?;
+    let path = manifests.join(format!("{execution_id}.json"));
     let manifest: Manifest = read_json_limited(&path)?;
     validate_manifest_links(&manifest)?;
     if &manifest.engagement.id != engagement_id || &manifest.execution.id != execution_id {
@@ -163,10 +166,11 @@ pub fn export_bundle(
             .map_err(|source| Error::io("create bundle directory", source))?;
     }
 
-    let engagement_root = engagement_root(workspace, &manifest.engagement.id)?;
+    let objects_root =
+        engagement_existing_subdirectory(workspace, &manifest.engagement.id, Path::new("objects"))?;
     for artifact in &manifest.artifacts {
         let file_name = format!("{}.bin", artifact.id);
-        let source = engagement_root.join("objects").join(&file_name);
+        let source = objects_root.join(&file_name);
         reject_symlink(&source, "workspace artifact")?;
         let destination_file = staging.join("objects").join(file_name);
         copy_new(&source, &destination_file)?;
@@ -247,6 +251,12 @@ pub(crate) fn validate_manifest_links(manifest: &Manifest) -> Result<()> {
         return Err(Error::InvalidManifest(
             "execution belongs to a different engagement".to_owned(),
         ));
+    }
+    if manifest.execution.adapter != crate::GenericExecutionAdapter::NAME {
+        return Err(Error::InvalidManifest(format!(
+            "unsupported execution adapter: {}",
+            manifest.execution.adapter
+        )));
     }
     if manifest.schema_version == MANIFEST_SCHEMA_VERSION {
         let context = manifest.context.as_ref().ok_or_else(|| {
@@ -372,6 +382,96 @@ pub(crate) fn reject_symlink(path: &Path, role: &'static str) -> Result<()> {
     Ok(())
 }
 
+pub(crate) fn engagement_existing_subdirectory(
+    workspace: &Path,
+    engagement_id: &EngagementId,
+    relative: &Path,
+) -> Result<PathBuf> {
+    validate_engagement_relative(relative)?;
+    let root = engagement_root(workspace, engagement_id)?;
+    let mut current = root.clone();
+    for component in relative.components() {
+        let Component::Normal(name) = component else {
+            return Err(Error::InvalidPath(
+                "engagement subdirectory contains a non-normal component".to_owned(),
+            ));
+        };
+        current.push(name);
+        reject_symlink(&current, "engagement subdirectory")?;
+        let canonical = current
+            .canonicalize()
+            .map_err(|source| Error::io("canonicalize engagement subdirectory", source))?;
+        if !canonical.starts_with(&root) {
+            return Err(Error::InvalidPath(format!(
+                "engagement subdirectory escapes its root: {}",
+                relative.display()
+            )));
+        }
+    }
+    if !current.is_dir() {
+        return Err(Error::InvalidPath(format!(
+            "engagement subpath is not a directory: {}",
+            relative.display()
+        )));
+    }
+    Ok(current)
+}
+
+pub(crate) fn ensure_engagement_subdirectory(
+    workspace: &Path,
+    engagement_id: &EngagementId,
+    relative: &Path,
+) -> Result<PathBuf> {
+    validate_engagement_relative(relative)?;
+    let root = engagement_root(workspace, engagement_id)?;
+    let mut current = root.clone();
+    for component in relative.components() {
+        let Component::Normal(name) = component else {
+            return Err(Error::InvalidPath(
+                "engagement subdirectory contains a non-normal component".to_owned(),
+            ));
+        };
+        current.push(name);
+        if current.exists() {
+            reject_symlink(&current, "engagement subdirectory")?;
+            if !current.is_dir() {
+                return Err(Error::InvalidPath(format!(
+                    "engagement subpath is not a directory: {}",
+                    current.display()
+                )));
+            }
+        } else {
+            fs::create_dir(&current)
+                .map_err(|source| Error::io("create engagement subdirectory", source))?;
+        }
+        let canonical = current
+            .canonicalize()
+            .map_err(|source| Error::io("canonicalize engagement subdirectory", source))?;
+        if !canonical.starts_with(&root) {
+            return Err(Error::InvalidPath(format!(
+                "engagement subdirectory escapes its root: {}",
+                relative.display()
+            )));
+        }
+    }
+    Ok(current)
+}
+
+fn validate_engagement_relative(relative: &Path) -> Result<()> {
+    if relative.as_os_str().is_empty()
+        || relative.is_absolute()
+        || !relative
+            .components()
+            .all(|component| matches!(component, Component::Normal(_)))
+    {
+        return Err(Error::InvalidPath(format!(
+            "invalid engagement-relative directory: {}",
+            relative.display()
+        )));
+    }
+    Ok(())
+}
+
 pub(crate) fn artifact_source_path(
     workspace: &Path,
     engagement_id: &EngagementId,
@@ -382,7 +482,8 @@ pub(crate) fn artifact_source_path(
             "artifact belongs to another engagement".to_owned(),
         ));
     }
-    Ok(engagement_root(workspace, engagement_id)?
-        .join("objects")
-        .join(format!("{}.bin", artifact.id)))
+    Ok(
+        engagement_existing_subdirectory(workspace, engagement_id, Path::new("objects"))?
+            .join(format!("{}.bin", artifact.id)),
+    )
 }

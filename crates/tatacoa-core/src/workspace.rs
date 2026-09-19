@@ -1,6 +1,6 @@
 use crate::bundle::{
-    engagement_root, load_execution_manifest, read_json_limited, reject_symlink, unix_ms_observed,
-    write_json_new_atomic,
+    engagement_existing_subdirectory, ensure_engagement_subdirectory, load_execution_manifest,
+    read_json_limited, unix_ms_observed, write_json_new_atomic,
 };
 use crate::{
     EngagementId, Environment, EnvironmentId, Error, ExecutionContext, ExecutionId,
@@ -347,13 +347,11 @@ fn context_directory(
     engagement_id: &EngagementId,
     kind: &str,
 ) -> Result<PathBuf> {
-    let directory = engagement_root(workspace, engagement_id)?
-        .join("context")
-        .join(kind);
-    fs::create_dir_all(&directory)
-        .map_err(|source| Error::io("create context directory", source))?;
-    reject_symlink(&directory, "context directory")?;
-    Ok(directory)
+    ensure_engagement_subdirectory(
+        workspace,
+        engagement_id,
+        Path::new("context").join(kind).as_path(),
+    )
 }
 
 fn store_record<T: serde::Serialize>(
@@ -363,10 +361,7 @@ fn store_record<T: serde::Serialize>(
     id: &str,
     value: &T,
 ) -> Result<()> {
-    let directory = engagement_root(workspace, engagement_id)?.join(kind);
-    fs::create_dir_all(&directory)
-        .map_err(|source| Error::io("create engagement record directory", source))?;
-    reject_symlink(&directory, "engagement record directory")?;
+    let directory = ensure_engagement_subdirectory(workspace, engagement_id, Path::new(kind))?;
     write_json_new_atomic(&directory.join(format!("{id}.json")), value)
 }
 
@@ -375,11 +370,11 @@ fn load_records<T: DeserializeOwned>(
     engagement_id: &EngagementId,
     kind: &str,
 ) -> Result<Vec<T>> {
-    let directory = engagement_root(workspace, engagement_id)?.join(kind);
-    if !directory.exists() {
+    let root = crate::bundle::engagement_root(workspace, engagement_id)?;
+    if !root.join(kind).exists() {
         return Ok(Vec::new());
     }
-    reject_symlink(&directory, "engagement record directory")?;
+    let directory = engagement_existing_subdirectory(workspace, engagement_id, Path::new(kind))?;
     let mut paths = fs::read_dir(&directory)
         .map_err(|source| Error::io("read engagement record directory", source))?
         .map(|entry| {
