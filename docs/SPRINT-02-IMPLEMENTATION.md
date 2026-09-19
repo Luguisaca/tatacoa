@@ -97,4 +97,3 @@ Además de la regresión completa de Sprint 01, se cubren:
 - Replay no ejecuta recetas ni autoriza operaciones.
 - Evidence promotion y registro de revisor humano quedan fuera de este incremento.
 - Se conservan las limitaciones filesystem/TOCTOU documentadas en Sprint 01.
-
