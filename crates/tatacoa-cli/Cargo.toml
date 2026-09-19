@@ -1,0 +1,19 @@
+[package]
+name = "tatacoa-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+clap.workspace = true
+tatacoa-core = { path = "../tatacoa-core" }
+tatacoa-verifier = { path = "../tatacoa-verifier" }
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "tatacoa"
+path = "src/main.rs"
+
