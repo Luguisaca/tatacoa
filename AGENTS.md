@@ -8,9 +8,9 @@ T·A·T·A·C·O·A significa **Test · Assess · Trace · Artifacts · Comprehe
 
 ## Autoridad
 
-1. Las instrucciones explícitas de Luis para una tarea tienen prioridad sobre propuestas del agente.
+1. Las instrucciones explícitas de Luguisaca para una tarea tienen prioridad sobre propuestas del agente.
 2. `main` es una rama protegida por proceso: ningún agente debe trabajar directamente sobre ella.
-3. No hacer merge, release, publicación, despliegue ni cambio de visibilidad sin aprobación explícita de Luis.
+3. No hacer merge, release, publicación, despliegue ni cambio de visibilidad sin aprobación explícita de luguisaca.
 4. No ampliar el alcance de una tarea silenciosamente.
 5. Ante una decisión irreversible, destructiva, criptográfica, de seguridad o arquitectura no aprobada, detenerse y solicitar revisión.
 
