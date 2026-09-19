@@ -6,6 +6,8 @@ Entregar una vertical mínima verificable:
 
 `ENGAGEMENT → CONTEXT → EXECUTION → ARTIFACT → SHA-256 → MANIFEST → EXPORT → VERIFY`
 
+El Core V1 se desarrolla como multiplataforma Windows + Linux desde Sprint 01.
+
 ## Fase 1 — Bootstrap técnico
 
 - workspace Rust;
@@ -15,7 +17,8 @@ Entregar una vertical mínima verificable:
 - tests unitarios;
 - format/lint/test en CI;
 - lockfile versionado;
-- política `unsafe` restrictiva.
+- política `unsafe` restrictiva;
+- bootstrap verificable en Windows 11 x64 y Linux sin introducir supuestos innecesarios de plataforma.
 
 ## Fase 2 — Context + Execution
 
@@ -25,7 +28,8 @@ Entregar una vertical mínima verificable:
 - stdout/stderr streaming;
 - estados COMPLETE/PARTIAL/TRUNCATED/FAILED;
 - aislamiento entre engagements;
-- Generic Execution Adapter.
+- Generic Execution Adapter;
+- separación explícita entre comportamiento portable del Core y capacidades específicas de plataforma.
 
 ## Fase 3 — Artifact + Manifest
 
@@ -35,7 +39,8 @@ Entregar una vertical mínima verificable:
 - manifest versionado;
 - paths relativos;
 - validación estructural;
-- tests de tampering/traversal/symlink.
+- tests de tampering/traversal/symlink;
+- tratamiento portable de paths y filesystem sin asumir semántica exclusiva de Windows o POSIX.
 
 ## Fase 4 — Bundle + Verifier
 
@@ -65,13 +70,15 @@ Entregar una vertical mínima verificable:
 
 - fresh clone;
 - build/check/test;
-- Kali;
-- Parrot;
-- non-root;
+- Windows 11 x64;
+- WSL2 Linux x64 como integración Linux temprana;
+- Kali Linux x64;
+- Parrot OS x64;
+- non-root donde aplique;
 - parallel sessions;
 - isolation;
 - tamper;
-- traversal/symlink;
+- traversal/symlink según semántica de plataforma;
 - malicious/huge output;
 - recorder failure;
 - secret boundary;
@@ -83,10 +90,12 @@ Entregar una vertical mínima verificable:
 - AI isolation;
 - documentación actualizada.
 
+WSL2 no sustituye el QA específico de Kali o Parrot.
+
 ## Definition of Alpha
 
-Alpha no significa “feature complete”. Significa que la vertical fundamental funciona de extremo a extremo, sus propiedades declaradas tienen pruebas reproducibles y las limitaciones están documentadas.
+Alpha no significa “feature complete”. Significa que la vertical fundamental funciona de extremo a extremo, sus propiedades declaradas tienen pruebas reproducibles y las limitaciones están documentadas en los targets realmente ejecutados.
 
 ## Post-V1 / investigación
 
-GUI, Windows completo, reporting avanzado, colaboración, public-key recipients, signatures, RFC 3161, encrypted workspace, hardware keys/PKCS#11/TPM/KMS, plugin sandboxing y AI local.
+GUI, reporting avanzado, colaboración, public-key recipients, signatures, RFC 3161, encrypted workspace, hardware keys/PKCS#11/TPM/KMS, plugin sandboxing y AI local.

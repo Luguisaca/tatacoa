@@ -75,4 +75,17 @@ Dependencias Rust no están aprobadas por nombre hasta realizar el spike corresp
 
 ## Portabilidad
 
-Kali y Parrot son los primeros entornos de QA. El Core debe evitar supuestos innecesarios de distribución para conservar portabilidad futura.
+El Core V1 se diseña y desarrolla como **multiplataforma Windows + Linux**. La portabilidad forma parte del baseline de V1, no de una ampliación post-V1.
+
+Targets iniciales:
+
+- Windows 11 x64: desarrollo y QA nativo;
+- WSL2 Linux x64: desarrollo e integración Linux temprana;
+- Kali Linux x64: QA objetivo;
+- Parrot OS x64: QA objetivo.
+
+WSL2 es un entorno auxiliar de desarrollo/integración y no reemplaza el QA específico en Kali o Parrot.
+
+El Core debe aislar diferencias de plataforma y evitar asumir como universales rutas, shells, permisos, señales, ejecutables, separadores o semánticas propias de Windows o POSIX.
+
+La compatibilidad del Core y la compatibilidad de un adapter/herramienta son conceptos separados. Un adapter puede declarar plataformas soportadas o requisitos exclusivos de un sistema operativo sin convertir esa restricción en una limitación del Core.
