@@ -1,6 +1,6 @@
 # Política de seguridad
 
-T·A·T·A·C·O·A es software de seguridad en desarrollo. La existencia de esta política no implica certificación, garantía forense ni cumplimiento de un estándar específico.
+T·A·T·A·C·O·A es software de seguridad en desarrollo. La existencia de esta política no implica certificación, garantía forense ni cumplimiento de un estándar específico. Sin embargo el software se debe alinear a estándares nacionales e internacionales tales como (Por definir de acuerdo al avance del proyecto) para dar cumplimiento a las exigencias y/o falencias que se identificaron en las investigaciones previas a la implementación y contribuir a la seguridad y veracidad de pruebas realizadas con las herramienta.
 
 ## Reporte de vulnerabilidades
 
