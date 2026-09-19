@@ -9,8 +9,8 @@ T·A·T·A·C·O·A significa **Test · Assess · Trace · Artifacts · Comprehe
 ## Autoridad
 
 1. Las instrucciones explícitas de la Validación Humana para una tarea tienen prioridad sobre propuestas del agente.
-2. `main` es una rama protegida por proceso: ningún agente debe trabajar directamente sobre ella.
-3. No hacer merge, release, publicación, despliegue ni cambio de visibilidad sin aprobación explícita de la Validación Humana.
+2. `main` es una rama protegida por proceso: ningún agente debe trabajar directamente sobre ella salvo autorización explícita y acotada de la Validación Humana para una tarea concreta.
+3. No hacer merge, release, publicación, despliegue, cambio de licencia ni cambio de visibilidad sin aprobación explícita de la Validación Humana.
 4. No ampliar el alcance de una tarea silenciosamente.
 5. Ante una decisión irreversible, destructiva, criptográfica, de seguridad o arquitectura no aprobada, detenerse y solicitar revisión.
 
@@ -48,7 +48,7 @@ Para decisiones técnicas o de seguridad que dependan de información externa:
 ## Código
 
 - Rust es la tecnología principal aprobada para Core, CLI y verificador.
-- El diseño debe ser compatible inicialmente con Kali Linux y Parrot OS y mantener portabilidad futura.
+- El Core V1 debe mantener el baseline multiplataforma Windows + Linux; Windows 11 x64 y WSL2 son targets de desarrollo/integración, y Kali Linux x64 y Parrot OS x64 son targets de QA específicos.
 - Evitar `unsafe` en código propio salvo justificación técnica documentada y revisión específica.
 - Ejecutar herramientas mediante ejecutable + argumentos cuando sea posible; el uso de shell debe ser explícito.
 - No implementar parsers especializados antes de que el contrato genérico y sus límites estén definidos.
@@ -60,6 +60,7 @@ Para decisiones técnicas o de seguridad que dependan de información externa:
 - La documentación debe describir el estado real, no capacidades futuras como si existieran.
 - Mantener separados: requisitos, decisiones, hipótesis, pendientes y resultados de QA.
 - No inventar métricas, certificaciones, compatibilidad, resultados de pruebas ni garantías.
+- `LICENSE` y `NOTICE` son superficies legales deliberadas; no modificarlas ni reinterpretarlas sin autorización humana explícita.
 - Claims como “FIPS validated”, “ISO certified”, “forensically certified”, “tamper-proof”, “unhackable”, “government approved” o equivalentes están prohibidos sin evidencia formal aplicable.
 
 ## IA y conocimiento

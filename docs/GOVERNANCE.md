@@ -19,7 +19,7 @@ El código existente no convierte automáticamente una decisión accidental en r
 
 ## Protección de `main`
 
-`main` representa el estado integrado aprobado. El desarrollo se realiza en ramas. Ningún agente debe hacer merge a `main` sin autorización explícita de la Validación Humana.
+`main` representa el estado integrado aprobado. El desarrollo se realiza normalmente en ramas. Ningún agente debe hacer merge ni modificar directamente `main` sin autorización explícita y acotada de la Validación Humana.
 
 Cuando las capacidades de GitHub lo permitan, estas reglas de proceso deberán reforzarse con controles técnicos de repositorio.
 
@@ -30,7 +30,7 @@ Cuando las capacidades de GitHub lo permitan, estas reglas de proceso deberán r
 - cambios en invariantes de seguridad;
 - reducción de controles;
 - incorporación de telemetría o servicios externos;
-- cambios de licencia o visibilidad;
+- cambios de licencia o visibilidad del repositorio;
 - publicación de releases;
 - compatibilidad declarada;
 - cambios que afecten evidencia RAW o procedencia;
