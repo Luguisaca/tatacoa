@@ -1,6 +1,36 @@
 # Política de seguridad
 
-T·A·T·A·C·O·A es software de seguridad en desarrollo. La existencia de esta política no implica certificación, garantía forense ni cumplimiento de un estándar específico. Sin embargo el software se debe alinear a estándares nacionales e internacionales tales como (Por definir de acuerdo al avance del proyecto) para dar cumplimiento a las exigencias y/o falencias que se identificaron en las investigaciones previas a la implementación y contribuir a la seguridad y veracidad de pruebas realizadas con las herramienta.
+T·A·T·A·C·O·A es software de seguridad en desarrollo. La existencia de esta política no implica certificación, garantía forense ni cumplimiento formal de un estándar específico.
+
+## Problema que aborda
+
+Las pruebas de seguridad generan información crítica de forma fragmentada: salidas de herramientas, comandos, notas, capturas, archivos, objetivos y resultados pueden quedar distribuidos entre terminales y carpetas. En trabajo paralelo aumenta además el riesgo de mezclar evidencia entre entornos o targets. La información puede contener secretos o datos sensibles y, al momento de revalidar un hallazgo, reconstruir exactamente qué se ejecutó y qué produjo un resultado puede requerir trabajo manual considerable.
+
+Esta necesidad no es únicamente operativa. NIST SP 800-115 recomienda conservar información sobre las actividades del evaluador y un registro paso a paso que permita disponer de un audit trail; para registros manuales identifica datos como fecha y hora, sistema de evaluación, objetivo, herramienta, comando y comentarios. OWASP WSTG recomienda que los hallazgos contengan información suficiente para comprenderlos, reproducirlos y remediarlos, incluyendo evidencia técnica y protegiendo la información sensible.
+
+TATACOA busca reducir esta brecha preservando contexto, ejecución, artefactos, integridad y procedencia desde el momento de la prueba, sin sustituir la interpretación profesional ni convertir automáticamente la salida de una herramienta en un hallazgo validado.
+
+## Aprendizaje y práctica
+
+El mismo problema aparece al aprender seguridad: ejecutar una técnica no garantiza comprender por qué funcionó, qué demuestra realmente, cuáles son sus limitaciones ni cómo reproducirla posteriormente.
+
+Por ello TATACOA debe servir tanto para evaluaciones profesionales autorizadas como para laboratorios propios, plataformas de práctica y formación. El flujo de aprendizaje debe relacionar la ejecución real con conocimiento verificable: qué se está probando, por qué se realiza, qué observar, qué demuestra y qué no demuestra el resultado, errores comunes, validación, contexto defensivo y referencias.
+
+La reproducción también es parte del aprendizaje: una prueba validada puede convertirse, de forma deliberada y trazable, en una receta de replay, script o miniherramienta reutilizable para practicar, verificar una corrección o realizar un retest. La reutilización no elimina los requisitos de alcance y autorización.
+
+El principio es: **aprender haciendo y poder demostrar lo aprendido**.
+
+## Referencias y trazabilidad de ingeniería
+
+TATACOA debe diseñarse, implementarse, documentarse y validarse tomando como referencia los estándares, marcos y lineamientos aplicables a cada componente del proyecto. Esto incluye, según corresponda, publicaciones NIST, guías OWASP, estándares ISO/IEC relacionados con seguridad y evidencia digital y lineamientos colombianos vigentes de seguridad y privacidad de la información.
+
+La aplicabilidad de cada referencia debe evaluarse durante el desarrollo. Cuando una referencia origine o respalde un requisito del producto, el proyecto debe mantener trazabilidad entre:
+
+`FUENTE → REQUISITO TATACOA → DECISIÓN DE DISEÑO → IMPLEMENTACIÓN → PRUEBA → EVIDENCIA DE QA`
+
+Entre las referencias ya identificadas para investigación y aplicación se encuentran NIST SP 800-115 para pruebas y evaluaciones técnicas, NIST SSDF para desarrollo seguro, OWASP WSTG y guías aplicables, la familia ISO/IEC 27000 pertinente a seguridad y evidencia digital, y los lineamientos colombianos que resulten aplicables. La lista deberá evolucionar de forma controlada conforme avance la arquitectura.
+
+La alineación técnica con una referencia no equivale por sí sola a certificación, conformidad integral ni aprobación de una entidad externa. TATACOA solo debe garantizar comportamientos y controles concretos cuando hayan sido implementados y demostrados mediante pruebas y QA reproducible.
 
 ## Reporte de vulnerabilidades
 
