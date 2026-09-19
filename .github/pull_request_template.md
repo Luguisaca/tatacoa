@@ -1,34 +1,34 @@
-## Summary
+## Resumen
 
-Describe what changes and why.
+Describe qué cambia y por qué.
 
-## Scope
+## Alcance
 
-State what is included and what is deliberately out of scope.
+Indica qué está incluido y qué queda deliberadamente fuera de alcance.
 
-## Validation
+## Validación
 
-List the checks actually executed. Do not mark QA as PASS unless the corresponding validation was performed.
+Enumera únicamente las comprobaciones realmente ejecutadas. No marques QA como PASS si la validación correspondiente no fue realizada.
 
-- [ ] Formatting / static checks applicable to this change
-- [ ] Tests applicable to this change
-- [ ] Manual validation, when required
-- [ ] Documentation updated, when required
+- [ ] Formato / comprobaciones estáticas aplicables
+- [ ] Pruebas aplicables al cambio
+- [ ] Validación manual, cuando corresponda
+- [ ] Documentación actualizada, cuando corresponda
 
-## Security and evidence impact
+## Impacto de seguridad y evidencia
 
-Describe any known impact on command execution, artifacts, manifests, verification, engagement isolation, paths/symlinks, secrets, privacy, replay, dependencies, or supply chain. Write `None identified` when none applies.
+Describe cualquier impacto conocido sobre ejecución de comandos, artefactos, manifests, verificación, aislamiento entre engagements, paths/symlinks, secretos, privacidad, replay, dependencias o cadena de suministro. Escribe `Ninguno identificado` cuando no aplique.
 
-Do not include credentials, client data, sensitive evidence, or undisclosed vulnerability details in the PR.
+No incluyas credenciales, datos de clientes, evidencia sensible ni detalles de vulnerabilidades no divulgadas en el PR.
 
-## Documentation / decisions
+## Documentación / decisiones
 
-Link relevant requirements, decisions, issues, or documentation.
+Enlaza requisitos, decisiones, Issues o documentación relevantes.
 
-## Remaining work
+## Trabajo pendiente
 
-List known follow-up work or explicitly state `None`.
+Enumera trabajo de seguimiento conocido o indica `Ninguno`.
 
 ---
 
-Merge into `main` requires Human Validation approval in accordance with the project governance.
+La integración a `main` requiere aprobación de la Validación Humana conforme al gobierno del proyecto.
