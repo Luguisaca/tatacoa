@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Vulnerabilidad de seguridad
+    url: https://github.com/Luguisaca/tatacoa/blob/main/SECURITY.md
+    about: No publiques vulnerabilidades ni evidencia sensible en Issues. Sigue el canal privado indicado en SECURITY.md.
+  - name: Preguntas y discusión del proyecto
+    url: https://github.com/Luguisaca/tatacoa/discussions
+    about: Usa Discussions para preguntas, ideas y conversaciones no sensibles sobre el proyecto.
