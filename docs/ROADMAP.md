@@ -43,11 +43,11 @@ El detalle de implementación está en [SPRINT-02-IMPLEMENTATION.md](SPRINT-02-I
 
 ### Encrypted Bundle v1
 
-**Estado: VALIDATED dentro del baseline Alpha consolidado.**
+**Estado: IMPLEMENTED / QA PENDING para validación integral de usuario.**
 
 `tatacoa.encrypted.v1` añade confidencialidad persistente bajo las decisiones criptográficas congeladas en [DECISIONS.md](DECISIONS.md). Su estado exacto está en [ENCRYPTED-V1-IMPLEMENTATION.md](ENCRYPTED-V1-IMPLEMENTATION.md).
 
-La implementación base y el hardening de password por Security Profile quedaron integrados y validados dentro del alcance documentado. Esto no implica certificación, validación FIPS ni garantías fuera de los entornos y casos efectivamente probados.
+La implementación base y el hardening de password por Security Profile están integrados y cuentan con pruebas automatizadas y QA técnico/humano previo. La Validación Humana decidió no considerar cerrado Encrypted v1 como experiencia de producto hasta poder probarlo dentro del flujo real de la Usable Alpha de Sprint 03. Esto no invalida los PASS técnicos ya obtenidos ni implica certificación, validación FIPS o garantías fuera de los casos efectivamente probados.
 
 ## Sprint 03 — Usable Alpha
 
@@ -67,14 +67,14 @@ Dirección aprobada:
 - operación local-first y offline-capable para funciones locales;
 - GUI orientada al flujo real de una pentester, no a demostrar métodos internos del Core;
 - integrar workspace/trabajo → contexto autorizado → Scope/Environment/Targets/Session → executions → artifacts/evidence → knowledge/replay/retest;
-- permitir pausa, persistencia segura, reanudación y recuperación tras cierre/fallo;
-- al retomar/retest, ofrecer contexto suficiente para comprender qué se hizo, qué quedó pendiente y desde dónde continuar;
-- permitir apertura/importación autorizada de paquetes compatibles preservando integridad, políticas y provenance;
+- permitir pausa, persistencia segura, reanudación y recuperación tras cierre voluntario, accidental o fallo, con guardado seguro suficiente para no perder el punto de trabajo;
+- al abrir, retomar o realizar retest, ofrecer bajo demanda un resumen de continuidad: qué se hizo, ejecuciones y evidencia relevantes, contexto conocido, pendientes y desde dónde continuar;
+- permitir apertura/importación autorizada de paquetes compatibles como proyectos continuables, preservando integridad, políticas y provenance original;
 - mantener interoperabilidad de datos soportados entre CLI y Desktop.
 
 ### Decisiones de SP3 que requieren diseño antes de implementación
 
-RFC 3161 deja de tratarse como una idea olvidada “post-V1” y pasa a investigación/diseño activo por su relevancia para integridad temporal. **No está aprobado todavía qué objeto se timestamp-ea, en qué momento, qué TSA/política se usa, cómo funciona offline ni cómo se representa la ausencia de timestamp.** Estas decisiones requieren investigación oficial, threat modeling y Validación Humana antes de código.
+RFC 3161 deja el horizonte POST-V1 y entra en **alcance aprobado de Sprint 03 como diseño + primera implementación funcional de trusted timestamping** por su relevancia para integridad temporal. Antes de codificar esa parte debe cerrarse mediante investigación oficial y Validación Humana qué objeto(s) se timestamp-ean y en qué momento del ciclo. La selección/configuración de TSA, representación, verificación y comportamiento ante ausencia de red/fallo deben diseñarse de forma explícita; un fallo de TSA nunca puede falsear, destruir ni degradar silenciosamente la evidencia existente.
 
 La autenticación/protección necesaria para reabrir trabajos protegidos, la persistencia de estado de continuidad y los límites exactos de importación también deben concretarse sin debilitar las decisiones de seguridad existentes.
 
