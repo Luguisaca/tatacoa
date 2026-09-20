@@ -39,6 +39,7 @@ Estas decisiones provienen del Discovery y de decisiones humanas posteriores apr
 | D-031 | Continuidad del trabajo — pausa, persistencia segura, reanudación, recuperación y contexto/resumen — es capacidad de producto | APPROVED |
 | D-032 | El roadmap es acumulativo: un sprint extiende la dirección del producto y no puede redefinir silenciosamente arquitectura/decisiones previas | APPROVED |
 | D-033 | Capacidades futuras conocidas se mantienen como horizonte sin asignarlas automáticamente a un sprint ni tratarlas como implementadas | APPROVED |
+| D-034 | El hardening de creación Encrypted amplía D-025 por Security Profile: LAB_LEARNING mínimo 12; PROFESSIONAL mínimo 14; HIGH_SENSITIVITY mínimo 16; PROFESSIONAL/HIGH_SENSITIVITY rechazan passwords evidentemente predecibles; CUSTOM permanece fail-closed. Se conserva máximo 1024 bytes, ausencia de reglas compositivas arbitrarias, ausencia de normalización Unicode silenciosa y compatibilidad de verify con passwords históricas | APPROVED |
 
 ## Decisiones pendientes de diseño/spike
 
