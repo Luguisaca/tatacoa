@@ -6,7 +6,7 @@ Sprint 02 amplía la vertical aprobada sin sustituir las garantías de Sprint 01
 
 `ENGAGEMENT → SCOPE → ENVIRONMENT → TARGET → SESSION → EXECUTION`
 
-La implementación también incorpora Knowledge Card manual, Replay Recipe foundation, políticas operativas para export Plain y validación de relaciones/provenance. Este estado queda listo para QA independiente; no implica producción, certificación ni validación automática de evidencia.
+La implementación también incorpora Knowledge Card manual, Replay Recipe foundation, políticas operativas para export Plain y validación de relaciones/provenance. Sprint 02 quedó posteriormente integrado y validado como parte del baseline Alpha consolidado. Este documento conserva el alcance histórico del incremento y no implica producción, certificación ni validación automática de evidencia.
 
 ## Contexto operacional
 
