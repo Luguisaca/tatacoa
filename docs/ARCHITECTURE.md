@@ -1,42 +1,105 @@
-# Arquitectura baseline
+# TATACOA — Arquitectura de producto
 
 ## Estado
 
-**APROBADA para iniciar Alpha; detalles de implementación pueden evolucionar mediante ADR.**
+**BASELINE APROBADA + DIRECCIÓN ARQUITECTÓNICA APROBADA PARA SP3.**
 
-## Vertical Alpha
+Este documento distingue componentes existentes de componentes planificados. Una capacidad planificada nunca debe presentarse como implementada.
 
-`ENGAGEMENT → CONTEXT → EXECUTION → ARTIFACT → SHA-256 → MANIFEST → EXPORT → VERIFY`
+## Principio rector
 
-## Componentes lógicos
+La interfaz no es la autoridad del producto. Reglas de dominio, seguridad, evidencia, políticas, cifrado y invariantes pertenecen al Core o a capas comunes expresamente aprobadas.
 
-### Core
-Reglas de dominio, IDs, estados, invariantes y políticas. No debe depender de parsers específicos de herramientas.
+CLI y Desktop deben ser instalaciones independientes de primera clase y operar sobre la misma semántica de dominio.
 
-### Execution
-Lanza procesos como usuario normal mediante ejecutable + argv. Shell solo cuando sea explícito. Registra contexto y captura stdout/stderr de forma streaming.
+## Arquitectura objetivo
 
-### Evidence
-Finaliza artefactos, calcula digest, registra metadatos, procedencia y derivaciones.
+```text
+                 TATACOA
+                    │
+          ┌─────────┴─────────┐
+          │                   │
+     tatacoa-cli        tatacoa-desktop
+          │                   │
+          │             tatacoa-app-api
+          │                   │
+          └─────────┬─────────┘
+                    │
+              tatacoa-core
+                    │
+       workspace / context / evidence
+       policy / crypto / replay / provenance
+```
 
-### Manifest
-Representación portable, versionada y determinista. JSON UTF-8 es el candidato aprobado para Alpha.
+El diagrama expresa responsabilidades, no obliga a que CLI dependa literalmente de `tatacoa-app-api` si hacerlo perjudica su instalación independiente. La regla es que **no se duplique lógica de dominio** y que las operaciones de usuario compartan contratos coherentes.
 
-### Verifier
-Componente separado, read-only y offline. Trata bundle y manifest como entrada hostil. Verifica estructura, digest y relaciones sin ejecutar contenido.
+## Componentes existentes
 
-### Security Profile / Export
-Aplica política de confidencialidad a exportaciones sin desactivar integridad/procedencia.
+### tatacoa-core
+Autoridad para reglas de dominio, IDs, estados, invariantes, contexto, workspace, políticas, evidencia, provenance y criptografía aprobada.
 
-### Generic Execution Adapter
-Primer adapter obligatorio. Los adapters especializados enriquecen; no gobiernan evidencia ni validan vulnerabilidades.
+### tatacoa-cli
+Interfaz de línea de comandos. Debe continuar siendo funcional sin Desktop, Tauri ni servidor local obligatorio.
+
+### tatacoa-verifier
+Componente separado, read-only y offline. Trata bundles/manifests como entrada hostil y verifica estructura, digest y relaciones sin ejecutar su contenido.
+
+### Execution / Evidence / Manifest / Export
+Capacidades del Core para ejecución contextualizada, captura, finalización de artefactos, digest, manifest portable, provenance y políticas de export.
 
 ### Knowledge / Replay
 Relaciona ejecuciones con conocimiento y recetas reproducibles. No es autoridad de validación.
 
-## Persistencia
+## Componentes aprobados para SP3 — no implementados
 
-Alpha: filesystem + manifests. No existe requisito de base de datos obligatoria.
+### tatacoa-app-api
+Capa común de operaciones de usuario entre las interfaces y el dominio. Debe reducir duplicación y evitar que Desktop introduzca reglas propias.
+
+Su diseño debe preservar la independencia del CLI. No debe convertirse en daemon, servicio de red o backend cloud por defecto.
+
+### tatacoa-desktop
+Aplicación local construida con **Tauri 2**. Presenta el flujo de trabajo de la pentester y consume operaciones aprobadas sin reimplementar seguridad o dominio.
+
+Desktop no requiere una instalación previa del CLI y no convierte Tauri en dependencia del CLI/Core.
+
+## Modalidades de instalación
+
+### CLI-only
+Instalación de TATACOA orientada a terminal/automatización. No arrastra runtime gráfico ni requiere Desktop.
+
+### Desktop
+Instalación de la aplicación gráfica completa. Empaqueta lo necesario para operar sin exigir que el usuario instale el CLI por separado.
+
+Ambas modalidades deben preservar interoperabilidad de los formatos/datos soportados y las mismas políticas/invariantes de seguridad.
+
+## Local-first y offline
+
+Las funciones locales de TATACOA no dependen de SaaS, cuenta cloud, telemetría ni conexión permanente.
+
+Una capacidad futura que requiera red debe:
+
+1. declarar explícitamente la dependencia;
+2. fallar de forma comprensible y segura cuando no esté disponible;
+3. no degradar silenciosamente garantías;
+4. no convertir conectividad en requisito para funciones locales no relacionadas.
+
+Esto es especialmente relevante para servicios externos potenciales como una TSA de RFC 3161.
+
+## Persistencia y continuidad
+
+Baseline actual: filesystem + manifests; no existe requisito de base de datos obligatoria.
+
+La arquitectura debe evolucionar para permitir pausa/reanudación segura del trabajo, recuperación tras cierre/fallo y resumen de continuidad sin convertir estado incompleto en evidencia validada.
+
+La persistencia de continuidad no puede alterar silenciosamente RAW, provenance, estados de captura o políticas de seguridad.
+
+## Modelo de dominio
+
+Vertical fundamental:
+
+`ENGAGEMENT → CONTEXT → EXECUTION → ARTIFACT → SHA-256 → MANIFEST → EXPORT → VERIFY`
+
+El contexto expandido incluye Scope, Environment, Target y Session. Knowledge y Replay relacionan la vertical con aprendizaje/retest.
 
 Escritura segura conceptual:
 
@@ -67,25 +130,23 @@ Los paths almacenados son relativos al bundle. El verificador debe rechazar trav
 
 ## Tecnología
 
-- Rust: Core, CLI, verifier, manifest, evidence y ejecución genérica.
+- Rust: Core, CLI, verifier y lógica común.
+- Tauri 2: Desktop aprobado para SP3.
+- Tecnologías web de UI: se decidirán/confirmarán dentro del diseño Desktop sin trasladar autoridad de seguridad al frontend.
 - Python: investigación, tooling de pruebas y adapters/parsers experimentales cuando sea útil.
-- TypeScript/Node: posible UI futura; no dependencia del Alpha.
 
-Dependencias Rust no están aprobadas por nombre hasta realizar el spike correspondiente. No introducir frameworks o async runtime sin necesidad demostrada.
+No introducir frameworks, runtimes o dependencias por conveniencia. Toda dependencia debe responder a una necesidad aprobada.
 
 ## Portabilidad
 
-El Core V1 se diseña y desarrolla como **multiplataforma Windows + Linux**. La portabilidad forma parte del baseline de V1, no de una ampliación post-V1.
+El Core se diseña como multiplataforma Windows + Linux. Windows 11 x64 y WSL2 son targets de desarrollo/integración ya usados; Kali Linux x64 y Parrot OS x64 permanecen targets de QA específicos.
 
-Targets iniciales:
+El Core debe aislar diferencias de plataforma y evitar asumir como universales rutas, shells, permisos, señales, ejecutables o semánticas propias de Windows/POSIX.
 
-- Windows 11 x64: desarrollo y QA nativo;
-- WSL2 Linux x64: desarrollo e integración Linux temprana;
-- Kali Linux x64: QA objetivo;
-- Parrot OS x64: QA objetivo.
+La compatibilidad del Core y la de un adapter/herramienta son conceptos separados.
 
-WSL2 es un entorno auxiliar de desarrollo/integración y no reemplaza el QA específico en Kali o Parrot.
+## Evolución
 
-El Core debe aislar diferencias de plataforma y evitar asumir como universales rutas, shells, permisos, señales, ejecutables, separadores o semánticas propias de Windows o POSIX.
+La arquitectura debe considerar el horizonte de [ROADMAP.md](ROADMAP.md) sin implementar anticipadamente capacidades no aprobadas.
 
-La compatibilidad del Core y la compatibilidad de un adapter/herramienta son conceptos separados. Un adapter puede declarar plataformas soportadas o requisitos exclusivos de un sistema operativo sin convertir esa restricción en una limitación del Core.
+Si un sprint futuro requiere romper una decisión congelada, no se adapta silenciosamente: se documenta el conflicto, se evalúan migración/compatibilidad y seguridad, y se solicita Validación Humana/ADR.
