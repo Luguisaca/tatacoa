@@ -109,3 +109,16 @@ Implementado:
 - controles Desktop para pausar, reconstruir el resumen persistido y reanudar con confirmación.
 
 Pendiente deliberado: la protección/autenticación concreta para reabrir por Security Profile no está definida por las políticas actuales. No se infiere cifrado de workspace ni una credencial nueva.
+
+## Bloque 05 — objeto de timestamp Plain
+
+Rama local: `feat/sp3-05-timestamp-root`, creada desde el bloque 04.
+
+Implementado:
+
+- especificación byte a byte de `tatacoa.plain-root.v1`, sin canonicalización JSON implícita;
+- cálculo determinista SHA-256 sobre `manifest.json` y cada objeto declarado, ordenados por path UTF-8;
+- verificación de tamaño y digest declarados antes de producir el digest raíz;
+- pruebas de determinismo y rechazo de artifact alterado.
+
+Pendiente: transporte RFC 3161, parseo/verificación CMS/PKIX y sidecar `.tsr`. Incorporarlos requiere seleccionar y revisar dependencias mantenidas; no se implementa ASN.1/CMS o validación X.509 propia.

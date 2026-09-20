@@ -18,6 +18,7 @@ mod model;
 mod paths;
 mod policy;
 mod replay;
+mod timestamp;
 mod validation;
 mod workspace;
 
@@ -55,6 +56,7 @@ pub use policy::{
     default_export_mode,
 };
 pub use replay::{REPLAY_SCHEMA_VERSION, ReplayPlaceholder, ReplayRecipe, ReplayRecipeInput};
+pub use timestamp::{PLAIN_ROOT_VERSION, PlainRootDigest, compute_plain_root};
 pub(crate) use validation::{
     validate_artifact_provenance, validate_knowledge_card, validate_replay_recipe,
 };

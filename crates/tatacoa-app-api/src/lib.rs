@@ -399,6 +399,10 @@ mod tests {
             password: None,
         })?;
         assert!(bundle.join("manifest.json").is_file());
+        let first_root = tatacoa_core::compute_plain_root(&bundle)?;
+        let second_root = tatacoa_core::compute_plain_root(&bundle)?;
+        assert_eq!(first_root, second_root);
+        assert_eq!(first_root.entry_count, 3);
         let reopened = AppService::open(root);
         let listed = reopened.list_work()?;
         assert_eq!(listed.len(), 1);
@@ -430,6 +434,12 @@ mod tests {
                 .artifact_preview(&work.engagement.id, &manifest.execution.id, &artifact.id)
                 .is_err()
         );
+        fs::write(
+            bundle.join("objects").join(format!("{}.bin", artifact.id)),
+            b"tampered",
+        )
+        .map_err(|source| tatacoa_core::Error::io("tamper exported artifact", source))?;
+        assert!(tatacoa_core::compute_plain_root(&bundle).is_err());
         Ok(())
     }
 }
