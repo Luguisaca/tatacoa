@@ -26,15 +26,13 @@ Estas decisiones provienen del Discovery aprobado. Cambios sustanciales requiere
 | D-018 | Open specs para manifest/provenance/verifier | APPROVED |
 | D-019 | Claims de certificación solo con evidencia formal | APPROVED |
 | D-020 | IA puede asistir pero no validar automáticamente | APPROVED |
+| D-021 | Encrypted v1 usa Argon2id v0x13 (64 MiB, t=3, p=4), KEK de 256 bits, Bundle Key aleatoria, HKDF-SHA-256, DEKs por objeto y AES-256-GCM con STREAM-BE32 | APPROVED |
+| D-022 | `tatacoa.encrypted.v1` usa header fijo de 136 bytes, chunks de 1 MiB y los límites de lector documentados en `security/ENCRYPTED-V1-FORMAT-PROPOSAL.md` | APPROVED |
+| D-023 | El CLI recibe passwords Encrypted desde TTY mediante prompt sin eco; export solicita confirmación y verify una entrada | APPROVED |
 
 ## Decisiones pendientes de spike
 
-- crate set final;
-- AEAD exacto;
-- parámetros Argon2id;
-- canonicalización/serialización exacta del manifest;
 - estrategia async solo si la necesidad lo exige;
-- formato final de bundle cifrado;
 - política de release signing;
 - SBOM tooling;
 - fuzzing toolchain.

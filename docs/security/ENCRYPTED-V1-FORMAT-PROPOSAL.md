@@ -1,10 +1,10 @@
-# Propuesta de formato `tatacoa.encrypted.v1`
+# Formato `tatacoa.encrypted.v1`
 
 ## Estado
 
-**PROPUESTA PARA VALIDACIÓN HUMANA. NO CONGELADA NI IMPLEMENTADA COMO FORMATO PERSISTENTE.**
+**CONTRATO APROBADO Y CONGELADO. IMPLEMENTACIÓN PERSISTENTE EN CURSO.**
 
-Este documento concreta los puntos todavía pendientes del spike criptográfico. La foundation interna implementada no serializa este layout y no habilita todavía exportaciones Encrypted.
+Este documento define el formato aprobado después del spike criptográfico. La foundation interna ya implementa las primitivas; mientras la integración persistente permanezca en curso, la documentación de estado debe evitar afirmar que el CLI produce bundles Encrypted.
 
 Todos los enteros se codifican unsigned, big-endian. Todo campo `reserved` debe ser cero. No se aceptan algoritmos, parámetros ni tamaños alternativos en v1.
 
@@ -24,7 +24,7 @@ Longitud exacta propuesta: 136 bytes.
 | 24 | 4 | argon2_memory_kib | `65536` |
 | 28 | 4 | argon2_iterations | `3` |
 | 32 | 4 | argon2_lanes | `4` |
-| 36 | 4 | plaintext_chunk_bytes | `1048576` propuesto |
+| 36 | 4 | plaintext_chunk_bytes | `1048576` |
 | 40 | 16 | argon2_salt | aleatorio por exportación |
 | 56 | 12 | bundle_key_wrap_nonce | aleatorio por exportación |
 | 68 | 7 | directory_stream_nonce | aleatorio por exportación |
@@ -100,9 +100,9 @@ La DEK es distinta por tipo e ID. Cada stream usa una nonce base generada por el
 
 El framing STREAM hace que modificación, reordenamiento, duplicación, omisión o cambio del flag final provoquen fallo de autenticación.
 
-## Tamaño de chunk propuesto
+## Tamaño de chunk
 
-Se propone **1 MiB de plaintext por chunk**.
+Encrypted v1 usa **1 MiB de plaintext por chunk**.
 
 Benchmark local de desarrollo sobre 64 MiB, build release, Windows x64:
 
@@ -115,11 +115,11 @@ Benchmark local de desarrollo sobre 64 MiB, build release, Windows x64:
 
 1 MiB queda cerca del throughput de 4 MiB, limita el buffer normal a aproximadamente 1 MiB más tag y reduce en 16 veces la cantidad de invocaciones frente a 64 KiB. El benchmark es orientativo y no constituye una garantía de rendimiento.
 
-## Límites propuestos del lector
+## Límites del lector
 
 Todos se comprueban con aritmética checked y antes de reservar memoria basada en datos no confiables:
 
-| Recurso | Límite v1 propuesto |
+| Recurso | Límite v1 |
 |---|---:|
 | Header | exactamente 136 bytes |
 | Password recibida | 1024 bytes |

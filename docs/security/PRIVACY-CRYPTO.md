@@ -2,7 +2,7 @@
 
 ## Estado
 
-**Política aprobada; algoritmos/parametrización exacta de cifrado requieren spike antes de implementación.**
+**Política y contrato Encrypted v1 aprobados. Implementación persistente en curso.**
 
 ## Seguridad configurable
 
@@ -54,7 +54,16 @@ Cuando exista cifrado:
 - contraseña incorrecta o autenticación fallida no produce plaintext parcial;
 - no master key/backdoor.
 
-El algoritmo AEAD, parámetros Argon2id, formato envelope y manejo de memoria **no están congelados** hasta el spike de implementación y revisión de fuentes oficiales.
+Encrypted v1 queda congelado con:
+
+- Argon2id v0x13: 64 MiB, 3 iteraciones, 4 lanes, salt aleatoria de 16 bytes y KEK de 32 bytes;
+- Bundle Key aleatoria de 256 bits por exportación;
+- HKDF-SHA-256 con separación de dominio para una DEK independiente por objeto;
+- AES-256-GCM y STREAM-BE32 con chunks de 1 MiB;
+- header binario fijo de 136 bytes y límites de lector documentados en `ENCRYPTED-V1-FORMAT-PROPOSAL.md`;
+- password por prompt TTY sin eco; nunca mediante argumento del proceso.
+
+Las claves se zeroizan cuando las bibliotecas mantenidas lo permiten. Esto reduce permanencia en memoria, pero no constituye una garantía sobre copias realizadas por el sistema operativo, allocator o hardware.
 
 ## Workspace
 
