@@ -122,3 +122,21 @@ Implementado:
 - pruebas de determinismo y rechazo de artifact alterado.
 
 Pendiente: transporte RFC 3161, parseo/verificación CMS/PKIX y sidecar `.tsr`. Incorporarlos requiere seleccionar y revisar dependencias mantenidas; no se implementa ASN.1/CMS o validación X.509 propia.
+
+## Bloque 06 — hardening previo a RFC 3161
+
+Rama local: `feat/sp3-06-pre-rfc-hardening`, creada desde el bloque 05.
+
+Implementado:
+
+- revisión contextual antes de ejecutar y antes de reanudar, derivada exclusivamente de Core/App API;
+- presentación de engagement, perfil, scope, límite de autorización, environment, target, session, executable y argumentos efectivos;
+- selectores nativos para workspace y destino de exportación mediante el plugin oficial de diálogo Tauri;
+- continuidad ordenada por `revision: u64`; timestamps quedan como metadata observacional;
+- rechazo de revisiones duplicadas y overflow; gaps son tolerables porque cada snapshot es autocontenido;
+- compatibilidad legacy: si solo existen snapshots sin revisión, se usa una vez el orden histórico de sus nombres y la siguiente escritura crea revisión 1;
+- advertencias explícitas de reapertura por Security Profile, sin autenticación ficticia ni cifrado de workspace;
+- aclaración normativa: `SHA-256(root-encoding)` es directamente el `messageImprint` Plain, sin doble hash;
+- documentación de importación corregida para separar D-040 de los detalles todavía abiertos.
+
+Capabilities Tauri: permanecen en `core:default`. Los diálogos se exponen mediante dos comandos Rust acotados; el frontend no recibe permisos genéricos de filesystem ni diálogo.

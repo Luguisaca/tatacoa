@@ -4,13 +4,14 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use tatacoa_core::{
     ArtifactId, ArtifactPreview, CaptureStatus, ContinuityInspection, ContinuityState, Engagement,
-    EngagementId, ExecutionId, ExportMode, KnowledgeCard, KnowledgeCardInput, KnowledgeReference,
-    KnowledgeReviewStatus, Manifest, PlainExportAuthorization, ReplayPlaceholder, ReplayRecipe,
-    ReplayRecipeInput, Result, SecretPassword, SecurityProfile, Session, SessionId,
-    create_engagement, create_environment, create_knowledge_card, create_replay_recipe,
-    create_scope, create_session, create_target, execute, export_bundle, export_encrypted_bundle,
-    inspect_continuity, list_engagements, list_execution_manifests, list_sessions,
-    load_execution_manifest, pause_work, read_artifact_preview, resume_work,
+    EngagementId, ExecutionContext, ExecutionId, ExportMode, KnowledgeCard, KnowledgeCardInput,
+    KnowledgeReference, KnowledgeReviewStatus, Manifest, PlainExportAuthorization,
+    ReplayPlaceholder, ReplayRecipe, ReplayRecipeInput, Result, SecretPassword, SecurityProfile,
+    Session, SessionId, create_engagement, create_environment, create_knowledge_card,
+    create_replay_recipe, create_scope, create_session, create_target, execute, export_bundle,
+    export_encrypted_bundle, inspect_continuity, list_engagements, list_execution_manifests,
+    list_sessions, load_execution_context, load_execution_manifest, pause_work,
+    read_artifact_preview, resume_work,
 };
 use zeroize::Zeroize;
 
@@ -32,6 +33,13 @@ pub struct NewWorkRequest {
 pub struct WorkContext {
     pub engagement: Engagement,
     pub session: Session,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AuthorizationReview {
+    pub engagement: Engagement,
+    pub context: ExecutionContext,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -171,6 +179,17 @@ impl AppService {
             request.argv,
             request.max_stream_bytes,
         )
+    }
+
+    pub fn authorization_review(
+        &self,
+        engagement_id: &EngagementId,
+        session_id: &SessionId,
+    ) -> Result<AuthorizationReview> {
+        Ok(AuthorizationReview {
+            engagement: tatacoa_core::load_engagement(&self.workspace, engagement_id)?,
+            context: load_execution_context(&self.workspace, engagement_id, session_id)?,
+        })
     }
 
     pub fn summarize(&self, engagement_id: &EngagementId) -> Result<WorkSummary> {
@@ -343,6 +362,18 @@ mod tests {
         })?;
         let executable = std::env::current_exe()
             .map_err(|source| tatacoa_core::Error::io("find test executable", source))?;
+        let review = service.authorization_review(&work.engagement.id, &work.session.id)?;
+        assert_eq!(
+            review.engagement.security_profile,
+            SecurityProfile::LabLearning
+        );
+        assert_eq!(
+            review.context.scope.authorization_boundary,
+            "Only this test process"
+        );
+        assert_eq!(review.context.environment.name, "Test host");
+        assert_eq!(review.context.target.label, "App API test");
+        assert_eq!(review.context.session, work.session);
         let manifest = service.run(RunRequest {
             engagement_id: work.engagement.id.clone(),
             session_id: work.session.id.clone(),
@@ -403,6 +434,7 @@ mod tests {
         let second_root = tatacoa_core::compute_plain_root(&bundle)?;
         assert_eq!(first_root, second_root);
         assert_eq!(first_root.entry_count, 3);
+        assert_eq!(first_root.message_imprint()?.len(), 32);
         let reopened = AppService::open(root);
         let listed = reopened.list_work()?;
         assert_eq!(listed.len(), 1);

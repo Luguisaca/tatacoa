@@ -43,6 +43,7 @@ Estas decisiones provienen del Discovery y de decisiones humanas posteriores apr
 | D-038 | RFC 3161 usa sidecar `.tsr`: Encrypted timestamp-ea los bytes exactos del archivo; Plain usa un digest raíz TATACOA versionado y formalmente especificado sobre manifest + objetos declarados. TSA solo explícita/configurada; su ausencia/fallo no invalida el bundle | APPROVED |
 | D-039 | Continuidad usa persistencia explícita/versionada sin secretos y recuperación determinista; reanudar operaciones requiere nueva validación de autorización | APPROVED |
 | D-040 | Importación aplica verify-before-trust, nunca ejecuta automáticamente y exige nueva validación de autorización antes de continuar operaciones | APPROVED |
+| D-041 | Reapertura por perfil: LAB no exige autenticación adicional; PROFESSIONAL exige revalidación contextual antes de operar; HIGH_SENSITIVITY declara que el workspace local aún no tiene protección criptográfica persistente; CUSTOM niega capacidades de protección sin política. Reabrir nunca autoriza ejecutar | APPROVED |
 | D-032 | El roadmap es acumulativo: un sprint extiende la dirección del producto y no puede redefinir silenciosamente arquitectura/decisiones previas | APPROVED |
 | D-033 | Capacidades futuras conocidas se mantienen como horizonte sin asignarlas automáticamente a un sprint ni tratarlas como implementadas | APPROVED |
 | D-034 | El hardening de creación Encrypted amplía D-025 por Security Profile: LAB_LEARNING mínimo 12; PROFESSIONAL mínimo 14; HIGH_SENSITIVITY mínimo 16; PROFESSIONAL/HIGH_SENSITIVITY rechazan passwords evidentemente predecibles; CUSTOM permanece fail-closed. Se conserva máximo 1024 bytes, ausencia de reglas compositivas arbitrarias, ausencia de normalización Unicode silenciosa y compatibilidad de verify con passwords históricas | APPROVED |
@@ -50,7 +51,7 @@ Estas decisiones provienen del Discovery y de decisiones humanas posteriores apr
 ## Decisiones pendientes de diseño/spike
 
 - modelo de protección/autenticación para reabrir trabajos protegidos;
-- límites/contratos de importación de paquetes compatibles;
+- importación: permanecen abiertos materialización/formato, compatibilidad y versiones, estados, provenance recibido y condiciones exactas para convertir un paquete ya verificado en proyecto continuable; D-040 ya congela verify-before-trust, ausencia de autoejecución y revalidación de autorización;
 - estrategia async solo si la necesidad lo exige;
 - política de release signing;
 - SBOM tooling;

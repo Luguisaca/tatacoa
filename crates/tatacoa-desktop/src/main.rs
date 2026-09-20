@@ -3,15 +3,44 @@
 
 use std::str::FromStr;
 use tatacoa_app_api::{
-    AppService, ExportRequest, KnowledgeRequest, NewWorkRequest, ReplayRequest, RunRequest,
-    WorkContext, WorkSummary,
+    AppService, AuthorizationReview, ExportRequest, KnowledgeRequest, NewWorkRequest,
+    ReplayRequest, RunRequest, WorkContext, WorkSummary,
 };
 use tatacoa_core::{
     ArtifactId, ArtifactPreview, ContinuityState, Engagement, EngagementId, ExecutionId,
     KnowledgeCard, Manifest, ReplayRecipe, SessionId,
 };
+use tauri_plugin_dialog::DialogExt;
 
 type CommandResult<T> = Result<T, String>;
+
+#[tauri::command]
+fn select_workspace(app: tauri::AppHandle) -> CommandResult<Option<String>> {
+    app.dialog()
+        .file()
+        .set_title("Seleccionar workspace TATACOA")
+        .blocking_pick_folder()
+        .map(|path| {
+            path.into_path()
+                .map(|value| value.to_string_lossy().into_owned())
+                .map_err(|error| error.to_string())
+        })
+        .transpose()
+}
+
+#[tauri::command]
+fn select_export_destination(app: tauri::AppHandle) -> CommandResult<Option<String>> {
+    app.dialog()
+        .file()
+        .set_title("Destino de exportación TATACOA")
+        .blocking_save_file()
+        .map(|path| {
+            path.into_path()
+                .map(|value| value.to_string_lossy().into_owned())
+                .map_err(|error| error.to_string())
+        })
+        .transpose()
+}
 
 #[tauri::command]
 fn list_work(workspace: String) -> CommandResult<Vec<Engagement>> {
@@ -42,6 +71,20 @@ fn run_tool(workspace: String, request: RunRequest) -> CommandResult<WorkSummary
     service.run(request).map_err(|error| error.to_string())?;
     service
         .summarize(&engagement_id)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn authorization_review(
+    workspace: String,
+    engagement_id: String,
+    session_id: String,
+) -> CommandResult<AuthorizationReview> {
+    let engagement_id =
+        EngagementId::from_str(&engagement_id).map_err(|error| error.to_string())?;
+    let session_id = SessionId::from_str(&session_id).map_err(|error| error.to_string())?;
+    AppService::open(workspace)
+        .authorization_review(&engagement_id, &session_id)
         .map_err(|error| error.to_string())
 }
 
@@ -129,11 +172,15 @@ fn resume_work(
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             list_work,
+            select_workspace,
+            select_export_destination,
             create_work,
             summarize,
             run_tool,
+            authorization_review,
             execution,
             artifact_preview,
             create_knowledge,

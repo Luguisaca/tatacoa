@@ -21,6 +21,8 @@ pub struct ContinuityState {
     pub status: ContinuityStatus,
     pub current_session_id: Option<SessionId>,
     pub pending: Vec<String>,
+    #[serde(default)]
+    pub revision: u64,
     pub updated_unix_ms_observed: u128,
 }
 
@@ -41,6 +43,7 @@ pub(crate) fn initialize(workspace: &Path, engagement_id: &EngagementId) -> Resu
             status: ContinuityStatus::Active,
             current_session_id: None,
             pending: Vec::new(),
+            revision: 1,
             updated_unix_ms_observed: unix_ms_observed()?,
         },
     )
@@ -61,6 +64,10 @@ pub fn pause_work(
     state.status = ContinuityStatus::Paused;
     state.current_session_id = current_session_id;
     state.pending = pending;
+    state.revision = state
+        .revision
+        .checked_add(1)
+        .ok_or_else(|| Error::InvalidManifest("continuity revision overflow".to_owned()))?;
     state.updated_unix_ms_observed = unix_ms_observed()?;
     store(workspace, &state)?;
     Ok(state)
@@ -78,6 +85,10 @@ pub fn resume_work(
     }
     let mut state = load(workspace, engagement_id)?;
     state.status = ContinuityStatus::Active;
+    state.revision = state
+        .revision
+        .checked_add(1)
+        .ok_or_else(|| Error::InvalidManifest("continuity revision overflow".to_owned()))?;
     state.updated_unix_ms_observed = unix_ms_observed()?;
     store(workspace, &state)?;
     Ok(state)
@@ -121,6 +132,7 @@ fn load(workspace: &Path, engagement_id: &EngagementId) -> Result<ContinuityStat
             status: ContinuityStatus::Active,
             current_session_id: None,
             pending: Vec::new(),
+            revision: 0,
             updated_unix_ms_observed: engagement.created_unix_ms_observed,
         });
     }
@@ -133,25 +145,167 @@ fn load(workspace: &Path, engagement_id: &EngagementId) -> Result<ContinuityStat
         })
         .collect::<Result<Vec<_>>>()?;
     paths.sort();
-    let path = paths
-        .pop()
-        .ok_or_else(|| Error::InvalidManifest("continuity history is empty".to_owned()))?;
-    let bytes = fs::read(path).map_err(|source| Error::io("read continuity state", source))?;
-    let state: ContinuityState = serde_json::from_slice(&bytes)?;
-    if state.schema_version != CONTINUITY_SCHEMA_VERSION || &state.engagement_id != engagement_id {
+    let mut states = Vec::with_capacity(paths.len());
+    for path in paths {
+        let bytes = fs::read(&path).map_err(|source| Error::io("read continuity state", source))?;
+        let state: ContinuityState = serde_json::from_slice(&bytes)?;
+        if state.schema_version != CONTINUITY_SCHEMA_VERSION
+            || &state.engagement_id != engagement_id
+        {
+            return Err(Error::InvalidManifest(
+                "invalid continuity state identity/version".to_owned(),
+            ));
+        }
+        states.push((path, state));
+    }
+    if states.is_empty() {
         return Err(Error::InvalidManifest(
-            "invalid continuity state identity/version".to_owned(),
+            "continuity history is empty".to_owned(),
         ));
     }
-    Ok(state)
+    let mut revisions = std::collections::HashSet::new();
+    for (_, state) in &states {
+        if state.revision > 0 && !revisions.insert(state.revision) {
+            return Err(Error::InvalidManifest(format!(
+                "duplicate continuity revision: {}",
+                state.revision
+            )));
+        }
+    }
+    if let Some((_, state)) = states
+        .iter()
+        .filter(|(_, state)| state.revision > 0)
+        .max_by_key(|(_, state)| state.revision)
+    {
+        return Ok(state.clone());
+    }
+    // Legacy SP3 snapshots had no revision. Their former filename order is used once
+    // for compatibility; every subsequent write receives revision 1 and no longer
+    // relies on observed wall-clock time.
+    states
+        .pop()
+        .map(|(_, state)| state)
+        .ok_or_else(|| Error::InvalidManifest("continuity history is empty".to_owned()))
 }
 fn store(workspace: &Path, state: &ContinuityState) -> Result<()> {
     let root = engagement_root(workspace, &state.engagement_id)?.join("continuity");
     fs::create_dir_all(&root).map_err(|source| Error::io("create continuity history", source))?;
     let name = format!(
-        "{:032}-{}.json",
-        state.updated_unix_ms_observed,
+        "{:020}-{}.json",
+        state.revision,
         uuid::Uuid::new_v4().simple()
     );
     write_json_new_atomic(&root.join(name), state)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{SecurityProfile, create_engagement};
+
+    fn root(label: &str) -> std::path::PathBuf {
+        std::env::temp_dir().join(format!(
+            "tatacoa-continuity-{label}-{}",
+            uuid::Uuid::new_v4()
+        ))
+    }
+
+    #[test]
+    fn revision_not_wall_clock_selects_latest_state() -> Result<()> {
+        let root = root("revision");
+        let engagement = create_engagement(&root, "test".to_owned(), SecurityProfile::LabLearning)?;
+        let mut state = load(&root, &engagement.id)?;
+        state.revision = 2;
+        state.status = ContinuityStatus::Paused;
+        state.updated_unix_ms_observed = u128::MAX;
+        store(&root, &state)?;
+        state.revision = 7;
+        state.status = ContinuityStatus::Active;
+        state.updated_unix_ms_observed = 0;
+        store(&root, &state)?;
+        assert_eq!(load(&root, &engagement.id)?.revision, 7);
+        assert_eq!(
+            load(&root, &engagement.id)?.status,
+            ContinuityStatus::Active
+        );
+        let _ = fs::remove_dir_all(root);
+        Ok(())
+    }
+
+    #[test]
+    fn legacy_snapshot_is_read_then_upgraded_on_write() -> Result<()> {
+        let root = root("legacy");
+        let engagement = create_engagement(&root, "test".to_owned(), SecurityProfile::LabLearning)?;
+        let history = engagement_root(&root, &engagement.id)?.join("continuity");
+        fs::remove_dir_all(&history)
+            .map_err(|source| Error::io("replace test continuity", source))?;
+        fs::create_dir(&history).map_err(|source| Error::io("create legacy history", source))?;
+        let legacy = ContinuityState {
+            schema_version: CONTINUITY_SCHEMA_VERSION.to_owned(),
+            engagement_id: engagement.id.clone(),
+            status: ContinuityStatus::Paused,
+            current_session_id: None,
+            pending: vec!["legacy".to_owned()],
+            revision: 0,
+            updated_unix_ms_observed: 99,
+        };
+        let mut legacy_value = serde_json::to_value(&legacy)?;
+        legacy_value
+            .as_object_mut()
+            .ok_or_else(|| Error::InvalidManifest("test legacy state is not an object".to_owned()))?
+            .remove("revision");
+        fs::write(
+            history.join("00099-legacy.json"),
+            serde_json::to_vec(&legacy_value)?,
+        )
+        .map_err(|source| Error::io("write legacy snapshot", source))?;
+        let mut later = legacy.clone();
+        later.pending = vec!["legacy-latest".to_owned()];
+        let mut later_value = serde_json::to_value(&later)?;
+        later_value
+            .as_object_mut()
+            .ok_or_else(|| Error::InvalidManifest("test legacy state is not an object".to_owned()))?
+            .remove("revision");
+        fs::write(
+            history.join("00100-legacy.json"),
+            serde_json::to_vec(&later_value)?,
+        )
+        .map_err(|source| Error::io("write later legacy snapshot", source))?;
+        assert_eq!(load(&root, &engagement.id)?.revision, 0);
+        assert_eq!(load(&root, &engagement.id)?.pending, later.pending);
+        let resumed = resume_work(&root, &engagement.id, true)?;
+        assert_eq!(resumed.revision, 1);
+        assert_eq!(load(&root, &engagement.id)?.revision, 1);
+        let _ = fs::remove_dir_all(root);
+        Ok(())
+    }
+
+    #[test]
+    fn duplicate_and_overflow_revisions_fail_closed() -> Result<()> {
+        let duplicate_root = root("duplicates");
+        let engagement = create_engagement(
+            &duplicate_root,
+            "test".to_owned(),
+            SecurityProfile::LabLearning,
+        )?;
+        let mut state = load(&duplicate_root, &engagement.id)?;
+        state.revision = 2;
+        store(&duplicate_root, &state)?;
+        store(&duplicate_root, &state)?;
+        assert!(load(&duplicate_root, &engagement.id).is_err());
+
+        let overflow_root = root("overflow");
+        let engagement = create_engagement(
+            &overflow_root,
+            "test".to_owned(),
+            SecurityProfile::LabLearning,
+        )?;
+        let mut state = load(&overflow_root, &engagement.id)?;
+        state.revision = u64::MAX;
+        store(&overflow_root, &state)?;
+        assert!(pause_work(&overflow_root, &engagement.id, None, Vec::new()).is_err());
+        let _ = fs::remove_dir_all(duplicate_root);
+        let _ = fs::remove_dir_all(overflow_root);
+        Ok(())
+    }
 }

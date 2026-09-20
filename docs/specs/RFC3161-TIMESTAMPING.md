@@ -22,6 +22,8 @@ No canonicaliza JSON ni depende del orden del filesystem. La entrada al SHA-256 
 
 Las entradas son `manifest.json` y cada `artifact.path` declarado. Paths duplicados, inseguros, ausentes o artifacts cuya integridad no corresponda al manifest producen error.
 
+Los 32 bytes obtenidos por `SHA-256(root-encoding)` son directamente el `messageImprint` SHA-256 enviado en `TimeStampReq`. No se aplica un segundo SHA-256 sobre ese digest. En otras palabras, queda prohibido `SHA256(SHA256(root-encoding))`.
+
 ## Momento y fallo
 
 El imprint se calcula después de finalizar atómicamente y verificar localmente el bundle. Solo una TSA configurada explícitamente puede recibirlo. Ausencia de configuración, red o respuesta válida se reporta sin invalidar, borrar ni modificar el bundle existente. Nunca existe fallback a hora local como trusted timestamp.

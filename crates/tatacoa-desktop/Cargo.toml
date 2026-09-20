@@ -10,6 +10,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 serde.workspace = true
 tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
 tatacoa-app-api = { path = "../tatacoa-app-api" }
 tatacoa-core = { path = "../tatacoa-core" }
 

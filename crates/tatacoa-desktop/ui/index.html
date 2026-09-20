@@ -6,7 +6,7 @@
 <main>
   <aside>
     <label>Workspace local<input id="workspace" placeholder="C:\ruta\tatacoa-workspace"></label>
-    <button id="open">Abrir workspace</button>
+    <button id="select-workspace">Seleccionar carpeta…</button><button id="open">Abrir workspace</button>
     <p id="workspace-status" role="status">Seleccione una ruta local.</p>
     <h2>Trabajos</h2><nav id="work-list" aria-label="Trabajos"></nav>
   </aside>
@@ -30,6 +30,7 @@
     <article id="work-panel" hidden>
       <div class="title-row"><div><p class="eyebrow" id="profile"></p><h2 id="work-title"></h2></div><button id="refresh">Actualizar resumen</button></div>
       <div id="summary" class="cards"></div>
+      <p id="profile-notice" role="status"></p>
       <p id="continuity-status"></p><label>Pendientes para continuidad (uno por línea)<textarea id="continuity-pending"></textarea></label><div class="title-row"><button id="pause">Pausar y guardar</button><button id="resume">Revalidar autorización y reanudar</button></div>
       <h3>Ejecutar herramienta autorizada</h3>
       <form id="run-form"><label>Sesión<select id="session" required></select></label><label>Ejecutable<input id="executable" required placeholder="rustc"></label><label>Argumentos (uno por línea)<textarea id="argv" placeholder="--version"></textarea></label><button type="submit">Revisar y ejecutar</button></form>
@@ -57,7 +58,7 @@
           <form id="replay-form"><label>Ejecutable<input id="replay-executable" required></label><label>Argumentos template (uno por línea)<textarea id="replay-argv"></textarea></label><label>Placeholders (NAME|SECRET|REQUIRED|DESCRIPCIÓN, uno por línea)<textarea id="replay-placeholders"></textarea></label><label>Prerequisitos (uno por línea)<textarea id="replay-prerequisites"></textarea></label><label>Límites de autorización (uno por línea)<textarea id="replay-limits" required></textarea></label><button type="submit">Guardar receta sin ejecutar</button></form>
         </details>
         <details><summary>Exportar ejecución</summary>
-          <form id="export-form"><label>Destino local<input id="export-destination" required></label><label>Modo<select id="export-mode"><option value="PLAIN">Plain</option><option value="ENCRYPTED">Encrypted v1</option></select></label><label><input type="checkbox" id="plain-ack"> Reconozco que Plain no cifra el contenido</label><div id="password-fields" hidden><label>Password<input id="export-password" type="password" autocomplete="new-password"></label><label>Confirmación<input id="export-confirmation" type="password" autocomplete="new-password"></label></div><button type="submit">Exportar según política</button></form>
+          <form id="export-form"><label>Destino local<input id="export-destination" required></label><button type="button" id="select-export">Seleccionar destino…</button><label>Modo<select id="export-mode"><option value="PLAIN">Plain</option><option value="ENCRYPTED">Encrypted v1</option></select></label><label><input type="checkbox" id="plain-ack"> Reconozco que Plain no cifra el contenido</label><div id="password-fields" hidden><label>Password<input id="export-password" type="password" autocomplete="new-password"></label><label>Confirmación<input id="export-confirmation" type="password" autocomplete="new-password"></label></div><button type="submit">Exportar según política</button></form>
         </details>
       </section>
     </article>

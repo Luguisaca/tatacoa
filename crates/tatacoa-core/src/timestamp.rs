@@ -12,6 +12,14 @@ pub struct PlainRootDigest {
     pub entry_count: u32,
 }
 
+impl PlainRootDigest {
+    /// Returns the RFC 3161 SHA-256 messageImprint bytes directly.
+    /// Callers must not hash this value a second time.
+    pub fn message_imprint(&self) -> Result<[u8; 32]> {
+        decode_sha256(&self.value)
+    }
+}
+
 pub fn compute_plain_root(bundle_root: &Path) -> Result<PlainRootDigest> {
     let manifest = read_bundle_manifest(bundle_root)?;
     let mut entries = vec![("manifest.json".to_owned(), None)];
