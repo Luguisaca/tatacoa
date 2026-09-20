@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TATACOA</title><link rel="stylesheet" href="styles.css"></head>
+<body>
+<header><div><p class="eyebrow">LUGUISACA</p><h1>T·A·T·A·C·O·A</h1><p>Trabajo autorizado, evidencia verificable y continuidad.</p></div><span id="connection">Local · Offline</span></header>
+<main>
+  <aside>
+    <label>Workspace local<input id="workspace" placeholder="C:\ruta\tatacoa-workspace"></label>
+    <button id="open">Abrir workspace</button>
+    <p id="workspace-status" role="status">Seleccione una ruta local.</p>
+    <h2>Trabajos</h2><nav id="work-list" aria-label="Trabajos"></nav>
+  </aside>
+  <section>
+    <div id="error" role="alert" hidden></div>
+    <article id="welcome"><h2>Usable Alpha</h2><p>Abra un workspace existente o cree el contexto autorizado de un nuevo trabajo.</p></article>
+    <article id="create-panel">
+      <h2>Nuevo trabajo autorizado</h2>
+      <form id="create-form">
+        <label>Nombre<input name="engagement_name" required></label>
+        <label>Perfil<select name="security_profile"><option value="LabLearning">Laboratorio</option><option value="Professional">Profesional</option><option value="HighSensitivity">Alta sensibilidad</option></select></label>
+        <label>Scope<input name="scope_name" required></label>
+        <label>Límite de autorización<textarea name="authorization_boundary" required></textarea></label>
+        <label>Entorno<input name="environment_name" required></label>
+        <label>Objetivo<input name="target_label" required></label>
+        <label>Localizador<input name="target_locator" required></label>
+        <label>Sesión<input name="session_name" required></label>
+        <button type="submit">Crear trabajo</button>
+      </form>
+    </article>
+    <article id="work-panel" hidden>
+      <div class="title-row"><div><p class="eyebrow" id="profile"></p><h2 id="work-title"></h2></div><button id="refresh">Actualizar resumen</button></div>
+      <div id="summary" class="cards"></div>
+      <h3>Ejecutar herramienta autorizada</h3>
+      <form id="run-form"><label>Sesión<select id="session" required></select></label><label>Ejecutable<input id="executable" required placeholder="rustc"></label><label>Argumentos (uno por línea)<textarea id="argv" placeholder="--version"></textarea></label><button type="submit">Revisar y ejecutar</button></form>
+      <h3>Ejecuciones</h3><div id="executions"></div>
+    </article>
+  </section>
+</main>
+<script src="app.js"></script>
+</body></html>

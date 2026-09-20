@@ -4,7 +4,7 @@
 
 TATACOA es un producto de **LUGUISACA — luguisaca.com** para organizar el trabajo real de una evaluación de seguridad autorizada: contexto, ejecuciones, artefactos, evidencia verificable, conocimiento y reproducción/retest, con una arquitectura local-first y Validación Humana como autoridad.
 
-> **Estado:** Sprint 01 + Sprint 02 / Alpha Expansion conforman el baseline implementado. `tatacoa.encrypted.v1` y su hardening están integrados y cuentan con QA técnico previo, pero su validación final como experiencia de usuario permanece pendiente hasta disponer de la Usable Alpha de Sprint 03. Sprint 03 está aprobado/planificado y todavía no está implementado.
+> **Estado:** Sprint 01 + Sprint 02 / Alpha Expansion conforman el baseline implementado. `tatacoa.encrypted.v1` y su hardening están integrados y cuentan con QA técnico previo, pero su validación final como experiencia de usuario permanece pendiente. Sprint 03 / Usable Alpha está en implementación incremental; consulte su registro para distinguir capacidades construidas, QA técnico y QA humano pendiente.
 
 ## Misión
 
@@ -35,7 +35,7 @@ La evolución de TATACOA debe ampliar esta base sin obligar a rediseñar el prod
        policy / crypto / replay / provenance
 ```
 
-Actualmente existen `tatacoa-core`, `tatacoa-cli` y `tatacoa-verifier`. `tatacoa-app-api` y `tatacoa-desktop` son capacidades aprobadas para Sprint 03 y **todavía no están implementadas**.
+Actualmente existen `tatacoa-core`, `tatacoa-app-api`, `tatacoa-desktop`, `tatacoa-cli` y `tatacoa-verifier`. App API y Desktop están en construcción incremental y todavía no constituyen por sí solos la Usable Alpha completa.
 
 CLI y Desktop son instalaciones independientes de primera clase. El CLI no requiere GUI/Tauri; Desktop no requiere una instalación previa del CLI. Ambos deben compartir la autoridad de dominio del Core y preservar interoperabilidad de los datos soportados.
 

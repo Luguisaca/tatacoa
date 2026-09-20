@@ -1,0 +1,28 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "TATACOA",
+  "version": "0.1.0-alpha.1",
+  "identifier": "com.luguisaca.tatacoa",
+  "build": {
+    "frontendDist": "ui"
+  },
+  "app": {
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'none'; object-src 'none'; frame-src 'none'"
+    },
+    "windows": [
+      {
+        "label": "main",
+        "title": "TATACOA — Usable Alpha",
+        "width": 1180,
+        "height": 760,
+        "minWidth": 900,
+        "minHeight": 620
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all"
+  }
+}

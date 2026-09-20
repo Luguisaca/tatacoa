@@ -22,12 +22,14 @@ pub struct NewWorkRequest {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct WorkContext {
     pub engagement: Engagement,
     pub session: Session,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct RunRequest {
     pub engagement_id: EngagementId,
     pub session_id: SessionId,
@@ -37,6 +39,7 @@ pub struct RunRequest {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ExecutionSummary {
     pub id: ExecutionId,
     pub session_id: Option<SessionId>,
@@ -47,6 +50,7 @@ pub struct ExecutionSummary {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct WorkSummary {
     pub engagement: Engagement,
     pub sessions: Vec<Session>,

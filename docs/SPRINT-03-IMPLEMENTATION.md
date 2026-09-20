@@ -34,3 +34,33 @@ QA humano propuesto cuando exista Desktop:
 5. comprobar que session, execution, estado de captura y artifacts aparecen en el resumen.
 
 Pendiente del siguiente bloque: Desktop/Tauri, integración visual y contratos de continuidad/importación que requieren diseño específico.
+
+## Bloque 02 — Desktop E2E inicial
+
+Rama local: `feat/sp3-02-desktop-e2e`, creada desde el bloque 01.
+
+Implementado:
+
+- nuevo crate `tatacoa-desktop` sobre Tauri 2, sin depender del binario CLI;
+- interfaz local para abrir un workspace, listar trabajos, crear el contexto autorizado completo, consultar el resumen persistido y ejecutar una herramienta tras confirmación explícita;
+- comunicación Desktop → `tatacoa-app-api` → Core mediante comandos y estructuras tipadas;
+- CSP restrictiva, `connect-src 'none'`, capability limitada a la ventana principal y APIs Core predeterminadas;
+- renderizado de datos no confiables mediante `textContent`/nodos de texto, sin interpolarlos como HTML;
+- recurso de aplicación Windows y configuración de empaquetado Tauri.
+
+QA técnico:
+
+- sintaxis JavaScript: PASS;
+- `cargo check --locked --workspace --all-targets`: PASS;
+- Clippy del workspace con warnings como error: PASS;
+- pruebas completas del workspace: PASS;
+- build del workspace, incluyendo Desktop: PASS en Windows 11 x64.
+
+QA humano propuesto:
+
+1. abrir el Desktop y seleccionar un workspace local de prueba;
+2. crear un trabajo y verificar que aparecen engagement y session sin copiar IDs;
+3. ejecutar una herramienta inocua dentro del alcance autorizado;
+4. cerrar y reabrir el Desktop y confirmar que el resumen se reconstruye desde disco.
+
+Este bloque aún no cubre consulta del contenido de artifacts, Knowledge/Replay, exportación desde Desktop, continuidad explícita ni importación. Los contratos exactos de continuidad, protección de reapertura e importación siguen siendo decisiones pendientes documentadas y no se implementan por inferencia.

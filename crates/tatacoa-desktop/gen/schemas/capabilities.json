@@ -1,0 +1,1 @@
+{"main-local":{"identifier":"main-local","description":"Main local-only TATACOA window","local":true,"windows":["main"],"permissions":["core:default"],"platforms":["windows","linux"]}}
