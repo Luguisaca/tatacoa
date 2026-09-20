@@ -41,3 +41,34 @@ Se aplican los límites congelados del formato: envelope de 1 TiB, directorio ci
 - No hay recuperación de password, master key, backdoor ni destinatarios de clave pública.
 - La resistencia efectiva depende también de la entropía de la password y de la seguridad del host.
 - Public/Sanitized, firmas, RFC 3161 y cifrado del workspace continúan fuera de este incremento.
+
+## Hardening de password — candidato pendiente de integración
+
+La rama `qa/encrypted-v1-hardening` contiene un incremento de hardening posterior a la implementación base de Encrypted v1. Su estado es **candidato de QA; pendiente de validación humana e integración**. No debe interpretarse como comportamiento aprobado de `main` hasta completar QA y revisión de integración.
+
+Cambios bajo evaluación:
+
+- `LAB_LEARNING`: conserva mínimo de 12 caracteres para facilitar aprendizaje y pruebas controladas.
+- `PROFESSIONAL`: mínimo de 14 caracteres y rechazo de passwords evidentemente predecibles.
+- `HIGH_SENSITIVITY`: mínimo de 16 caracteres y rechazo de passwords evidentemente predecibles.
+- `CUSTOM`: continúa fail-closed mientras no exista una política aprobada.
+- La validación se aplica en `tatacoa-core`; CLI consume la política del Security Profile del engagement.
+- No se añade un canal de password por argumentos, variables de entorno o archivos.
+- No se modifican los parámetros criptográficos congelados de Encrypted v1: Argon2id, AES-256-GCM, formato del envelope ni parámetros del KDF.
+- Se corrige la guía de error de `HIGH_SENSITIVITY` para indicar el uso de exportación Encrypted.
+
+La política evita imponer reglas arbitrarias de composición. Una passphrase larga y no predecible puede ser válida sin exigir combinaciones artificiales de mayúsculas, números o símbolos.
+
+### Gate de integración
+
+Antes de integrar este hardening debe existir evidencia de:
+
+1. CI verde en Windows y Linux.
+2. QA humano de exportación y verificación para `LAB_LEARNING`, `PROFESSIONAL` y `HIGH_SENSITIVITY`.
+3. Rechazo confirmado de passwords cortas y patrones evidentemente débiles en los perfiles protegidos.
+4. Aceptación confirmada de passphrases suficientemente largas y no predecibles.
+5. Verificación de que una password incorrecta continúa fallando de forma cerrada y sin modificar el bundle.
+6. Regresión satisfactoria de Encrypted v1 y Security Profiles.
+7. Working tree limpio y revisión final del diff antes de cualquier integración.
+
+Hasta completar este gate, el estado documental es **QA PENDING / INTEGRATION PENDING**.
