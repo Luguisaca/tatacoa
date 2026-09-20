@@ -74,11 +74,11 @@ La siguiente etapa busca una **Usable Alpha**:
 - flujo gráfico basado en trabajo real de pentesting;
 - interoperabilidad de datos soportados entre CLI y Desktop;
 - pausa/reanudación y persistencia segura del trabajo;
-- recuperación tras cierre/fallo sin falsear estados de evidencia;
-- resumen/contexto de continuidad para retest y reanudación;
-- apertura/importación autorizada de paquetes compatibles preservando políticas, integridad y provenance.
+- recuperación tras cierre voluntario, accidental o fallo desde el último estado seguro disponible, sin falsear estados de evidencia;
+- resumen/contexto bajo demanda al abrir, reanudar o realizar retest: acciones realizadas, ejecuciones/evidencia relevantes, contexto conocido, pendientes y punto de continuidad;
+- apertura/importación autorizada de paquetes compatibles como proyectos continuables, preservando políticas, integridad y provenance original.
 
-RFC 3161 entra en investigación/diseño activo durante esta evolución por su relevancia para integridad temporal. Su mecanismo concreto no se considera aprobado hasta completar investigación y decisión humana.
+RFC 3161 entra en Sprint 03 como **diseño + primera implementación funcional** de trusted timestamping. Antes de implementar esa parte debe aprobarse qué objeto(s) se timestamp-ean y en qué momento. La solución debe permitir verificación posterior y registrar de forma explícita ausencia/fallo de TSA sin falsear ni destruir evidencia; la conectividad de una TSA no convierte Internet en requisito general de TATACOA.
 
 ## Estados de captura
 
