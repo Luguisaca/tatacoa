@@ -27,7 +27,7 @@ La portabilidad Windows + Linux forma parte del baseline. Windows 11 x64 y WSL2 
 
 ## Sprint 02 — Alpha Expansion
 
-**Estado: IMPLEMENTED; validación integral/humana según documentación vigente.**
+**Estado: VALIDATED dentro del alcance documentado.**
 
 Extiende Foundation con:
 
@@ -43,11 +43,11 @@ El detalle de implementación está en [SPRINT-02-IMPLEMENTATION.md](SPRINT-02-I
 
 ### Encrypted Bundle v1
 
-**Estado: IMPLEMENTED / QA HUMANO INDEPENDIENTE PENDIENTE.**
+**Estado: VALIDATED dentro del baseline Alpha consolidado.**
 
 `tatacoa.encrypted.v1` añade confidencialidad persistente bajo las decisiones criptográficas congeladas en [DECISIONS.md](DECISIONS.md). Su estado exacto está en [ENCRYPTED-V1-IMPLEMENTATION.md](ENCRYPTED-V1-IMPLEMENTATION.md).
 
-Implementado no significa aprobado.
+La implementación base y el hardening de password por Security Profile quedaron integrados y validados dentro del alcance documentado. Esto no implica certificación, validación FIPS ni garantías fuera de los entornos y casos efectivamente probados.
 
 ## Sprint 03 — Usable Alpha
 

@@ -2,7 +2,7 @@
 
 ## Estado
 
-La rama de desarrollo implementa exportación y verificación persistente de `tatacoa.encrypted.v1`. El trabajo tiene pruebas automatizadas, pero continúa pendiente de revisión y QA humano independiente. No se declara certificación, validación FIPS ni protección del workspace.
+`tatacoa.encrypted.v1` está integrado en el baseline Alpha consolidado y fue validado dentro del alcance documentado mediante pruebas automatizadas y QA humano. No se declara certificación, validación FIPS, garantía forense ni protección del workspace.
 
 La guía reproducible para validarlo como usuario se encuentra en [`ALPHA-USER-QA-GUIDE.md`](ALPHA-USER-QA-GUIDE.md).
 
@@ -42,33 +42,25 @@ Se aplican los límites congelados del formato: envelope de 1 TiB, directorio ci
 - La resistencia efectiva depende también de la entropía de la password y de la seguridad del host.
 - Public/Sanitized, firmas, RFC 3161 y cifrado del workspace continúan fuera de este incremento.
 
-## Hardening de password — candidato pendiente de integración
+## Hardening de password — integrado y validado
 
-La rama `qa/encrypted-v1-hardening` contiene un incremento de hardening posterior a la implementación base de Encrypted v1. Su estado es **candidato de QA; pendiente de validación humana e integración**. No debe interpretarse como comportamiento aprobado de `main` hasta completar QA y revisión de integración.
+El hardening posterior a la implementación base de Encrypted v1 quedó integrado en `main` y validado dentro del alcance de QA de la Alpha.
 
-Cambios bajo evaluación:
+Política vigente de creación:
 
-- `LAB_LEARNING`: conserva mínimo de 12 caracteres para facilitar aprendizaje y pruebas controladas.
+- `LAB_LEARNING`: mínimo de 12 caracteres.
 - `PROFESSIONAL`: mínimo de 14 caracteres y rechazo de passwords evidentemente predecibles.
 - `HIGH_SENSITIVITY`: mínimo de 16 caracteres y rechazo de passwords evidentemente predecibles.
-- `CUSTOM`: continúa fail-closed mientras no exista una política aprobada.
-- La validación se aplica en `tatacoa-core`; CLI consume la política del Security Profile del engagement.
-- No se añade un canal de password por argumentos, variables de entorno o archivos.
-- No se modifican los parámetros criptográficos congelados de Encrypted v1: Argon2id, AES-256-GCM, formato del envelope ni parámetros del KDF.
-- Se corrige la guía de error de `HIGH_SENSITIVITY` para indicar el uso de exportación Encrypted.
+- `CUSTOM`: fail-closed mientras no exista una política aprobada.
+- máximo común: 1024 bytes UTF-8.
+- verify conserva compatibilidad con passwords históricas no vacías dentro del máximo.
 
-La política evita imponer reglas arbitrarias de composición. Una passphrase larga y no predecible puede ser válida sin exigir combinaciones artificiales de mayúsculas, números o símbolos.
+La validación permanece en `tatacoa-core`; CLI consume el Security Profile del engagement. No existe canal de password por argumentos, variables de entorno o archivos. No se modificaron Argon2id, AES-256-GCM, HKDF, STREAM-BE32, el envelope ni los parámetros congelados del KDF.
 
-### Gate de integración
+La política evita reglas arbitrarias de composición: una passphrase suficientemente larga y no predecible puede ser válida sin exigir combinaciones artificiales de mayúsculas, números o símbolos.
 
-Antes de integrar este hardening debe existir evidencia de:
+### Cierre de QA e integración
 
-1. CI verde en Windows y Linux.
-2. QA humano de exportación y verificación para `LAB_LEARNING`, `PROFESSIONAL` y `HIGH_SENSITIVITY`.
-3. Rechazo confirmado de passwords cortas y patrones evidentemente débiles en los perfiles protegidos.
-4. Aceptación confirmada de passphrases suficientemente largas y no predecibles.
-5. Verificación de que una password incorrecta continúa fallando de forma cerrada y sin modificar el bundle.
-6. Regresión satisfactoria de Encrypted v1 y Security Profiles.
-7. Working tree limpio y revisión final del diff antes de cualquier integración.
+El gate del incremento se completó con CI aplicable y QA humano del baseline consolidado, incluyendo Security Profiles, exportación/verificación, aceptación y rechazo de passwords según política, fallo cerrado ante password incorrecta y regresión de Encrypted v1. El estado vigente es **VALIDATED dentro del alcance documentado**.
 
-Hasta completar este gate, el estado documental es **QA PENDING / INTEGRATION PENDING**.
+La guía reproducible permanece en [`ALPHA-USER-QA-GUIDE.md`](ALPHA-USER-QA-GUIDE.md). La validación no amplía las garantías más allá de los entornos y casos efectivamente probados.
