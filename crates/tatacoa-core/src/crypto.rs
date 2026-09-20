@@ -111,7 +111,7 @@ fn is_obviously_weak_password(password: &str) -> bool {
 
 fn is_repeated_pattern(chars: &[char]) -> bool {
     (1..=chars.len() / 2).any(|period| {
-        chars.len() % period == 0
+        chars.len().is_multiple_of(period)
             && chars
                 .iter()
                 .enumerate()
