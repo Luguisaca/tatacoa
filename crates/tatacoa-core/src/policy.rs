@@ -16,7 +16,7 @@ pub fn authorize_plain_export(
             "PROFESSIONAL requires explicit acknowledgement for a PLAIN export".to_owned(),
         )),
         SecurityProfile::HighSensitivity => Err(Error::Conflict(
-            "HIGH_SENSITIVITY forbids PLAIN export; encrypted export is not implemented".to_owned(),
+            "HIGH_SENSITIVITY forbids PLAIN export; use ENCRYPTED export".to_owned(),
         )),
         SecurityProfile::Custom => Err(Error::Conflict(
             "CUSTOM has no approved export policy; PLAIN export is denied".to_owned(),
