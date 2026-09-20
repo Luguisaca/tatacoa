@@ -61,7 +61,7 @@ El alcance implementado de SP1/SP2 incluye, según sus documentos de estado:
 - Replay Recipe foundation/versionada;
 - provenance y relaciones implementadas en el alcance documentado.
 
-`tatacoa.encrypted.v1` está implementado pero pendiente de QA humano independiente. Implementado no significa aprobado.
+`tatacoa.encrypted.v1` está implementado e integrado y cuenta con pruebas automatizadas y QA técnico/humano previo. Su **validación integral como experiencia de producto permanece pendiente** hasta poder probarlo dentro del flujo real de usuario de Sprint 03 / Usable Alpha. Implementado y probado técnicamente no equivale todavía a aprobado como producto.
 
 ## Capacidades aprobadas para SP3 — no implementadas
 
@@ -130,7 +130,7 @@ Integridad, manifest y procedencia permanecen activos. El cifrado puede ser opci
 - plugins arbitrarios de terceros;
 - convertir IA en autoridad de validación.
 
-Reporting avanzado, colaboración controlada, firmas, RFC 3161 y otras capacidades del horizonte **no son “no objetivos permanentes”**: su estado y secuencia se gobiernan desde [ROADMAP.md](ROADMAP.md).
+Reporting avanzado, colaboración controlada, firmas y otras capacidades del horizonte **no son “no objetivos permanentes”**: su estado y secuencia se gobiernan desde [ROADMAP.md](ROADMAP.md). RFC 3161 ya fue promovido a Sprint 03 y se rige por el gate documentado.
 
 ## Plataformas
 
