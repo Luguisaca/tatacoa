@@ -469,14 +469,16 @@ fn export_by_policy(
             },
         )?,
         ExportMode::Encrypted => {
-            let password = prompt_export_password()?;
+            let password = prompt_export_password(manifest.engagement.security_profile)?;
             export_encrypted_bundle(workspace, manifest, bundle, &password)?;
         }
     }
     Ok(())
 }
 
-fn prompt_export_password() -> Result<SecretPassword, Box<dyn std::error::Error>> {
+fn prompt_export_password(
+    profile: SecurityProfile,
+) -> Result<SecretPassword, Box<dyn std::error::Error>> {
     let mut password = rpassword::prompt_password("Encrypted bundle password: ")?;
     let mut confirmation = rpassword::prompt_password("Confirm encrypted bundle password: ")?;
     if password != confirmation {
@@ -485,7 +487,7 @@ fn prompt_export_password() -> Result<SecretPassword, Box<dyn std::error::Error>
         return Err("encrypted bundle passwords do not match".into());
     }
     confirmation.zeroize();
-    Ok(SecretPassword::for_export(password)?)
+    Ok(SecretPassword::for_export_profile(profile, password)?)
 }
 
 fn prompt_verification_password() -> Result<SecretPassword, Box<dyn std::error::Error>> {

@@ -1,4 +1,4 @@
-use crate::{Error, Result};
+use crate::{Error, Result, SecurityProfile};
 use aead_stream::aead::{Aead, KeyInit, Payload};
 use aead_stream::{DecryptorBE32, EncryptorBE32};
 use aes_gcm::{Aes256Gcm, Key, Nonce};
@@ -17,6 +17,8 @@ pub(crate) const WRAP_NONCE_BYTES: usize = 12;
 pub(crate) const STREAM_NONCE_BYTES: usize = 7;
 pub const MAX_PASSWORD_BYTES: usize = 1024;
 pub const MIN_EXPORT_PASSWORD_CHARACTERS: usize = 12;
+pub const PROFESSIONAL_MIN_PASSWORD_CHARACTERS: usize = 14;
+pub const HIGH_SENSITIVITY_MIN_PASSWORD_CHARACTERS: usize = 16;
 
 const DEK_DOMAIN: &[u8] = b"TATACOA\0encrypted\0v1\0dek\0";
 
@@ -38,6 +40,34 @@ impl SecretPassword {
         Ok(Self(Zeroizing::new(password.into_bytes())))
     }
 
+    pub fn for_export_profile(profile: SecurityProfile, mut password: String) -> Result<Self> {
+        let character_count = password.chars().count();
+        let minimum = match profile {
+            SecurityProfile::LabLearning => MIN_EXPORT_PASSWORD_CHARACTERS,
+            SecurityProfile::Professional => PROFESSIONAL_MIN_PASSWORD_CHARACTERS,
+            SecurityProfile::HighSensitivity => HIGH_SENSITIVITY_MIN_PASSWORD_CHARACTERS,
+            SecurityProfile::Custom => {
+                password.zeroize();
+                return Err(Error::Conflict(
+                    "CUSTOM has no approved password policy; ENCRYPTED export is denied".to_owned(),
+                ));
+            }
+        };
+        if character_count < minimum || password.len() > MAX_PASSWORD_BYTES {
+            password.zeroize();
+            return Err(Error::Conflict(format!(
+                "{profile:?} ENCRYPTED export password must contain at least {minimum} characters and at most {MAX_PASSWORD_BYTES} UTF-8 bytes"
+            )));
+        }
+        if profile != SecurityProfile::LabLearning && is_obviously_weak_password(&password) {
+            password.zeroize();
+            return Err(Error::Conflict(format!(
+                "{profile:?} ENCRYPTED export rejects predictable passwords; use a longer, non-repetitive passphrase"
+            )));
+        }
+        Ok(Self(Zeroizing::new(password.into_bytes())))
+    }
+
     pub fn for_verification(mut password: String) -> Result<Self> {
         if password.is_empty() || password.len() > MAX_PASSWORD_BYTES {
             password.zeroize();
@@ -49,6 +79,80 @@ impl SecretPassword {
     fn as_bytes(&self) -> &[u8] {
         self.0.as_slice()
     }
+}
+
+fn is_obviously_weak_password(password: &str) -> bool {
+    let normalized = password.trim().to_ascii_lowercase();
+    if normalized.is_empty() {
+        return true;
+    }
+    let chars: Vec<char> = normalized.chars().collect();
+    if chars.iter().all(|character| *character == chars[0]) {
+        return true;
+    }
+    if is_repeated_pattern(&chars)
+        || is_monotonic_ascii_sequence(&chars)
+        || is_cyclic_numeric_sequence(&chars)
+    {
+        return true;
+    }
+    const COMMON: &[&str] = &[
+        "password",
+        "password123",
+        "password1234",
+        "qwerty",
+        "qwerty123",
+        "qwerty123456",
+        "123456789012",
+        "123456789123",
+        "letmein",
+        "administrator",
+        "changeme",
+    ];
+    COMMON.iter().any(|candidate| normalized == *candidate)
+}
+
+fn is_repeated_pattern(chars: &[char]) -> bool {
+    (1..=chars.len() / 2).any(|period| {
+        chars
+            .iter()
+            .enumerate()
+            .all(|(index, character)| *character == chars[index % period])
+    })
+}
+
+fn is_cyclic_numeric_sequence(chars: &[char]) -> bool {
+    if chars.len() < 4 || !chars.iter().all(|character| character.is_ascii_digit()) {
+        return false;
+    }
+
+    const CYCLES: &[&[u8]] = &[b"0123456789", b"123456789"];
+    CYCLES.iter().any(|cycle| {
+        chars.iter().enumerate().all(|(index, character)| {
+            let Some(start) = cycle.iter().position(|digit| *digit == chars[0] as u8) else {
+                return false;
+            };
+            *character as u8 == cycle[(start + index) % cycle.len()]
+        })
+    })
+}
+
+fn is_monotonic_ascii_sequence(chars: &[char]) -> bool {
+    if chars.len() < 4
+        || !chars
+            .iter()
+            .all(|character| character.is_ascii_alphanumeric())
+    {
+        return false;
+    }
+    let bytes: Vec<u8> = chars.iter().map(|character| *character as u8).collect();
+    let ascending = bytes
+        .windows(2)
+        .all(|pair| pair[1] == pair[0].wrapping_add(1));
+    let descending = bytes
+        .windows(2)
+        .all(|pair| pair[0] == pair[1].wrapping_add(1));
+    ascending || descending
 }
 
 impl SecretKey {
@@ -486,6 +590,48 @@ mod tests {
         assert_eq!(bundle_key.as_bytes(), recovered.as_bytes());
         assert_ne!(protected.ciphertext.as_slice(), bundle_key.as_bytes());
         Ok(())
+    }
+
+    #[test]
+    fn profile_password_policy_scales_with_security_profile() {
+        assert!(
+            SecretPassword::for_export_profile(
+                SecurityProfile::LabLearning,
+                "000000000000".to_owned()
+            )
+            .is_ok()
+        );
+
+        for weak in ["00000000000000", "11111111111111", "12345678912345"] {
+            assert!(
+                SecretPassword::for_export_profile(SecurityProfile::Professional, weak.to_owned())
+                    .is_err()
+            );
+        }
+        assert!(
+            SecretPassword::for_export_profile(
+                SecurityProfile::Professional,
+                "correct horse battery staple".to_owned()
+            )
+            .is_ok()
+        );
+
+        for weak in ["0000000000000000", "1111111111111111", "1234123412341234"] {
+            assert!(
+                SecretPassword::for_export_profile(
+                    SecurityProfile::HighSensitivity,
+                    weak.to_owned()
+                )
+                .is_err()
+            );
+        }
+        assert!(
+            SecretPassword::for_export_profile(
+                SecurityProfile::HighSensitivity,
+                "evidence glacier orbit lantern".to_owned()
+            )
+            .is_ok()
+        );
     }
 
     #[test]
