@@ -176,8 +176,21 @@ pub fn export_bundle(
         copy_new(&source, &destination_file)?;
     }
 
+    let exported = prepare_export_manifest(workspace, manifest, ExportMode::Plain)?;
+    write_json_new_atomic(&staging.join("manifest.json"), &exported)?;
+    fs::rename(&staging, destination)
+        .map_err(|source| Error::io("commit portable bundle", source))?;
+    Ok(())
+}
+
+pub(crate) fn prepare_export_manifest(
+    workspace: &Path,
+    manifest: &Manifest,
+    export_mode: ExportMode,
+) -> Result<Manifest> {
+    validate_manifest_links(manifest)?;
     let mut exported = manifest.clone();
-    exported.export_mode = ExportMode::Plain;
+    exported.export_mode = export_mode;
     exported.knowledge_cards = crate::workspace::load_associated_knowledge(
         workspace,
         &manifest.engagement.id,
@@ -189,10 +202,7 @@ pub fn export_bundle(
         &manifest.execution.id,
     )?;
     validate_manifest_links(&exported)?;
-    write_json_new_atomic(&staging.join("manifest.json"), &exported)?;
-    fs::rename(&staging, destination)
-        .map_err(|source| Error::io("commit portable bundle", source))?;
-    Ok(())
+    Ok(exported)
 }
 
 pub(crate) fn write_json_new_atomic<T: Serialize>(path: &Path, value: &T) -> Result<()> {

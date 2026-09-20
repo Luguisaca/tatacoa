@@ -113,14 +113,28 @@ pub(crate) fn random_stream_nonce() -> Result<[u8; STREAM_NONCE_BYTES]> {
     Ok(nonce)
 }
 
+pub(crate) fn random_wrap_nonce() -> Result<[u8; WRAP_NONCE_BYTES]> {
+    let mut nonce = [0_u8; WRAP_NONCE_BYTES];
+    getrandom::fill(&mut nonce)
+        .map_err(|_| Error::Cryptography("system random generation unavailable"))?;
+    Ok(nonce)
+}
+
 pub(crate) fn protect_bundle_key(
     kek: &SecretKey,
     bundle_key: &SecretKey,
     authenticated_header: &[u8],
 ) -> Result<ProtectedBundleKey> {
-    let mut nonce = [0_u8; WRAP_NONCE_BYTES];
-    getrandom::fill(&mut nonce)
-        .map_err(|_| Error::Cryptography("system random generation unavailable"))?;
+    let nonce = random_wrap_nonce()?;
+    protect_bundle_key_with_nonce(kek, bundle_key, nonce, authenticated_header)
+}
+
+pub(crate) fn protect_bundle_key_with_nonce(
+    kek: &SecretKey,
+    bundle_key: &SecretKey,
+    nonce: [u8; WRAP_NONCE_BYTES],
+    authenticated_header: &[u8],
+) -> Result<ProtectedBundleKey> {
     let mut key = Key::<Aes256Gcm>::from(*kek.as_bytes());
     let nonce_array = Nonce::from(nonce);
     let cipher = Aes256Gcm::new(&key);
@@ -490,6 +504,25 @@ mod tests {
         assert!(recover_bundle_key(&kek, &protected, b"tampered header").is_err());
         protected.ciphertext[0] ^= 1;
         assert!(recover_bundle_key(&kek, &protected, HEADER).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn caller_managed_wrap_nonce_is_authenticated() -> Result<()> {
+        let salt = random_salt()?;
+        let password = SecretPassword::for_export("authenticated nonce password".to_owned())?;
+        let kek = derive_kek(&password, &salt)?;
+        let bundle_key = generate_bundle_key()?;
+        let nonce = random_wrap_nonce()?;
+        let protected = protect_bundle_key_with_nonce(&kek, &bundle_key, nonce, HEADER)?;
+        assert_eq!(protected.nonce, nonce);
+        let mut changed_nonce = protected.nonce;
+        changed_nonce[0] ^= 1;
+        let altered = ProtectedBundleKey {
+            nonce: changed_nonce,
+            ciphertext: protected.ciphertext,
+        };
+        assert!(recover_bundle_key(&kek, &altered, HEADER).is_err());
         Ok(())
     }
 

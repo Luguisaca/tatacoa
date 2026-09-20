@@ -135,6 +135,31 @@ impl ObjectDescriptor {
         output.extend_from_slice(self.object_id.as_bytes());
         Ok(())
     }
+
+    pub(crate) fn canonical_bytes(&self) -> Result<Vec<u8>> {
+        let mut bytes = Vec::with_capacity(28 + self.object_id.len());
+        self.encode(&mut bytes)?;
+        Ok(bytes)
+    }
+}
+
+pub(crate) fn directory_aad(header: &[u8; HEADER_BYTES]) -> Vec<u8> {
+    let mut aad = Vec::with_capacity(HEADER_BYTES + 37);
+    aad.extend_from_slice(header);
+    aad.extend_from_slice(b"TATACOA\0encrypted\0v1\0directory\0root");
+    aad
+}
+
+pub(crate) fn object_aad(
+    header: &[u8; HEADER_BYTES],
+    descriptor: &ObjectDescriptor,
+) -> Result<Vec<u8>> {
+    let encoded = descriptor.canonical_bytes()?;
+    let mut aad = Vec::with_capacity(HEADER_BYTES + 30 + encoded.len());
+    aad.extend_from_slice(header);
+    aad.extend_from_slice(b"TATACOA\0encrypted\0v1\0object\0");
+    aad.extend_from_slice(&encoded);
+    Ok(aad)
 }
 
 pub(crate) fn encode_directory(descriptors: &[ObjectDescriptor]) -> Result<Vec<u8>> {
@@ -388,6 +413,22 @@ mod tests {
             CHUNK_BYTES as u64 + 33
         );
         assert!(stream_ciphertext_length(MAX_ARTIFACT_BYTES + 1).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn aad_binds_header_and_exact_descriptor() -> Result<()> {
+        let header = [9_u8; HEADER_BYTES];
+        let first = descriptor(ObjectType::Artifact, "art_one", 10)?;
+        let second = descriptor(ObjectType::Artifact, "art_two", 10)?;
+        assert_ne!(object_aad(&header, &first)?, object_aad(&header, &second)?);
+        let mut changed_header = header;
+        changed_header[0] ^= 1;
+        assert_ne!(
+            object_aad(&header, &first)?,
+            object_aad(&changed_header, &first)?
+        );
+        assert_ne!(directory_aad(&header), object_aad(&header, &first)?);
         Ok(())
     }
 }
