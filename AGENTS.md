@@ -13,7 +13,7 @@ Antes de proponer o implementar cambios sustanciales, el agente debe:
 1. inspeccionar rama, HEAD y estado real del repositorio;
 2. leer `README.md`;
 3. leer `docs/PROJECT.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md` y `docs/DECISIONS.md`;
-4. leer PRD, seguridad, specs y documentos del sprint aplicables;
+4. leer `docs/CURRENT-STATE.md`, PRD, seguridad, specs y el plan/documentos del sprint aplicables;
 5. distinguir explícitamente **implementado**, **pendiente de QA**, **aprobado/planificado**, **horizonte** y **decisión pendiente**;
 6. continuar el roadmap vigente en vez de inventar uno nuevo.
 
@@ -47,6 +47,7 @@ Una capacidad documentada como futura/horizonte no constituye permiso para imple
 - No introducir dependencias por conveniencia.
 - Preferir implementaciones simples y verificables sobre abstracciones prematuras.
 - Un sprint extiende el producto; no invalida decisiones anteriores silenciosamente.
+- En SP3, avanzar dentro del alcance aprobado de `docs/SPRINT-03-PLAN.md` sin pedir aprobación por detalles menores ya cubiertos; detenerse solo ante bloqueo real, gate humano, conflicto arquitectónico/de seguridad o acción que requiera autorización.
 - Si una necesidad nueva entra en conflicto con arquitectura/decisión congelada, documentar el conflicto y esperar Validación Humana/ADR.
 
 ## Investigación y fuentes
@@ -59,7 +60,7 @@ Para decisiones técnicas o de seguridad externas:
 - registrar decisiones relevantes mediante documentación/ADR;
 - no presentar recomendación/estándar/borrador como certificación o cumplimiento.
 
-RFC 3161 está en investigación/diseño activo para la evolución de Alpha. No implementar una solución ni seleccionar TSA/política/objeto timestamp-eado por inferencia: requiere investigación oficial y aprobación humana.
+RFC 3161 está aprobado para SP3 como diseño + primera implementación funcional. Antes de codificar el sellado, el agente debe investigar fuentes oficiales y detenerse para Validación Humana sobre el objeto(s) a timestamp-ear y el momento exacto del ciclo. No seleccionar por inferencia una TSA, política u objeto de sellado; fallos/ausencia de TSA deben ser explícitos y nunca degradar silenciosamente evidencia existente.
 
 ## Seguridad
 
