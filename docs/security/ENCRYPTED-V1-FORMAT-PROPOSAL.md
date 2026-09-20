@@ -2,9 +2,9 @@
 
 ## Estado
 
-**CONTRATO APROBADO Y CONGELADO. IMPLEMENTACIÓN PERSISTENTE EN CURSO.**
+**CONTRATO APROBADO Y CONGELADO. IMPLEMENTACIÓN PERSISTENTE DISPONIBLE PARA REVISIÓN Y QA HUMANO.**
 
-Este documento define el formato aprobado después del spike criptográfico. La foundation interna ya implementa las primitivas; mientras la integración persistente permanezca en curso, la documentación de estado debe evitar afirmar que el CLI produce bundles Encrypted.
+Este documento define el formato aprobado después del spike criptográfico. Core, CLI y verifier implementan su escritura y verificación; esta afirmación describe el estado de desarrollo y no equivale a aprobación de seguridad, interoperabilidad certificada ni QA humano.
 
 Todos los enteros se codifican unsigned, big-endian. Todo campo `reserved` debe ser cero. No se aceptan algoritmos, parámetros ni tamaños alternativos en v1.
 

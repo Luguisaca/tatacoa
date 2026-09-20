@@ -588,6 +588,7 @@ dependencies = [
  "rpassword",
  "tatacoa-core",
  "tatacoa-verifier",
+ "zeroize",
 ]
 
 [[package]]
@@ -611,6 +612,7 @@ name = "tatacoa-verifier"
 version = "0.1.0-alpha.1"
 dependencies = [
  "clap",
+ "rpassword",
  "serde",
  "serde_json",
  "tatacoa-core",

@@ -2,7 +2,7 @@
 
 ## Estado
 
-**Política y contrato Encrypted v1 aprobados. Implementación persistente en curso.**
+**Política y contrato Encrypted v1 aprobados. Implementación persistente disponible para revisión y QA humano.**
 
 ## Seguridad configurable
 
@@ -48,11 +48,11 @@ Una exportación pública/sanitizada nunca sustituye el RAW.
 
 ## Diseño criptográfico aprobado
 
-Cuando exista cifrado:
+La implementación Encrypted v1:
 
 - usar AEAD estandarizado mediante bibliotecas mantenidas;
-- DEK aleatoria por material protegido;
-- contraseña → KDF adecuada (Argon2id es candidato) → KEK → unwrap DEK;
+- deriva una DEK independiente por objeto;
+- aplica contraseña → Argon2id → KEK → protección de Bundle Key aleatoria;
 - contraseña nunca usada directamente como clave;
 - CSPRNG del sistema;
 - disciplina estricta de nonce;

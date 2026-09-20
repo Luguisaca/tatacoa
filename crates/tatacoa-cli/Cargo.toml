@@ -9,6 +9,7 @@ clap.workspace = true
 rpassword.workspace = true
 tatacoa-core = { path = "../tatacoa-core" }
 tatacoa-verifier = { path = "../tatacoa-verifier" }
+zeroize.workspace = true
 
 [lints]
 workspace = true

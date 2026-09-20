@@ -5,7 +5,8 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
 use tatacoa_core::{
-    ArtifactId, Error, Result, compute_sha256, read_bundle_manifest, safe_join_existing,
+    ArtifactId, Error, Result, SecretPassword, compute_sha256, read_bundle_manifest,
+    safe_join_existing,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -91,6 +92,28 @@ pub fn verify_bundle(bundle_root: &Path) -> Result<VerificationReport> {
         valid,
         schema_version: manifest.schema_version,
         artifacts: artifact_reports,
+    })
+}
+
+pub fn verify_encrypted_bundle(
+    bundle_path: &Path,
+    password: &SecretPassword,
+) -> Result<VerificationReport> {
+    let manifest = tatacoa_core::verify_encrypted_bundle(bundle_path, password)?;
+    let artifacts = manifest
+        .artifacts
+        .iter()
+        .map(|artifact| ArtifactVerification {
+            artifact_id: artifact.id.clone(),
+            path: artifact.path.clone(),
+            valid: true,
+            message: "authenticated size and SHA-256 match".to_owned(),
+        })
+        .collect();
+    Ok(VerificationReport {
+        valid: true,
+        schema_version: manifest.schema_version,
+        artifacts,
     })
 }
 

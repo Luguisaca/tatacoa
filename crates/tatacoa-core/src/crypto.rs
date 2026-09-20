@@ -26,10 +26,11 @@ pub(crate) struct SecretKey([u8; KEY_BYTES]);
 pub struct SecretPassword(Zeroizing<Vec<u8>>);
 
 impl SecretPassword {
-    pub fn for_export(password: String) -> Result<Self> {
+    pub fn for_export(mut password: String) -> Result<Self> {
         if password.chars().count() < MIN_EXPORT_PASSWORD_CHARACTERS
             || password.len() > MAX_PASSWORD_BYTES
         {
+            password.zeroize();
             return Err(Error::Conflict(format!(
                 "ENCRYPTED export password must contain at least {MIN_EXPORT_PASSWORD_CHARACTERS} characters and at most {MAX_PASSWORD_BYTES} UTF-8 bytes"
             )));
@@ -37,8 +38,9 @@ impl SecretPassword {
         Ok(Self(Zeroizing::new(password.into_bytes())))
     }
 
-    pub fn for_verification(password: String) -> Result<Self> {
+    pub fn for_verification(mut password: String) -> Result<Self> {
         if password.is_empty() || password.len() > MAX_PASSWORD_BYTES {
+            password.zeroize();
             return Err(Error::Cryptography("bundle authentication failed"));
         }
         Ok(Self(Zeroizing::new(password.into_bytes())))

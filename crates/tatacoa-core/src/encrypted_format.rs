@@ -88,6 +88,12 @@ pub(crate) enum ObjectType {
 }
 
 impl ObjectType {
+    pub(crate) fn domain(self) -> &'static [u8] {
+        match self {
+            Self::Manifest => b"manifest",
+            Self::Artifact => b"artifact",
+        }
+    }
     fn code(self) -> u8 {
         match self {
             Self::Manifest => 1,

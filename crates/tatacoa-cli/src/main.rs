@@ -5,13 +5,15 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::str::FromStr;
 use tatacoa_core::{
-    EngagementId, EnvironmentId, ExecutionId, KnowledgeCardInput, KnowledgeReference,
+    EngagementId, EnvironmentId, ExecutionId, ExportMode, KnowledgeCardInput, KnowledgeReference,
     KnowledgeReviewStatus, PlainExportAuthorization, ReplayPlaceholder, ReplayRecipeInput, ScopeId,
-    SecurityProfile, SessionId, SourceClassification, TargetId, create_engagement,
+    SecretPassword, SecurityProfile, SessionId, SourceClassification, TargetId, create_engagement,
     create_environment, create_knowledge_card, create_replay_recipe, create_scope, create_session,
-    create_target, execute, export_bundle, load_execution_manifest,
+    create_target, default_export_mode, execute, export_bundle, export_encrypted_bundle,
+    load_execution_manifest,
 };
-use tatacoa_verifier::verify_bundle;
+use tatacoa_verifier::{verify_bundle, verify_encrypted_bundle};
+use zeroize::Zeroize;
 
 #[derive(Debug, Parser)]
 #[command(
@@ -99,6 +101,9 @@ enum Commands {
         bundle: Option<PathBuf>,
         #[arg(long)]
         acknowledge_plain_export: bool,
+        /// Request an Encrypted v1 bundle; otherwise the Security Profile default applies.
+        #[arg(long, conflicts_with = "acknowledge_plain_export")]
+        encrypted: bool,
         /// Maximum bytes preserved independently for stdout and stderr; remaining bytes are drained.
         #[arg(long)]
         max_stream_bytes: Option<u64>,
@@ -119,6 +124,9 @@ enum Commands {
         bundle: PathBuf,
         #[arg(long)]
         acknowledge_plain_export: bool,
+        /// Request an Encrypted v1 bundle; otherwise the Security Profile default applies.
+        #[arg(long, conflicts_with = "acknowledge_plain_export")]
+        encrypted: bool,
     },
     /// Create a manual, versioned Knowledge Card for an execution.
     KnowledgeCreate {
@@ -289,6 +297,7 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             session,
             bundle,
             acknowledge_plain_export,
+            encrypted,
             max_stream_bytes,
             executable,
             argv,
@@ -306,13 +315,12 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             println!("execution={}", manifest.execution.id);
             println!("capture_status={:?}", manifest.execution.capture_status);
             if let Some(bundle) = bundle {
-                export_bundle(
+                export_by_policy(
                     &workspace,
                     &manifest,
                     &bundle,
-                    PlainExportAuthorization {
-                        acknowledged_plaintext: acknowledge_plain_export,
-                    },
+                    encrypted,
+                    acknowledge_plain_export,
                 )?;
                 println!("bundle={}", bundle.display());
             }
@@ -323,17 +331,17 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             execution,
             bundle,
             acknowledge_plain_export,
+            encrypted,
         } => {
             let engagement_id = EngagementId::from_str(&engagement)?;
             let execution_id = ExecutionId::from_str(&execution)?;
             let manifest = load_execution_manifest(&workspace, &engagement_id, &execution_id)?;
-            export_bundle(
+            export_by_policy(
                 &workspace,
                 &manifest,
                 &bundle,
-                PlainExportAuthorization {
-                    acknowledged_plaintext: acknowledge_plain_export,
-                },
+                encrypted,
+                acknowledge_plain_export,
             )?;
             println!("bundle={}", bundle.display());
         }
@@ -418,7 +426,12 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             println!("{}", recipe.id);
         }
         Commands::Verify { bundle } => {
-            let report = verify_bundle(&bundle)?;
+            let report = if bundle.is_file() {
+                let password = prompt_verification_password()?;
+                verify_encrypted_bundle(&bundle, &password)?
+            } else {
+                verify_bundle(&bundle)?
+            };
             for artifact in &report.artifacts {
                 let status = if artifact.valid { "VALID" } else { "INVALID" };
                 println!("{status} {}: {}", artifact.path, artifact.message);
@@ -430,6 +443,55 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     Ok(())
+}
+
+fn export_by_policy(
+    workspace: &std::path::Path,
+    manifest: &tatacoa_core::Manifest,
+    bundle: &std::path::Path,
+    encrypted_requested: bool,
+    acknowledged_plaintext: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mode = if encrypted_requested {
+        ExportMode::Encrypted
+    } else if acknowledged_plaintext {
+        ExportMode::Plain
+    } else {
+        default_export_mode(manifest.engagement.security_profile)?
+    };
+    match mode {
+        ExportMode::Plain => export_bundle(
+            workspace,
+            manifest,
+            bundle,
+            PlainExportAuthorization {
+                acknowledged_plaintext,
+            },
+        )?,
+        ExportMode::Encrypted => {
+            let password = prompt_export_password()?;
+            export_encrypted_bundle(workspace, manifest, bundle, &password)?;
+        }
+    }
+    Ok(())
+}
+
+fn prompt_export_password() -> Result<SecretPassword, Box<dyn std::error::Error>> {
+    let mut password = rpassword::prompt_password("Encrypted bundle password: ")?;
+    let mut confirmation = rpassword::prompt_password("Confirm encrypted bundle password: ")?;
+    if password != confirmation {
+        password.zeroize();
+        confirmation.zeroize();
+        return Err("encrypted bundle passwords do not match".into());
+    }
+    confirmation.zeroize();
+    Ok(SecretPassword::for_export(password)?)
+}
+
+fn prompt_verification_password() -> Result<SecretPassword, Box<dyn std::error::Error>> {
+    Ok(SecretPassword::for_verification(
+        rpassword::prompt_password("Encrypted bundle password: ")?,
+    )?)
 }
 
 fn parse_reference(value: &str) -> Result<KnowledgeReference, String> {

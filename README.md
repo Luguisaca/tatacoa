@@ -1,6 +1,6 @@
 ## Estado
 
-**Sprint 02 — Alpha Expansion en implementación.** Sobre la vertical aprobada de Sprint 01 se añadió contexto operacional completo, políticas Plain por Security Profile, Knowledge Card manual, Replay Recipe foundation y verificación de sus relaciones. El estado y sus límites están documentados en `docs/SPRINT-02-IMPLEMENTATION.md`.
+**Alpha en desarrollo.** Sobre Sprint 02 se añadió la implementación persistente de bundles `tatacoa.encrypted.v1`, aún pendiente de QA humano independiente. El estado y sus límites están documentados en `docs/SPRINT-02-IMPLEMENTATION.md` y `docs/ENCRYPTED-V1-IMPLEMENTATION.md`.
 
 Sprint 01 fue validado en Windows 11 x64 y en WSL2/Ubuntu x86_64 como integración Linux temprana, incluyendo verificación offline, controles negativos y portabilidad bidireccional de bundles entre ambos entornos.
 

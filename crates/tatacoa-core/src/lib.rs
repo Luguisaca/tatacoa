@@ -6,8 +6,10 @@ mod context;
 // Foundation criptográfica interna pendiente de integrar al envelope versionado.
 #[allow(dead_code)]
 mod crypto;
+mod encrypted_export;
 #[allow(dead_code)]
 mod encrypted_format;
+mod encrypted_read;
 mod error;
 mod ids;
 mod knowledge;
@@ -25,6 +27,8 @@ pub use bundle::{
 pub use capture::{GenericExecutionAdapter, compute_sha256, execute};
 pub use context::{Environment, ExecutionContext, ExecutionContextIds, Scope, Session, Target};
 pub use crypto::{MAX_PASSWORD_BYTES, MIN_EXPORT_PASSWORD_CHARACTERS, SecretPassword};
+pub use encrypted_export::export_encrypted_bundle;
+pub use encrypted_read::verify_encrypted_bundle;
 pub use error::{Error, Result};
 pub use ids::{
     ArtifactId, EngagementId, EnvironmentId, ExecutionId, KnowledgeId, ReplayId, ScopeId,
