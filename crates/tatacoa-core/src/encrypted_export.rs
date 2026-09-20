@@ -9,6 +9,8 @@ use crate::encrypted_format::{
     stream_ciphertext_length,
 };
 use crate::{ExportMode, Manifest, Result, SecretPassword, authorize_encrypted_export};
+use sha2::{Digest as ShaDigest, Sha256};
+use std::fmt::Write as FmtWrite;
 use std::fs::{self, File, OpenOptions};
 use std::io::{BufWriter, Cursor, Read, Write};
 use std::path::Path;
@@ -185,20 +187,30 @@ impl EnvelopeWritePlan<'_> {
                         "workspace artifact changed during encrypted export".to_owned(),
                     ));
                 }
+                let mut hashing_source = HashingReader::new(&mut source);
                 let written = encrypt_stream_io(
                     &dek,
                     &descriptor.stream_nonce,
                     descriptor.plaintext_length,
                     CHUNK_BYTES as usize,
                     &aad,
-                    &mut source,
+                    &mut hashing_source,
                     &mut writer,
                 )?;
                 let mut trailing = [0_u8; 1];
-                if source
+                if hashing_source
                     .read(&mut trailing)
                     .map_err(|source| crate::Error::io("finish workspace artifact", source))?
                     != 0
+                {
+                    return Err(crate::Error::Conflict(
+                        "workspace artifact changed during encrypted export".to_owned(),
+                    ));
+                }
+                let (actual_size, actual_digest) = hashing_source.finish();
+                if actual_size != artifact.size_bytes
+                    || artifact.digest.algorithm != "SHA-256"
+                    || !actual_digest.eq_ignore_ascii_case(&artifact.digest.value)
                 {
                     return Err(crate::Error::Conflict(
                         "workspace artifact changed during encrypted export".to_owned(),
@@ -217,6 +229,43 @@ impl EnvelopeWritePlan<'_> {
             .sync_all()
             .map_err(|source| crate::Error::io("sync encrypted bundle", source))?;
         Ok(())
+    }
+}
+
+struct HashingReader<R> {
+    inner: R,
+    digest: Sha256,
+    size: u64,
+}
+
+impl<R> HashingReader<R> {
+    fn new(inner: R) -> Self {
+        Self {
+            inner,
+            digest: Sha256::new(),
+            size: 0,
+        }
+    }
+
+    fn finish(self) -> (u64, String) {
+        let bytes = self.digest.finalize();
+        let mut encoded = String::with_capacity(bytes.len() * 2);
+        for byte in bytes {
+            let _ = write!(encoded, "{byte:02x}");
+        }
+        (self.size, encoded)
+    }
+}
+
+impl<R: Read> Read for HashingReader<R> {
+    fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+        let read = self.inner.read(buffer)?;
+        self.digest.update(&buffer[..read]);
+        self.size = self
+            .size
+            .checked_add(read as u64)
+            .ok_or_else(|| std::io::Error::other("artifact size overflow"))?;
+        Ok(read)
     }
 }
 
@@ -288,6 +337,19 @@ mod tests {
         let wrong = SecretPassword::for_verification("wrong password".to_owned())?;
         assert!(verify_encrypted_bundle(&bundle, &wrong).is_err());
 
+        let original = fs::read(&bundle)
+            .map_err(|source| crate::Error::io("read test encrypted bundle", source))?;
+        let truncated = root.join("truncated.tatacoa-encrypted");
+        fs::write(&truncated, &original[..original.len() - 1])
+            .map_err(|source| crate::Error::io("write truncated test bundle", source))?;
+        assert!(verify_encrypted_bundle(&truncated, &password).is_err());
+        let appended = root.join("appended.tatacoa-encrypted");
+        let mut appended_bytes = original.clone();
+        appended_bytes.push(0);
+        fs::write(&appended, appended_bytes)
+            .map_err(|source| crate::Error::io("write appended test bundle", source))?;
+        assert!(verify_encrypted_bundle(&appended, &password).is_err());
+
         let mut file = OpenOptions::new()
             .read(true)
             .write(true)
@@ -305,6 +367,21 @@ mod tests {
             .map_err(|source| crate::Error::io("tamper test bundle", source))?;
         drop(file);
         assert!(verify_encrypted_bundle(&bundle, &password).is_err());
+
+        let artifact = manifest
+            .artifacts
+            .iter()
+            .find(|artifact| artifact.size_bytes > 0)
+            .ok_or_else(|| crate::Error::Execution("test produced no artifact bytes".to_owned()))?;
+        let artifact_path = artifact_source_path(root, &engagement.id, artifact)?;
+        let mut artifact_bytes = fs::read(&artifact_path)
+            .map_err(|source| crate::Error::io("read test artifact", source))?;
+        artifact_bytes[0] ^= 1;
+        fs::write(&artifact_path, artifact_bytes)
+            .map_err(|source| crate::Error::io("tamper test artifact", source))?;
+        let changed_destination = root.join("changed-source.tatacoa-encrypted");
+        assert!(export_encrypted_bundle(root, &manifest, &changed_destination, &password).is_err());
+        assert!(!changed_destination.exists());
         Ok(())
     }
 }
