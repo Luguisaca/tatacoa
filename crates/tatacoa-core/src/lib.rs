@@ -39,7 +39,10 @@ pub use model::{
     SecurityProfile,
 };
 pub use paths::{ensure_safe_relative_path, safe_join_existing};
-pub use policy::{PlainExportAuthorization, authorize_plain_export};
+pub use policy::{
+    PlainExportAuthorization, authorize_encrypted_export, authorize_plain_export,
+    default_export_mode,
+};
 pub use replay::{REPLAY_SCHEMA_VERSION, ReplayPlaceholder, ReplayRecipe, ReplayRecipeInput};
 pub(crate) use validation::{
     validate_artifact_provenance, validate_knowledge_card, validate_replay_recipe,

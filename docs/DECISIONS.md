@@ -29,6 +29,7 @@ Estas decisiones provienen del Discovery aprobado. Cambios sustanciales requiere
 | D-021 | Encrypted v1 usa Argon2id v0x13 (64 MiB, t=3, p=4), KEK de 256 bits, Bundle Key aleatoria, HKDF-SHA-256, DEKs por objeto y AES-256-GCM con STREAM-BE32 | APPROVED |
 | D-022 | `tatacoa.encrypted.v1` usa header fijo de 136 bytes, chunks de 1 MiB y los límites de lector documentados en `security/ENCRYPTED-V1-FORMAT-PROPOSAL.md` | APPROVED |
 | D-023 | El CLI recibe passwords Encrypted desde TTY mediante prompt sin eco; export solicita confirmación y verify una entrada | APPROVED |
+| D-024 | LAB_LEARNING usa Plain por defecto y permite Encrypted; PROFESSIONAL usa Encrypted por defecto y Plain exige acknowledgement; HIGH_SENSITIVITY solo permite Encrypted; CUSTOM niega ambos hasta aprobar su política | APPROVED |
 
 ## Decisiones pendientes de spike
 

@@ -15,6 +15,13 @@ Perfiles:
 - `HIGH_SENSITIVITY`: política puede exigirlo;
 - `CUSTOM`: configuración explícita dentro de límites del sistema.
 
+Comportamiento congelado para exportación:
+
+- `LAB_LEARNING`: Plain por defecto; Encrypted cuando se solicita;
+- `PROFESSIONAL`: Encrypted por defecto; Plain solo con acknowledgement explícito;
+- `HIGH_SENSITIVITY`: únicamente Encrypted;
+- `CUSTOM`: Plain y Encrypted denegados hasta aprobar una política Custom.
+
 Precedencia:
 
 `SYSTEM POLICY > ENGAGEMENT POLICY > USER DEFAULT > EXPORT CHOICE`

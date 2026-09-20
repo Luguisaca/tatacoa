@@ -34,6 +34,7 @@ pub enum ArtifactRole {
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ExportMode {
     Plain,
+    Encrypted,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
