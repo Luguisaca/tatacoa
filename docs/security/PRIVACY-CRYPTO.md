@@ -70,6 +70,8 @@ Encrypted v1 queda congelado con:
 - header binario fijo de 136 bytes y límites de lector documentados en `ENCRYPTED-V1-FORMAT-PROPOSAL.md`;
 - password por prompt TTY sin eco; nunca mediante argumento del proceso.
 
+Al crear un bundle, la password requiere al menos 12 caracteres Unicode y máximo 1024 bytes UTF-8. No se imponen reglas compositivas de mayúsculas, números o símbolos y no se normaliza Unicode silenciosamente. Verify acepta passwords históricas no vacías dentro del máximo, aunque no satisfagan el mínimo actual de creación.
+
 Las claves se zeroizan cuando las bibliotecas mantenidas lo permiten. Esto reduce permanencia en memoria, pero no constituye una garantía sobre copias realizadas por el sistema operativo, allocator o hardware.
 
 ## Workspace

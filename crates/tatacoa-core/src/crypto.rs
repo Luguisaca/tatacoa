@@ -15,17 +15,33 @@ pub(crate) const ARGON2_SALT_BYTES: usize = 16;
 pub(crate) const KEY_BYTES: usize = 32;
 pub(crate) const WRAP_NONCE_BYTES: usize = 12;
 pub(crate) const STREAM_NONCE_BYTES: usize = 7;
+pub const MAX_PASSWORD_BYTES: usize = 1024;
+pub const MIN_EXPORT_PASSWORD_CHARACTERS: usize = 12;
 
 const DEK_DOMAIN: &[u8] = b"TATACOA\0encrypted\0v1\0dek\0";
 
 #[derive(Zeroize, ZeroizeOnDrop)]
 pub(crate) struct SecretKey([u8; KEY_BYTES]);
 
-pub(crate) struct SecretPassword(Zeroizing<Vec<u8>>);
+pub struct SecretPassword(Zeroizing<Vec<u8>>);
 
 impl SecretPassword {
-    pub(crate) fn new(bytes: Vec<u8>) -> Self {
-        Self(Zeroizing::new(bytes))
+    pub fn for_export(password: String) -> Result<Self> {
+        if password.chars().count() < MIN_EXPORT_PASSWORD_CHARACTERS
+            || password.len() > MAX_PASSWORD_BYTES
+        {
+            return Err(Error::Conflict(format!(
+                "ENCRYPTED export password must contain at least {MIN_EXPORT_PASSWORD_CHARACTERS} characters and at most {MAX_PASSWORD_BYTES} UTF-8 bytes"
+            )));
+        }
+        Ok(Self(Zeroizing::new(password.into_bytes())))
+    }
+
+    pub fn for_verification(password: String) -> Result<Self> {
+        if password.is_empty() || password.len() > MAX_PASSWORD_BYTES {
+            return Err(Error::Cryptography("bundle authentication failed"));
+        }
+        Ok(Self(Zeroizing::new(password.into_bytes())))
     }
 
     fn as_bytes(&self) -> &[u8] {
@@ -446,7 +462,7 @@ mod tests {
     #[test]
     fn fixed_argon2id_protects_and_recovers_bundle_key() -> Result<()> {
         let salt = random_salt()?;
-        let password = SecretPassword::new(b"correct horse battery staple".to_vec());
+        let password = SecretPassword::for_export("correct horse battery staple".to_owned())?;
         let kek = derive_kek(&password, &salt)?;
         let bundle_key = generate_bundle_key()?;
         let protected = protect_bundle_key(&kek, &bundle_key, HEADER)?;
@@ -459,8 +475,8 @@ mod tests {
     #[test]
     fn wrong_password_and_header_tampering_fail_closed() -> Result<()> {
         let salt = random_salt()?;
-        let password = SecretPassword::new(b"correct password".to_vec());
-        let wrong_password = SecretPassword::new(b"wrong password".to_vec());
+        let password = SecretPassword::for_export("correct password".to_owned())?;
+        let wrong_password = SecretPassword::for_verification("wrong password".to_owned())?;
         let kek = derive_kek(&password, &salt)?;
         let wrong_kek = derive_kek(&wrong_password, &salt)?;
         let bundle_key = generate_bundle_key()?;
@@ -484,6 +500,15 @@ mod tests {
         let second_bundle_key = generate_bundle_key()?;
         assert_ne!(first_bundle_key.as_bytes(), second_bundle_key.as_bytes());
         Ok(())
+    }
+
+    #[test]
+    fn password_policy_applies_only_when_creating_encrypted_bundles() {
+        assert!(SecretPassword::for_export("short".to_owned()).is_err());
+        assert!(SecretPassword::for_export("docecarácter".to_owned()).is_ok());
+        assert!(SecretPassword::for_verification("short".to_owned()).is_ok());
+        assert!(SecretPassword::for_verification(String::new()).is_err());
+        assert!(SecretPassword::for_verification("x".repeat(MAX_PASSWORD_BYTES + 1)).is_err());
     }
 
     #[test]

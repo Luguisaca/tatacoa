@@ -30,6 +30,7 @@ Estas decisiones provienen del Discovery aprobado. Cambios sustanciales requiere
 | D-022 | `tatacoa.encrypted.v1` usa header fijo de 136 bytes, chunks de 1 MiB y los límites de lector documentados en `security/ENCRYPTED-V1-FORMAT-PROPOSAL.md` | APPROVED |
 | D-023 | El CLI recibe passwords Encrypted desde TTY mediante prompt sin eco; export solicita confirmación y verify una entrada | APPROVED |
 | D-024 | LAB_LEARNING usa Plain por defecto y permite Encrypted; PROFESSIONAL usa Encrypted por defecto y Plain exige acknowledgement; HIGH_SENSITIVITY solo permite Encrypted; CUSTOM niega ambos hasta aprobar su política | APPROVED |
+| D-025 | Password de creación Encrypted exige mínimo 12 caracteres Unicode y máximo 1024 bytes UTF-8, sin reglas compositivas ni normalización silenciosa; verify conserva compatibilidad con passwords no vacías dentro del máximo | APPROVED |
 
 ## Decisiones pendientes de spike
 

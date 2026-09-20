@@ -24,6 +24,7 @@ pub use bundle::{
 };
 pub use capture::{GenericExecutionAdapter, compute_sha256, execute};
 pub use context::{Environment, ExecutionContext, ExecutionContextIds, Scope, Session, Target};
+pub use crypto::{MAX_PASSWORD_BYTES, MIN_EXPORT_PASSWORD_CHARACTERS, SecretPassword};
 pub use error::{Error, Result};
 pub use ids::{
     ArtifactId, EngagementId, EnvironmentId, ExecutionId, KnowledgeId, ReplayId, ScopeId,
