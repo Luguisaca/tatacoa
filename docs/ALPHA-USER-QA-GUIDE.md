@@ -4,7 +4,7 @@
 
 Esta guía permite validar TATACOA como usuario final, sin asumir conocimiento interno del código. Cubre el recorrido `ENGAGEMENT → SCOPE → ENVIRONMENT → TARGET → SESSION → EXECUTION`, export Plain y Encrypted v1, verificación offline, Security Profiles y pruebas negativas controladas.
 
-La ejecución de esta guía no aprueba por sí sola Alpha. Registre el entorno, los resultados y cualquier diferencia observada. Use datos ficticios y herramientas autorizadas; nunca incorpore secretos o información real de clientes.
+Esta guía conserva el procedimiento reproducible utilizado para el QA humano de la Alpha. El baseline consolidado fue validado dentro del alcance documentado; futuras ejecuciones de esta guía sirven para regresión y no amplían por sí solas las garantías existentes. Registre el entorno, los resultados y cualquier diferencia observada. Use datos ficticios y herramientas autorizadas; nunca incorpore secretos o información real de clientes.
 
 ## Preparación
 
