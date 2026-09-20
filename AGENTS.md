@@ -4,84 +4,114 @@
 
 Estas reglas aplican a cualquier agente de IA o automatización que trabaje sobre este repositorio.
 
-T·A·T·A·C·O·A significa **Test · Assess · Trace · Artifacts · Comprehend · Observe · Apply** y es una plataforma local-first para evaluación de seguridad, evidencia verificable, pruebas reproducibles y aprendizaje aplicado.
+T·A·T·A·C·O·A significa **Test · Assess · Trace · Artifacts · Comprehend · Observe · Apply** y es un producto de LUGUISACA para trabajo de seguridad autorizado, evidencia verificable, pruebas reproducibles, continuidad y aprendizaje aplicado.
+
+## Orden obligatorio de contexto
+
+Antes de proponer o implementar cambios sustanciales, el agente debe:
+
+1. inspeccionar rama, HEAD y estado real del repositorio;
+2. leer `README.md`;
+3. leer `docs/PROJECT.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md` y `docs/DECISIONS.md`;
+4. leer PRD, seguridad, specs y documentos del sprint aplicables;
+5. distinguir explícitamente **implementado**, **pendiente de QA**, **aprobado/planificado**, **horizonte** y **decisión pendiente**;
+6. continuar el roadmap vigente en vez de inventar uno nuevo.
+
+Una capacidad documentada como futura/horizonte no constituye permiso para implementarla.
 
 ## Autoridad
 
-1. Las instrucciones explícitas de la Validación Humana para una tarea tienen prioridad sobre propuestas del agente.
-2. `main` es una rama protegida por proceso: ningún agente debe trabajar directamente sobre ella salvo autorización explícita y acotada de la Validación Humana para una tarea concreta.
-3. No hacer merge, release, publicación, despliegue, cambio de licencia ni cambio de visibilidad sin aprobación explícita de la Validación Humana.
-4. No ampliar el alcance de una tarea silenciosamente.
-5. Ante una decisión irreversible, destructiva, criptográfica, de seguridad o arquitectura no aprobada, detenerse y solicitar revisión.
+1. Las instrucciones explícitas de la Validación Humana tienen prioridad sobre propuestas del agente.
+2. `main` es protegida por proceso: ningún agente trabaja directamente sobre ella salvo autorización explícita y acotada.
+3. No hacer merge, release, publicación, despliegue, cambio de licencia ni visibilidad sin aprobación humana explícita.
+4. No ampliar alcance silenciosamente.
+5. Ante decisión irreversible, destructiva, criptográfica, de seguridad o arquitectura no aprobada, detenerse y solicitar revisión.
+6. Codex/agentes ejecutan tareas concretas ya analizadas/aprobadas; no tienen autoridad autónoma para redefinir roadmap, misión, arquitectura o modelo de seguridad.
+
+## Conservación arquitectónica
+
+- `tatacoa-core` es la autoridad de dominio, lógica, seguridad, evidencia, políticas y cifrado.
+- CLI y Desktop son interfaces independientes de primera clase sobre una semántica común.
+- El CLI no debe depender de Tauri/GUI.
+- Desktop no debe exigir CLI preinstalado.
+- `tatacoa-app-api` está aprobado para SP3 como capa común de operaciones; no implica backend cloud/daemon/red.
+- Una interfaz nueva no puede convertirse en autoridad del producto ni duplicar reglas de seguridad.
+- TATACOA es local-first/offline-capable; no introducir SaaS, cuenta cloud, telemetría o conexión permanente como requisito implícito.
+- Si una capacidad requiere red por naturaleza, declararlo y diseñar su ausencia/fallo explícitamente.
 
 ## Forma de trabajo
 
 - Trabajar en ramas dedicadas y cambios pequeños, revisables y trazables.
 - Mantener commits con propósito único y mensajes descriptivos.
-- Inspeccionar el estado real del repositorio antes de modificarlo.
-- Leer la documentación aplicable antes de implementar.
-- No reescribir historial, forzar pushes ni eliminar ramas o datos sin autorización explícita.
-- No introducir dependencias por conveniencia. Cada dependencia debe tener una necesidad identificable y ser revisada antes de incorporarse.
+- No reescribir historial, forzar pushes ni eliminar ramas/datos sin autorización.
+- No introducir dependencias por conveniencia.
 - Preferir implementaciones simples y verificables sobre abstracciones prematuras.
+- Un sprint extiende el producto; no invalida decisiones anteriores silenciosamente.
+- Si una necesidad nueva entra en conflicto con arquitectura/decisión congelada, documentar el conflicto y esperar Validación Humana/ADR.
 
 ## Investigación y fuentes
 
-Para decisiones técnicas o de seguridad que dependan de información externa:
+Para decisiones técnicas o de seguridad externas:
 
-- Priorizar documentación oficial del lenguaje, biblioteca, estándar o proveedor.
-- Para controles y prácticas de seguridad, priorizar estándares y organismos reconocidos.
-- Distinguir requisitos del proyecto, recomendaciones externas y decisiones de implementación.
-- Registrar decisiones relevantes mediante documentación o ADR cuando corresponda.
-- No presentar una recomendación, estándar o borrador como certificación o cumplimiento del producto.
+- priorizar documentación oficial del lenguaje, biblioteca, estándar o proveedor;
+- para seguridad, priorizar estándares y organismos reconocidos;
+- distinguir requisitos del proyecto, recomendaciones externas y decisiones;
+- registrar decisiones relevantes mediante documentación/ADR;
+- no presentar recomendación/estándar/borrador como certificación o cumplimiento.
+
+RFC 3161 está en investigación/diseño activo para la evolución de Alpha. No implementar una solución ni seleccionar TSA/política/objeto timestamp-eado por inferencia: requiere investigación oficial y aprobación humana.
 
 ## Seguridad
 
-- TATACOA está diseñado para pruebas de seguridad autorizadas.
-- Nunca incorporar credenciales, tokens, claves, secretos o datos reales de clientes al repositorio.
-- Tratar artefactos, manifests, archivos importados y salida de herramientas como entrada no confiable.
+- TATACOA está diseñado para pruebas autorizadas.
+- Nunca incorporar credenciales, tokens, claves, secretos o datos reales de clientes.
+- Tratar artefactos, manifests, imports y salida de herramientas como entrada no confiable.
 - No crear criptografía propia.
-- No debilitar validaciones o controles para hacer pasar una prueba.
-- No convertir automáticamente resultados de herramientas o IA en vulnerabilidades o evidencia validada.
-- Preservar originales: una derivación, redacción o transformación nunca sustituye silenciosamente el artefacto RAW.
-- Los fallos de seguridad, integridad o captura deben ser explícitos; nunca degradar silenciosamente a un estado menos seguro.
+- No debilitar controles para hacer pasar una prueba.
+- No convertir automáticamente resultados de herramientas/IA en vulnerabilidades o evidencia validada.
+- Preservar RAW; derivaciones nunca sustituyen silenciosamente originales.
+- Fallos de seguridad, integridad, captura o continuidad deben ser explícitos.
 
 ## Código
 
-- Rust es la tecnología principal aprobada para Core, CLI y verificador.
-- El Core V1 debe mantener el baseline multiplataforma Windows + Linux; Windows 11 x64 y WSL2 son targets de desarrollo/integración, y Kali Linux x64 y Parrot OS x64 son targets de QA específicos.
-- Evitar `unsafe` en código propio salvo justificación técnica documentada y revisión específica.
-- Ejecutar herramientas mediante ejecutable + argumentos cuando sea posible; el uso de shell debe ser explícito.
-- No implementar parsers especializados antes de que el contrato genérico y sus límites estén definidos.
-- Todo comportamiento de seguridad relevante requiere pruebas negativas además de pruebas de éxito.
+- Rust es la tecnología principal para Core, CLI y verifier.
+- Tauri 2 está aprobado para `tatacoa-desktop` en SP3.
+- Core mantiene baseline multiplataforma Windows + Linux.
+- Evitar `unsafe` propio salvo justificación y revisión.
+- Ejecutar herramientas mediante executable + args cuando sea posible; shell debe ser explícito.
+- No implementar parsers especializados antes de definir contrato/límites.
+- Todo comportamiento de seguridad relevante requiere pruebas negativas.
 
 ## Documentación
 
-- Español de Colombia es el idioma principal de documentación interna del proyecto, salvo artefactos que deban ser interoperables o públicos en inglés.
-- La documentación debe describir el estado real, no capacidades futuras como si existieran.
-- Mantener separados: requisitos, decisiones, hipótesis, pendientes y resultados de QA.
-- No inventar métricas, certificaciones, compatibilidad, resultados de pruebas ni garantías.
-- `LICENSE` y `NOTICE` son superficies legales deliberadas; no modificarlas ni reinterpretarlas sin autorización humana explícita.
-- Claims como “FIPS validated”, “ISO certified”, “forensically certified”, “tamper-proof”, “unhackable”, “government approved” o equivalentes están prohibidos sin evidencia formal aplicable.
+- Español de Colombia es el idioma principal interno, salvo artefactos interoperables/públicos que deban estar en inglés.
+- Describir estado real, no capacidades futuras como existentes.
+- Separar requisitos, decisiones, hipótesis, pendientes y resultados QA.
+- Mantener PROJECT/ROADMAP/ARCHITECTURE/DECISIONS coherentes cuando una decisión aprobada cambie la dirección.
+- Documentos de sprint son registros históricos; no reescribirlos para fingir que decisiones futuras ya existían.
+- No inventar métricas, certificaciones, compatibilidad, resultados ni garantías.
+- `LICENSE` y `NOTICE` no se modifican ni reinterpretan sin autorización humana.
+- Claims como “FIPS validated”, “ISO certified”, “forensically certified”, “tamper-proof”, “unhackable” o equivalentes están prohibidos sin evidencia formal.
 
 ## IA y conocimiento
 
-- La IA puede asistir investigación, documentación, pruebas y desarrollo, pero no es autoridad de validación.
-- Contenido generado por IA que dependa de hechos externos debe poder rastrearse a fuentes revisables.
-- El conocimiento comunitario puede orientar investigación, pero no reemplaza fuentes oficiales para decisiones críticas.
+- IA puede asistir investigación, documentación, pruebas y desarrollo, pero no es autoridad de validación.
+- Contenido factual asistido por IA debe poder rastrearse a fuentes revisables.
+- Conocimiento comunitario puede orientar, no reemplaza fuentes oficiales para decisiones críticas.
 
 ## Definition of Done mínima
 
-Un cambio no se considera terminado solo porque compila. Según su alcance debe incluir:
+Un cambio no termina porque compile. Según alcance incluye:
 
-- código/documentación coherente con requisitos aprobados;
-- pruebas aplicables;
+- coherencia con misión, roadmap y decisiones aprobadas;
+- pruebas aplicables y negativas;
 - manejo explícito de errores;
-- revisión de impacto de seguridad;
-- documentación actualizada cuando cambie comportamiento o arquitectura;
+- revisión de seguridad;
+- documentación sincronizada;
 - ausencia de secretos;
 - QA reproducible;
 - aprobación humana antes de integrar a `main`.
 
 ## Regla de conservación
 
-Si una instrucción nueva entra en conflicto con una decisión congelada del proyecto, no reinterpretarla silenciosamente. Señalar el conflicto y esperar decisión humana.
+Si una instrucción nueva entra en conflicto con una decisión congelada, no reinterpretarla silenciosamente. Señalar el conflicto y esperar decisión humana.
