@@ -581,6 +581,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "tatacoa-app-api"
+version = "0.1.0-alpha.1"
+dependencies = [
+ "serde",
+ "tatacoa-core",
+]
+
+[[package]]
 name = "tatacoa-cli"
 version = "0.1.0-alpha.1"
 dependencies = [

@@ -77,6 +77,40 @@ pub fn load_engagement(workspace: &Path, id: &EngagementId) -> Result<Engagement
     Ok(engagement)
 }
 
+pub fn list_engagements(workspace: &Path) -> Result<Vec<Engagement>> {
+    reject_symlink(workspace, "workspace")?;
+    let root = workspace.join("engagements");
+    reject_symlink(&root, "engagements directory")?;
+    let mut paths = fs::read_dir(root)
+        .map_err(|source| Error::io("read engagements directory", source))?
+        .map(|entry| {
+            entry
+                .map(|value| value.path())
+                .map_err(|source| Error::io("read engagement entry", source))
+        })
+        .collect::<Result<Vec<_>>>()?;
+    paths.sort();
+    paths
+        .into_iter()
+        .map(|path| {
+            reject_symlink(&path, "engagement entry")?;
+            if !path.is_dir() {
+                return Err(Error::InvalidPath(
+                    "engagement entry is not a directory".to_owned(),
+                ));
+            }
+            let value = path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .ok_or_else(|| {
+                    Error::InvalidPath("engagement directory name is not UTF-8".to_owned())
+                })?;
+            let id = value.parse()?;
+            load_engagement(workspace, &id)
+        })
+        .collect()
+}
+
 pub fn engagement_root(workspace: &Path, id: &EngagementId) -> Result<PathBuf> {
     let root = workspace.join("engagements").join(id.as_str());
     let canonical_workspace = workspace
@@ -122,6 +156,36 @@ pub fn load_execution_manifest(
         ));
     }
     Ok(manifest)
+}
+
+pub fn list_execution_manifests(
+    workspace: &Path,
+    engagement_id: &EngagementId,
+) -> Result<Vec<Manifest>> {
+    let root = engagement_existing_subdirectory(workspace, engagement_id, Path::new("manifests"))?;
+    let mut paths = fs::read_dir(root)
+        .map_err(|source| Error::io("read execution manifests", source))?
+        .map(|entry| {
+            entry
+                .map(|value| value.path())
+                .map_err(|source| Error::io("read execution manifest entry", source))
+        })
+        .collect::<Result<Vec<_>>>()?;
+    paths.sort();
+    paths
+        .into_iter()
+        .filter(|path| path.extension().is_some_and(|value| value == "json"))
+        .map(|path| {
+            let manifest: Manifest = read_json_limited(&path)?;
+            validate_manifest_links(&manifest)?;
+            if &manifest.engagement.id != engagement_id {
+                return Err(Error::InvalidManifest(
+                    "execution manifest belongs to another engagement".to_owned(),
+                ));
+            }
+            Ok(manifest)
+        })
+        .collect()
 }
 
 pub fn read_bundle_manifest(bundle_root: &Path) -> Result<Manifest> {

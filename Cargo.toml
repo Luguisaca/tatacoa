@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/tatacoa-core",
+    "crates/tatacoa-app-api",
     "crates/tatacoa-cli",
     "crates/tatacoa-verifier",
 ]

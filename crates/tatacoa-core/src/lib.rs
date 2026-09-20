@@ -21,8 +21,8 @@ mod validation;
 mod workspace;
 
 pub use bundle::{
-    create_engagement, export_bundle, load_engagement, load_execution_manifest,
-    read_bundle_manifest,
+    create_engagement, export_bundle, list_engagements, list_execution_manifests, load_engagement,
+    load_execution_manifest, read_bundle_manifest,
 };
 pub use capture::{GenericExecutionAdapter, compute_sha256, execute};
 pub use context::{Environment, ExecutionContext, ExecutionContextIds, Scope, Session, Target};
@@ -54,7 +54,7 @@ pub(crate) use validation::{
 };
 pub use workspace::{
     create_environment, create_knowledge_card, create_replay_recipe, create_scope, create_session,
-    create_target, load_execution_context,
+    create_target, list_sessions, load_execution_context,
 };
 
 pub const MANIFEST_SCHEMA_VERSION: &str = "tatacoa.alpha.v2";

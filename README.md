@@ -57,6 +57,7 @@ TATACOA no requiere SaaS, cuenta cloud ni conexión permanente para sus funcione
 | [ALPHA-USER-QA-GUIDE.md](docs/ALPHA-USER-QA-GUIDE.md) | recorrido reproducible de QA técnico/humano existente; la validación integral de usuario se completa sobre Usable Alpha |
 | [CURRENT-STATE.md](docs/CURRENT-STATE.md) | fuente operativa del estado actual y siguiente paso |
 | [SPRINT-03-PLAN.md](docs/SPRINT-03-PLAN.md) | alcance aprobado y gates de Sprint 03 |
+| [SPRINT-03-IMPLEMENTATION.md](docs/SPRINT-03-IMPLEMENTATION.md) | estado técnico incremental de Sprint 03 |
 | [SECURITY.md](SECURITY.md) | política y reporte de vulnerabilidades |
 | [AGENTS.md](AGENTS.md) | reglas para agentes y automatizaciones |
 
