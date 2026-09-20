@@ -15,6 +15,7 @@ pub enum Error {
     InvalidPath(String),
     InvalidManifest(String),
     Conflict(String),
+    Cryptography(&'static str),
     Execution(String),
 }
 
@@ -33,6 +34,9 @@ impl Display for Error {
             Self::InvalidPath(message) => write!(formatter, "unsafe path: {message}"),
             Self::InvalidManifest(message) => write!(formatter, "invalid manifest: {message}"),
             Self::Conflict(message) => write!(formatter, "conflict: {message}"),
+            Self::Cryptography(message) => {
+                write!(formatter, "cryptographic operation failed: {message}")
+            }
             Self::Execution(message) => write!(formatter, "execution failed: {message}"),
         }
     }

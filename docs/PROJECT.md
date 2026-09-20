@@ -1,14 +1,32 @@
-# Visión, origen y problema
+# TATACOA — Identidad y dirección del producto
 
 ## Estado
 
-**APROBADO — baseline de Sprint 01.**
+**DOCUMENTO RECTOR — dirección de producto aprobada.**
+
+Este documento describe el propósito estable de TATACOA. Los sprints implementan partes de esta dirección; no redefinen el producto desde cero.
+
+## Identidad
+
+T·A·T·A·C·O·A significa **Test · Assess · Trace · Artifacts · Comprehend · Observe · Apply**.
+
+TATACOA es un producto de **LUGUISACA — luguisaca.com** para profesionales que realizan evaluaciones de seguridad autorizadas y necesitan preservar no solo resultados, sino también contexto, evidencia, procedencia, decisiones y conocimiento reproducible.
 
 ## Origen
 
-TATACOA nació de investigar una necesidad recurrente en pruebas de seguridad: no basta con ejecutar herramientas ni guardar capturas. Una auditoría o laboratorio produce contexto, comandos, stdout/stderr, archivos, notas y decisiones que deben poder relacionarse entre sí.
+TATACOA nació de una necesidad recurrente en pentesting: ejecutar herramientas no basta. Una auditoría o laboratorio produce contexto, comandos, stdout/stderr, archivos, notas, decisiones, interrupciones y retests que deben poder relacionarse y retomarse.
 
-El Discovery descartó competir como gestor genérico de findings o simple grabador de terminal. El foco aprobado es un **motor verificable de procedencia, integridad, autenticidad futura, transformación y reproducción de evidencia de pruebas de seguridad**, acompañado por un motor de aprendizaje aplicado.
+El Discovery descartó competir como scanner, gestor genérico de findings o simple grabador de terminal. El foco es un espacio de trabajo verificable para procedencia, integridad, transformación, reproducción y comprensión de evidencia de pruebas de seguridad.
+
+## Misión
+
+Ayudar a profesionales de seguridad a ejecutar, preservar, comprender, retomar y demostrar su trabajo autorizado con contexto, trazabilidad e integridad, reduciendo la pérdida de evidencia y conocimiento sin convertir la automatización o la IA en autoridad de validación.
+
+## Visión
+
+Construir un espacio de trabajo local-first para pentesting y evaluación de seguridad que acompañe el ciclo técnico completo —desde el contexto autorizado hasta evidencia, aprendizaje, replay y retest— y permita que el trabajo siga siendo verificable, portable y útil más allá de una sesión, una interfaz o un equipo.
+
+TATACOA debe poder evolucionar por capacidades sin obligar a rediseñar sus fundamentos en cada sprint.
 
 ## Problema
 
@@ -18,10 +36,12 @@ Los flujos manuales pueden provocar:
 - pérdida del contexto exacto de ejecución;
 - mezcla accidental de targets, entornos o engagements;
 - dificultad para distinguir RAW de evidencia derivada o redactada;
-- revalidación costosa porque no se conserva una receta reproducible;
+- revalidación costosa por ausencia de recetas reproducibles;
+- pérdida del punto de trabajo al pausar, cerrar o sufrir fallos;
+- dificultad para reconstruir qué se hizo al retomar un proyecto o realizar un retest;
 - exposición accidental de secretos o datos sensibles;
-- aprendizaje superficial: se ejecuta una técnica sin documentar qué demuestra, limitaciones o validación;
-- dependencia de una aplicación para “creer” la evidencia en lugar de poder verificarla externamente.
+- aprendizaje superficial sin registrar qué demuestra una técnica y sus límites;
+- dependencia de una aplicación para “creer” evidencia que debería poder verificarse externamente.
 
 ## Usuarios
 
@@ -31,34 +51,41 @@ TATACOA se diseña para:
 2. personas que estudian y practican en laboratorios propios o plataformas autorizadas;
 3. revisores que necesitan comprobar integridad, procedencia y contexto sin confiar ciegamente en la aplicación.
 
-## Principios
+## Principios de producto
 
-- local-first;
-- cero telemetría por defecto;
-- alcance autorizado;
-- Validación Humana;
-- preservar originales;
-- procedencia explícita;
-- verificación portable/offline;
-- reproducibilidad;
-- minimización de datos;
-- secure-by-design;
-- estándares como insumo trazable de ingeniería, no como marketing;
-- aprender haciendo y poder demostrar lo aprendido.
+- **Local-first y offline-capable:** el trabajo local no depende de SaaS, cuenta cloud ni conexión permanente.
+- **Interfaces independientes:** CLI y Desktop son experiencias de primera clase sobre una autoridad de dominio común.
+- **Continuidad:** el trabajo debe poder pausarse, persistirse de forma segura, retomarse y resumirse.
+- **Portabilidad:** un trabajo o bundle compatible debe poder trasladarse y abrirse sin perder su contexto/procedencia verificable.
+- **Alcance autorizado:** ninguna automatización elimina la responsabilidad de trabajar dentro del scope permitido.
+- **Validación Humana:** herramientas e IA asisten; no promueven por sí solas resultados a evidencia validada.
+- **Preservar originales:** RAW nunca se sustituye silenciosamente por derivados.
+- **Procedencia explícita:** transformaciones, derivaciones y retests mantienen relaciones trazables.
+- **Verificación portable/offline:** lo verificable no debe exigir confiar ciegamente en la aplicación.
+- **Reproducibilidad:** conservar suficiente contexto para repetir y comparar pruebas cuando sea legítimo.
+- **Minimización de datos y secure-by-design.**
+- **Estándares como ingeniería, no marketing:** una referencia no implica certificación.
+- **Aprender haciendo:** ejecución, evidencia y conocimiento deben poder relacionarse.
 
-## Tres motores
+## Motores conceptuales
 
 ### Scope / Context
-Evita que una ejecución exista sin contexto operativo identificable.
+Evita que una ejecución exista sin contexto operativo identificable y autorizado.
 
 ### Evidence
 Captura, identifica, preserva, deriva, exporta y verifica artefactos.
 
 ### Knowledge / Learning
-Relaciona la ejecución con objetivos, observaciones, límites, validación, contexto defensivo y fuentes.
+Relaciona ejecución con objetivos, observaciones, límites, validación, contexto defensivo y fuentes.
 
-Replay conecta los tres: permite repetir una prueba, hacer retest y convertir una técnica validada en receta, script o miniherramienta trazable sin convertirla automáticamente en un exploit genérico.
+### Replay / Retest
+Conecta contexto, evidencia y conocimiento para repetir una prueba de forma deliberada y comparar resultados sin convertir automáticamente una técnica en explotación genérica.
+
+### Continuity
+Permite que un trabajo sobreviva a pausas, cierres y cambios de sesión; facilita recordar qué se hizo, qué quedó pendiente y desde dónde continuar.
 
 ## Criterio de éxito
 
-El receptor de un bundle no debe tener que “creerle” a TATACOA. Debe poder verificar lo verificable con una especificación portable y un verificador independiente.
+TATACOA tiene éxito cuando una persona puede realizar y retomar una evaluación autorizada conservando contexto, evidencia y conocimiento; y cuando un receptor autorizado puede verificar lo verificable sin tener que “creerle” ciegamente a TATACOA.
+
+La evolución técnica de esta dirección se mantiene en [ROADMAP.md](ROADMAP.md).

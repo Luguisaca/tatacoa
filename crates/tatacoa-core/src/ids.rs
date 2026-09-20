@@ -55,5 +55,11 @@ macro_rules! logical_id {
 }
 
 logical_id!(EngagementId, "eng_", "engagement");
+logical_id!(ScopeId, "scp_", "scope");
+logical_id!(EnvironmentId, "env_", "environment");
+logical_id!(TargetId, "tgt_", "target");
+logical_id!(SessionId, "ses_", "session");
 logical_id!(ExecutionId, "exe_", "execution");
 logical_id!(ArtifactId, "art_", "artifact");
+logical_id!(KnowledgeId, "knw_", "knowledge card");
+logical_id!(ReplayId, "rpl_", "replay recipe");

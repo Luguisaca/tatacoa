@@ -2,7 +2,9 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use tatacoa_core::{
-    CaptureStatus, EngagementId, SecurityProfile, create_engagement, execute, export_bundle,
+    CaptureStatus, Engagement, EngagementId, PlainExportAuthorization, SecurityProfile, Session,
+    create_engagement, create_environment, create_scope, create_session, create_target, execute,
+    export_bundle,
 };
 use tatacoa_verifier::verify_bundle;
 
@@ -39,13 +41,20 @@ fn valid_bundle_passes_and_tampering_fails() -> Result<(), Box<dyn std::error::E
     let root = TestDirectory::new("e2e")?;
     let workspace = root.path().join("workspace");
     let bundle = root.path().join("bundle");
-    let engagement = create_engagement(
+    let (engagement, session) = create_test_context(
         &workspace,
         "authorized alpha test".to_owned(),
         SecurityProfile::LabLearning,
     )?;
     let (executable, argv) = test_command();
-    let manifest = execute(&workspace, &engagement.id, executable.clone(), argv, None)?;
+    let manifest = execute(
+        &workspace,
+        &engagement.id,
+        &session.id,
+        executable.clone(),
+        argv,
+        None,
+    )?;
 
     assert_eq!(manifest.execution.engagement_id, engagement.id);
     assert_eq!(manifest.execution.capture_status, CaptureStatus::Complete);
@@ -53,7 +62,12 @@ fn valid_bundle_passes_and_tampering_fails() -> Result<(), Box<dyn std::error::E
     assert_eq!(manifest.execution.invocation.executable, executable);
     assert_eq!(manifest.artifacts.len(), 2);
 
-    export_bundle(&workspace, &manifest, &bundle)?;
+    export_bundle(
+        &workspace,
+        &manifest,
+        &bundle,
+        PlainExportAuthorization::default(),
+    )?;
     let initial = verify_bundle(&bundle)?;
     assert!(initial.valid);
     assert!(initial.artifacts.iter().all(|artifact| artifact.valid));
@@ -73,13 +87,20 @@ fn valid_bundle_passes_and_tampering_fails() -> Result<(), Box<dyn std::error::E
 fn capture_limit_is_explicitly_truncated() -> Result<(), Box<dyn std::error::Error>> {
     let root = TestDirectory::new("truncate")?;
     let workspace = root.path().join("workspace");
-    let engagement = create_engagement(
+    let (engagement, session) = create_test_context(
         &workspace,
         "truncation test".to_owned(),
         SecurityProfile::LabLearning,
     )?;
     let (executable, argv) = test_command();
-    let manifest = execute(&workspace, &engagement.id, executable, argv, Some(2))?;
+    let manifest = execute(
+        &workspace,
+        &engagement.id,
+        &session.id,
+        executable,
+        argv,
+        Some(2),
+    )?;
 
     assert_eq!(manifest.execution.capture_status, CaptureStatus::Truncated);
     assert!(
@@ -101,21 +122,33 @@ fn capture_limit_is_explicitly_truncated() -> Result<(), Box<dyn std::error::Err
 fn cross_engagement_manifest_is_rejected() -> Result<(), Box<dyn std::error::Error>> {
     let root = TestDirectory::new("isolation")?;
     let workspace = root.path().join("workspace");
-    let first = create_engagement(
+    let (first, first_session) = create_test_context(
         &workspace,
         "first engagement".to_owned(),
         SecurityProfile::LabLearning,
     )?;
-    let second = create_engagement(
+    let (second, _) = create_test_context(
         &workspace,
         "second engagement".to_owned(),
         SecurityProfile::LabLearning,
     )?;
     let (executable, argv) = test_command();
-    let mut manifest = execute(&workspace, &first.id, executable, argv, None)?;
+    let mut manifest = execute(
+        &workspace,
+        &first.id,
+        &first_session.id,
+        executable,
+        argv,
+        None,
+    )?;
     manifest.engagement = second;
 
-    let result = export_bundle(&workspace, &manifest, &root.path().join("invalid-bundle"));
+    let result = export_bundle(
+        &workspace,
+        &manifest,
+        &root.path().join("invalid-bundle"),
+        PlainExportAuthorization::default(),
+    );
     assert!(result.is_err());
     Ok(())
 }
@@ -125,19 +158,68 @@ fn missing_artifact_is_reported_invalid() -> Result<(), Box<dyn std::error::Erro
     let root = TestDirectory::new("missing")?;
     let workspace = root.path().join("workspace");
     let bundle = root.path().join("bundle");
-    let engagement = create_engagement(
+    let (engagement, session) = create_test_context(
         &workspace,
         "missing artifact test".to_owned(),
         SecurityProfile::LabLearning,
     )?;
     let (executable, argv) = test_command();
-    let manifest = execute(&workspace, &engagement.id, executable, argv, None)?;
-    export_bundle(&workspace, &manifest, &bundle)?;
+    let manifest = execute(
+        &workspace,
+        &engagement.id,
+        &session.id,
+        executable,
+        argv,
+        None,
+    )?;
+    export_bundle(
+        &workspace,
+        &manifest,
+        &bundle,
+        PlainExportAuthorization::default(),
+    )?;
     fs::remove_file(bundle.join(&manifest.artifacts[0].path))?;
 
     let report = verify_bundle(&bundle)?;
     assert!(!report.valid);
     Ok(())
+}
+
+fn create_test_context(
+    workspace: &Path,
+    name: String,
+    profile: SecurityProfile,
+) -> Result<(Engagement, Session), Box<dyn std::error::Error>> {
+    let engagement = create_engagement(workspace, name, profile)?;
+    let scope = create_scope(
+        workspace,
+        &engagement.id,
+        "authorized scope".to_owned(),
+        "local test process only".to_owned(),
+    )?;
+    let environment = create_environment(
+        workspace,
+        &engagement.id,
+        &scope.id,
+        "test environment".to_owned(),
+    )?;
+    let target = create_target(
+        workspace,
+        &engagement.id,
+        &scope.id,
+        &environment.id,
+        "local target".to_owned(),
+        "localhost".to_owned(),
+    )?;
+    let session = create_session(
+        workspace,
+        &engagement.id,
+        &scope.id,
+        &environment.id,
+        &target.id,
+        "test session".to_owned(),
+    )?;
+    Ok((engagement, session))
 }
 
 #[cfg(windows)]

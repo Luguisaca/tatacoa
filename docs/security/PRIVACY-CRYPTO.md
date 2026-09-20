@@ -2,7 +2,7 @@
 
 ## Estado
 
-**Política aprobada; algoritmos/parametrización exacta de cifrado requieren spike antes de implementación.**
+**Política y contrato Encrypted v1 aprobados. Implementación persistente disponible para revisión y QA humano.**
 
 ## Seguridad configurable
 
@@ -14,6 +14,13 @@ Perfiles:
 - `PROFESSIONAL`: cifrado recomendado/default de export;
 - `HIGH_SENSITIVITY`: política puede exigirlo;
 - `CUSTOM`: configuración explícita dentro de límites del sistema.
+
+Comportamiento congelado para exportación:
+
+- `LAB_LEARNING`: Plain por defecto; Encrypted cuando se solicita;
+- `PROFESSIONAL`: Encrypted por defecto; Plain solo con acknowledgement explícito;
+- `HIGH_SENSITIVITY`: únicamente Encrypted;
+- `CUSTOM`: Plain y Encrypted denegados hasta aprobar una política Custom.
 
 Precedencia:
 
@@ -41,11 +48,11 @@ Una exportación pública/sanitizada nunca sustituye el RAW.
 
 ## Diseño criptográfico aprobado
 
-Cuando exista cifrado:
+La implementación Encrypted v1:
 
 - usar AEAD estandarizado mediante bibliotecas mantenidas;
-- DEK aleatoria por material protegido;
-- contraseña → KDF adecuada (Argon2id es candidato) → KEK → unwrap DEK;
+- deriva una DEK independiente por objeto;
+- aplica contraseña → Argon2id → KEK → protección de Bundle Key aleatoria;
 - contraseña nunca usada directamente como clave;
 - CSPRNG del sistema;
 - disciplina estricta de nonce;
@@ -54,7 +61,18 @@ Cuando exista cifrado:
 - contraseña incorrecta o autenticación fallida no produce plaintext parcial;
 - no master key/backdoor.
 
-El algoritmo AEAD, parámetros Argon2id, formato envelope y manejo de memoria **no están congelados** hasta el spike de implementación y revisión de fuentes oficiales.
+Encrypted v1 queda congelado con:
+
+- Argon2id v0x13: 64 MiB, 3 iteraciones, 4 lanes, salt aleatoria de 16 bytes y KEK de 32 bytes;
+- Bundle Key aleatoria de 256 bits por exportación;
+- HKDF-SHA-256 con separación de dominio para una DEK independiente por objeto;
+- AES-256-GCM y STREAM-BE32 con chunks de 1 MiB;
+- header binario fijo de 136 bytes y límites de lector documentados en `ENCRYPTED-V1-FORMAT-PROPOSAL.md`;
+- password por prompt TTY sin eco; nunca mediante argumento del proceso.
+
+Al crear un bundle, la password requiere al menos 12 caracteres Unicode y máximo 1024 bytes UTF-8. No se imponen reglas compositivas de mayúsculas, números o símbolos y no se normaliza Unicode silenciosamente. Verify acepta passwords históricas no vacías dentro del máximo, aunque no satisfagan el mínimo actual de creación.
+
+Las claves se zeroizan cuando las bibliotecas mantenidas lo permiten. Esto reduce permanencia en memoria, pero no constituye una garantía sobre copias realizadas por el sistema operativo, allocator o hardware.
 
 ## Workspace
 

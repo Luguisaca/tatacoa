@@ -1,9 +1,11 @@
 use crate::bundle::{
-    artifact_source_path, engagement_root, store_execution_manifest, unix_ms_observed,
+    artifact_source_path, engagement_existing_subdirectory, store_execution_manifest,
+    unix_ms_observed,
 };
 use crate::{
-    Artifact, ArtifactId, ArtifactRole, CaptureStatus, Digest, EngagementId, Error, Execution,
-    ExecutionId, ExportMode, Invocation, MANIFEST_SCHEMA_VERSION, Manifest, Result,
+    Artifact, ArtifactClassification, ArtifactId, ArtifactProvenance, ArtifactRole, CaptureStatus,
+    Digest, EngagementId, Error, EvidenceState, Execution, ExecutionId, ExportMode, Invocation,
+    MANIFEST_SCHEMA_VERSION, Manifest, ProvenanceKind, Result, SessionId,
 };
 use sha2::{Digest as ShaDigest, Sha256};
 use std::fs::{self, File, OpenOptions};
@@ -38,6 +40,7 @@ struct StreamCapture {
 pub fn execute(
     workspace: &Path,
     engagement_id: &EngagementId,
+    session_id: &SessionId,
     executable: String,
     argv: Vec<String>,
     max_stream_bytes: Option<u64>,
@@ -46,8 +49,11 @@ pub fn execute(
         return Err(Error::Execution("executable must not be empty".to_owned()));
     }
     let engagement = crate::load_engagement(workspace, engagement_id)?;
+    let context = crate::load_execution_context(workspace, engagement_id, session_id)?;
+    let context_ids = context.ids();
     let execution_id = ExecutionId::new();
-    let objects_root = engagement_root(workspace, engagement_id)?.join("objects");
+    let objects_root =
+        engagement_existing_subdirectory(workspace, engagement_id, Path::new("objects"))?;
     let stdout_capture = prepare_capture(&objects_root, ArtifactRole::Stdout)?;
     let stderr_capture = prepare_capture(&objects_root, ArtifactRole::Stderr)?;
 
@@ -93,10 +99,12 @@ pub fn execute(
         schema_version: MANIFEST_SCHEMA_VERSION.to_owned(),
         export_mode: ExportMode::Plain,
         engagement,
+        context: Some(context),
         execution: Execution {
             id: execution_id,
             engagement_id: engagement_id.clone(),
             adapter: GenericExecutionAdapter::NAME.to_owned(),
+            context: Some(context_ids),
             invocation: Invocation {
                 executable,
                 argv,
@@ -109,6 +117,8 @@ pub fn execute(
             capture_status,
         },
         artifacts,
+        knowledge_cards: Vec::new(),
+        replay_recipes: Vec::new(),
     };
     store_execution_manifest(workspace, &manifest)?;
     Ok(manifest)
@@ -199,7 +209,7 @@ fn finalize_capture(
         id: capture.artifact_id,
         engagement_id: engagement_id.clone(),
         execution_id: execution_id.clone(),
-        classification: "RAW".to_owned(),
+        classification: ArtifactClassification::Raw,
         role: capture.role,
         path: String::new(),
         size_bytes,
@@ -211,6 +221,11 @@ fn finalize_capture(
             CaptureStatus::Truncated
         } else {
             CaptureStatus::Complete
+        },
+        evidence_state: EvidenceState::Captured,
+        provenance: ArtifactProvenance {
+            kind: ProvenanceKind::Capture,
+            source_artifact_ids: Vec::new(),
         },
     };
     let mut artifact = artifact;
