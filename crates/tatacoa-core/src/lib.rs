@@ -3,6 +3,7 @@
 mod bundle;
 mod capture;
 mod context;
+mod continuity;
 // Foundation criptográfica interna pendiente de integrar al envelope versionado.
 #[allow(dead_code)]
 mod crypto;
@@ -27,6 +28,10 @@ pub use bundle::{
 };
 pub use capture::{GenericExecutionAdapter, compute_sha256, execute};
 pub use context::{Environment, ExecutionContext, ExecutionContextIds, Scope, Session, Target};
+pub use continuity::{
+    CONTINUITY_SCHEMA_VERSION, ContinuityInspection, ContinuityState, ContinuityStatus,
+    inspect_continuity, pause_work, resume_work,
+};
 pub use crypto::{MAX_PASSWORD_BYTES, MIN_EXPORT_PASSWORD_CHARACTERS, SecretPassword};
 pub use encrypted_export::export_encrypted_bundle;
 pub use encrypted_read::verify_encrypted_bundle;

@@ -94,3 +94,18 @@ QA humano propuesto:
 5. probar Encrypted v1, confirmar que los campos password se limpian y verificar el bundle con password correcta e incorrecta.
 
 Límite siguiente: continuidad/recuperación, protección para reabrir trabajos e importación continuable tienen decisiones pendientes explícitas en `DECISIONS.md`. No se define su formato o política por inferencia.
+
+## Bloque 04 — foundation de continuidad
+
+Rama local: `feat/sp3-04-continuity-foundation`, creada desde el bloque 03.
+
+Implementado:
+
+- snapshots append-only `tatacoa.continuity.v1`, atómicos, explícitos y sin campos de secretos;
+- estados ACTIVE/PAUSED, session actual y pendientes indicados por la persona;
+- inspección determinista de capturas `.partial` y señal explícita de recuperación requerida;
+- compatibilidad de lectura con engagements anteriores a continuidad;
+- reanudación fail-closed si no se declara revalidación actual de autorización;
+- controles Desktop para pausar, reconstruir el resumen persistido y reanudar con confirmación.
+
+Pendiente deliberado: la protección/autenticación concreta para reabrir por Security Profile no está definida por las políticas actuales. No se infiere cifrado de workspace ni una credencial nueva.

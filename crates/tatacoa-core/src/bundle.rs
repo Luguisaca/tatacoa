@@ -66,6 +66,7 @@ pub fn create_engagement(
             .map_err(|source| Error::io("create engagement data directory", source))?;
     }
     write_json_new_atomic(&engagement_root.join("engagement.json"), &engagement)?;
+    crate::continuity::initialize(workspace, &engagement.id)?;
     Ok(engagement)
 }
 

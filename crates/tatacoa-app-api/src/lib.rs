@@ -3,13 +3,14 @@
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use tatacoa_core::{
-    ArtifactId, ArtifactPreview, CaptureStatus, Engagement, EngagementId, ExecutionId, ExportMode,
-    KnowledgeCard, KnowledgeCardInput, KnowledgeReference, KnowledgeReviewStatus, Manifest,
-    PlainExportAuthorization, ReplayPlaceholder, ReplayRecipe, ReplayRecipeInput, Result,
-    SecretPassword, SecurityProfile, Session, SessionId, create_engagement, create_environment,
-    create_knowledge_card, create_replay_recipe, create_scope, create_session, create_target,
-    execute, export_bundle, export_encrypted_bundle, list_engagements, list_execution_manifests,
-    list_sessions, load_execution_manifest, read_artifact_preview,
+    ArtifactId, ArtifactPreview, CaptureStatus, ContinuityInspection, ContinuityState, Engagement,
+    EngagementId, ExecutionId, ExportMode, KnowledgeCard, KnowledgeCardInput, KnowledgeReference,
+    KnowledgeReviewStatus, Manifest, PlainExportAuthorization, ReplayPlaceholder, ReplayRecipe,
+    ReplayRecipeInput, Result, SecretPassword, SecurityProfile, Session, SessionId,
+    create_engagement, create_environment, create_knowledge_card, create_replay_recipe,
+    create_scope, create_session, create_target, execute, export_bundle, export_encrypted_bundle,
+    inspect_continuity, list_engagements, list_execution_manifests, list_sessions,
+    load_execution_manifest, pause_work, read_artifact_preview, resume_work,
 };
 use zeroize::Zeroize;
 
@@ -60,6 +61,7 @@ pub struct WorkSummary {
     pub engagement: Engagement,
     pub sessions: Vec<Session>,
     pub executions: Vec<ExecutionSummary>,
+    pub continuity: ContinuityInspection,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -189,7 +191,25 @@ impl AppService {
             engagement,
             sessions,
             executions,
+            continuity: inspect_continuity(&self.workspace, engagement_id)?,
         })
+    }
+
+    pub fn pause(
+        &self,
+        engagement_id: &EngagementId,
+        session_id: Option<SessionId>,
+        pending: Vec<String>,
+    ) -> Result<ContinuityState> {
+        pause_work(&self.workspace, engagement_id, session_id, pending)
+    }
+
+    pub fn resume(
+        &self,
+        engagement_id: &EngagementId,
+        authorization_revalidated: bool,
+    ) -> Result<ContinuityState> {
+        resume_work(&self.workspace, engagement_id, authorization_revalidated)
     }
 
     pub fn execution(
@@ -383,10 +403,19 @@ mod tests {
         let listed = reopened.list_work()?;
         assert_eq!(listed.len(), 1);
         let summary = reopened.summarize(&work.engagement.id)?;
-        assert_eq!(summary.sessions, vec![work.session]);
+        assert_eq!(summary.sessions, vec![work.session.clone()]);
         assert_eq!(summary.executions.len(), 1);
         assert_eq!(summary.executions[0].id, manifest.execution.id);
         assert_eq!(summary.executions[0].artifact_count, 2);
+        let paused = service.pause(
+            &work.engagement.id,
+            Some(work.session.id.clone()),
+            vec!["Review captured output".to_owned()],
+        )?;
+        assert_eq!(paused.status, tatacoa_core::ContinuityStatus::Paused);
+        assert!(service.resume(&work.engagement.id, false).is_err());
+        let resumed = service.resume(&work.engagement.id, true)?;
+        assert_eq!(resumed.status, tatacoa_core::ContinuityStatus::Active);
 
         fs::write(
             root.join("engagements")

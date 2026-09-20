@@ -30,6 +30,7 @@
     <article id="work-panel" hidden>
       <div class="title-row"><div><p class="eyebrow" id="profile"></p><h2 id="work-title"></h2></div><button id="refresh">Actualizar resumen</button></div>
       <div id="summary" class="cards"></div>
+      <p id="continuity-status"></p><label>Pendientes para continuidad (uno por línea)<textarea id="continuity-pending"></textarea></label><div class="title-row"><button id="pause">Pausar y guardar</button><button id="resume">Revalidar autorización y reanudar</button></div>
       <h3>Ejecutar herramienta autorizada</h3>
       <form id="run-form"><label>Sesión<select id="session" required></select></label><label>Ejecutable<input id="executable" required placeholder="rustc"></label><label>Argumentos (uno por línea)<textarea id="argv" placeholder="--version"></textarea></label><button type="submit">Revisar y ejecutar</button></form>
       <h3>Ejecuciones</h3><div id="executions"></div>

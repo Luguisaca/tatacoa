@@ -7,8 +7,8 @@ use tatacoa_app_api::{
     WorkContext, WorkSummary,
 };
 use tatacoa_core::{
-    ArtifactId, ArtifactPreview, Engagement, EngagementId, ExecutionId, KnowledgeCard, Manifest,
-    ReplayRecipe,
+    ArtifactId, ArtifactPreview, ContinuityState, Engagement, EngagementId, ExecutionId,
+    KnowledgeCard, Manifest, ReplayRecipe, SessionId,
 };
 
 type CommandResult<T> = Result<T, String>;
@@ -96,6 +96,37 @@ fn export_execution(workspace: String, request: ExportRequest) -> CommandResult<
         .map_err(|error| error.to_string())
 }
 
+#[tauri::command]
+fn pause_work(
+    workspace: String,
+    engagement_id: String,
+    session_id: Option<String>,
+    pending: Vec<String>,
+) -> CommandResult<ContinuityState> {
+    let engagement_id =
+        EngagementId::from_str(&engagement_id).map_err(|error| error.to_string())?;
+    let session_id = session_id
+        .map(|id| SessionId::from_str(&id))
+        .transpose()
+        .map_err(|error| error.to_string())?;
+    AppService::open(workspace)
+        .pause(&engagement_id, session_id, pending)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn resume_work(
+    workspace: String,
+    engagement_id: String,
+    authorization_revalidated: bool,
+) -> CommandResult<ContinuityState> {
+    let engagement_id =
+        EngagementId::from_str(&engagement_id).map_err(|error| error.to_string())?;
+    AppService::open(workspace)
+        .resume(&engagement_id, authorization_revalidated)
+        .map_err(|error| error.to_string())
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -107,7 +138,9 @@ fn main() {
             artifact_preview,
             create_knowledge,
             create_replay,
-            export_execution
+            export_execution,
+            pause_work,
+            resume_work
         ])
         .run(tauri::generate_context!())
         .unwrap_or_else(|error| eprintln!("TATACOA desktop failed: {error}"));

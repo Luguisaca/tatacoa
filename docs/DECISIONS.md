@@ -40,15 +40,16 @@ Estas decisiones provienen del Discovery y de decisiones humanas posteriores apr
 | D-035 | Un paquete TATACOA compatible recibido por una persona autorizada debe poder abrirse como proyecto continuable sin reescribir provenance ni confiar ciegamente en su contenido | APPROVED |
 | D-036 | Sprint 03 debe avanzar dentro del alcance aprobado y detenerse solo ante bloqueo real, decisión humana/arquitectónica/de seguridad no resuelta o acción que requiera aprobación | APPROVED |
 | D-037 | La validación integral de Encrypted v1 como producto se difiere hasta poder probarla dentro del flujo real de Usable Alpha; los PASS técnicos previos se conservan como evidencia | APPROVED |
+| D-038 | RFC 3161 usa sidecar `.tsr`: Encrypted timestamp-ea los bytes exactos del archivo; Plain usa un digest raíz TATACOA versionado y formalmente especificado sobre manifest + objetos declarados. TSA solo explícita/configurada; su ausencia/fallo no invalida el bundle | APPROVED |
+| D-039 | Continuidad usa persistencia explícita/versionada sin secretos y recuperación determinista; reanudar operaciones requiere nueva validación de autorización | APPROVED |
+| D-040 | Importación aplica verify-before-trust, nunca ejecuta automáticamente y exige nueva validación de autorización antes de continuar operaciones | APPROVED |
 | D-032 | El roadmap es acumulativo: un sprint extiende la dirección del producto y no puede redefinir silenciosamente arquitectura/decisiones previas | APPROVED |
 | D-033 | Capacidades futuras conocidas se mantienen como horizonte sin asignarlas automáticamente a un sprint ni tratarlas como implementadas | APPROVED |
 | D-034 | El hardening de creación Encrypted amplía D-025 por Security Profile: LAB_LEARNING mínimo 12; PROFESSIONAL mínimo 14; HIGH_SENSITIVITY mínimo 16; PROFESSIONAL/HIGH_SENSITIVITY rechazan passwords evidentemente predecibles; CUSTOM permanece fail-closed. Se conserva máximo 1024 bytes, ausencia de reglas compositivas arbitrarias, ausencia de normalización Unicode silenciosa y compatibilidad de verify con passwords históricas | APPROVED |
 
 ## Decisiones pendientes de diseño/spike
 
-- RFC 3161: objeto(s) a timestamp-ear y momento exacto del flujo requieren decisión humana previa al código; política/TSA, representación, verificación y comportamiento offline se concretan dentro del diseño aprobado de SP3;
 - modelo de protección/autenticación para reabrir trabajos protegidos;
-- persistencia exacta del estado de continuidad y recuperación;
 - límites/contratos de importación de paquetes compatibles;
 - estrategia async solo si la necesidad lo exige;
 - política de release signing;
