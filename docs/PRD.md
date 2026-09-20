@@ -2,11 +2,27 @@
 
 ## Estado
 
-**APROBADO para Alpha.**
+**APROBADO para la evolución de Alpha.**
+
+Este PRD separa requisitos estables del producto, capacidades ya implementadas y capacidades aprobadas para la siguiente entrega. El estado operativo exacto se mantiene en los documentos de implementación y en [ROADMAP.md](ROADMAP.md).
 
 ## Objetivo
 
-Plataforma local de trabajo y aprendizaje para auditorías de seguridad que preserva evidencia verificable y transforma cada prueba autorizada en conocimiento reproducible.
+Plataforma local-first de trabajo y aprendizaje para auditorías de seguridad autorizadas que preserva evidencia verificable, conserva contexto y transforma cada prueba en conocimiento reproducible sin sustituir la Validación Humana.
+
+## Requisitos estables del producto
+
+- funcionamiento local sin SaaS obligatorio;
+- cero telemetría por defecto;
+- contexto y alcance autorizado;
+- preservar RAW y provenance;
+- integridad y verificación portable/offline;
+- Validación Humana para promoción de evidencia;
+- reproducibilidad/retest;
+- minimización de datos y fallos explícitos;
+- interfaces que no dupliquen ni debiliten la autoridad de dominio;
+- continuidad del trabajo como capacidad de producto;
+- evolución compatible con el roadmap y decisiones congeladas.
 
 ## Modelo de dominio
 
@@ -18,7 +34,7 @@ Flujos derivados:
 - `ARTIFACT/EVIDENCE → DERIVATION → REDACTED/DERIVED ARTIFACT → EXPORT`
 - `EXECUTION/EVIDENCE → KNOWLEDGE CARD`
 
-El Finding no es la unidad primaria de V1. La unidad fundamental es una **Execution contextualizada** que produce artefactos.
+Finding no es la unidad primaria. La unidad fundamental es una **Execution contextualizada** que produce artefactos.
 
 ## Estados de evidencia
 
@@ -26,21 +42,43 @@ El Finding no es la unidad primaria de V1. La unidad fundamental es una **Execut
 
 La promoción a evidencia validada requiere Validación Humana.
 
-## Requisitos funcionales Alpha
+## Capacidades Alpha implementadas
 
-- crear Engagement y contexto;
-- registrar Environment/Target/Session necesarios para una Execution;
-- ejecutar un programa con ejecutable + argv;
-- capturar stdout/stderr y estado de captura;
-- generar Artifact con ID lógico y SHA-256;
-- producir manifest versionado;
-- aislar engagements;
-- exportar bundle portable;
-- verificar bundle offline y detectar alteraciones;
-- soportar Security Profile y export Plain/Encrypted cuando la política lo permita;
+El alcance implementado de SP1/SP2 incluye, según sus documentos de estado:
+
+- Engagement y contexto tipado;
+- Environment/Target/Session;
+- ejecución mediante executable + argv;
+- captura stdout/stderr y estados explícitos;
+- Artifact con ID lógico y SHA-256;
+- manifest versionado;
+- aislamiento de engagements;
+- bundle portable y verificación offline;
+- Security Profiles;
+- export Plain y Encrypted según política;
 - Generic Execution Adapter;
-- Knowledge Card manual;
-- preparar Replay sin afirmar todavía automatización completa.
+- Knowledge Card manual/versionada;
+- Replay Recipe foundation/versionada;
+- provenance y relaciones implementadas en el alcance documentado.
+
+`tatacoa.encrypted.v1` está implementado pero pendiente de QA humano independiente. Implementado no significa aprobado.
+
+## Capacidades aprobadas para SP3 — no implementadas
+
+La siguiente etapa busca una **Usable Alpha**:
+
+- `tatacoa-app-api` como capa común de operaciones de usuario;
+- `tatacoa-desktop` con Tauri 2;
+- `tatacoa-cli` continúa plenamente funcional e instalable sin Desktop;
+- Desktop instalable sin requerir CLI preinstalado;
+- flujo gráfico basado en trabajo real de pentesting;
+- interoperabilidad de datos soportados entre CLI y Desktop;
+- pausa/reanudación y persistencia segura del trabajo;
+- recuperación tras cierre/fallo sin falsear estados de evidencia;
+- resumen/contexto de continuidad para retest y reanudación;
+- apertura/importación autorizada de paquetes compatibles preservando políticas, integridad y provenance.
+
+RFC 3161 entra en investigación/diseño activo durante esta evolución por su relevancia para integridad temporal. Su mecanismo concreto no se considera aprobado hasta completar investigación y decisión humana.
 
 ## Estados de captura
 
@@ -50,11 +88,9 @@ Un fallo nunca se representa silenciosamente como captura completa.
 
 ## Reproducción
 
-Resultado de reproducción:
-
 `REPRODUCED | NOT_REPRODUCED | CHANGED | ERROR`
 
-Replay debe conservar contexto, parámetros, placeholders de secretos y requisitos de seguridad. Una receta reproducible puede evolucionar deliberadamente a script/miniherramienta con procedencia.
+Replay conserva contexto, parámetros, placeholders de secretos y requisitos de seguridad. Una receta puede evolucionar deliberadamente a script/miniherramienta con procedencia.
 
 ## Knowledge Card
 
@@ -81,34 +117,30 @@ Precedencia:
 
 Integridad, manifest y procedencia permanecen activos. El cifrado puede ser opcional en laboratorio y exigido por política en contextos sensibles.
 
-## No objetivos V1
+## No objetivos actuales
 
-- SaaS obligatorio;
-- cloud obligatorio;
+- SaaS o cloud obligatorios;
 - blockchain;
 - scanner propio;
 - auto-exploit;
 - pentest autónomo;
-- multi-tenant empresarial;
 - SIEM;
-- cientos de adapters;
 - findings confirmados automáticamente;
-- reporting empresarial completo;
-- GUI como requisito del Alpha;
-- mobile;
-- plugins arbitrarios de terceros.
+- mobile como requisito actual;
+- plugins arbitrarios de terceros;
+- convertir IA en autoridad de validación.
+
+Reporting avanzado, colaboración controlada, firmas, RFC 3161 y otras capacidades del horizonte **no son “no objetivos permanentes”**: su estado y secuencia se gobiernan desde [ROADMAP.md](ROADMAP.md).
 
 ## Plataformas
 
-El **Core V1 es multiplataforma para Windows y Linux desde el diseño**.
+El Core es multiplataforma Windows + Linux desde el diseño.
 
-Targets iniciales de desarrollo y validación:
+Targets:
 
 - Windows 11 x64: desarrollo y QA;
-- WSL2 Linux x64: desarrollo e integración temprana en Linux;
+- WSL2 Linux x64: desarrollo/integración Linux;
 - Kali Linux x64: QA objetivo;
 - Parrot OS x64: QA objetivo.
 
-WSL2 no sustituye la validación específica en Kali y Parrot.
-
-El Core debe evitar supuestos innecesarios de una plataforma o distribución. Las capacidades y adapters que dependan de herramientas exclusivas de un sistema operativo pueden declarar compatibilidad específica sin reducir la portabilidad del Core.
+WSL2 no sustituye QA específico en Kali/Parrot. Las capacidades dependientes de una herramienta o plataforma deben declarar compatibilidad sin reducir la portabilidad del Core.
