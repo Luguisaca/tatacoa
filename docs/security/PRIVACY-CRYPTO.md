@@ -2,7 +2,7 @@
 
 ## Estado
 
-**Política y contrato Encrypted v1 aprobados. Implementación persistente disponible para revisión y QA humano.**
+**Política, contrato e implementación Encrypted v1 integrados y validados dentro del alcance documentado de la Alpha.**
 
 ## Seguridad configurable
 
@@ -70,7 +70,7 @@ Encrypted v1 queda congelado con:
 - header binario fijo de 136 bytes y límites de lector documentados en `ENCRYPTED-V1-FORMAT-PROPOSAL.md`;
 - password por prompt TTY sin eco; nunca mediante argumento del proceso.
 
-Al crear un bundle, la password requiere al menos 12 caracteres Unicode y máximo 1024 bytes UTF-8. No se imponen reglas compositivas de mayúsculas, números o símbolos y no se normaliza Unicode silenciosamente. Verify acepta passwords históricas no vacías dentro del máximo, aunque no satisfagan el mínimo actual de creación.
+Al crear un bundle, la política depende del Security Profile: `LAB_LEARNING` exige mínimo 12 caracteres Unicode; `PROFESSIONAL`, mínimo 14; `HIGH_SENSITIVITY`, mínimo 16; `CUSTOM` permanece fail-closed hasta aprobar una política propia. `PROFESSIONAL` y `HIGH_SENSITIVITY` rechazan además passwords evidentemente predecibles. Todos los perfiles conservan el máximo de 1024 bytes UTF-8. No se imponen reglas compositivas arbitrarias de mayúsculas, números o símbolos y no se normaliza Unicode silenciosamente. Verify conserva compatibilidad con passwords históricas no vacías dentro del máximo, aunque no satisfagan la política actual de creación.
 
 Las claves se zeroizan cuando las bibliotecas mantenidas lo permiten. Esto reduce permanencia en memoria, pero no constituye una garantía sobre copias realizadas por el sistema operativo, allocator o hardware.
 
