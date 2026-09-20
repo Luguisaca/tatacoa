@@ -4,7 +4,7 @@
 
 TATACOA es un producto de **LUGUISACA — luguisaca.com** para organizar el trabajo real de una evaluación de seguridad autorizada: contexto, ejecuciones, artefactos, evidencia verificable, conocimiento y reproducción/retest, con una arquitectura local-first y Validación Humana como autoridad.
 
-> **Estado:** baseline Alpha de Sprint 01 + Sprint 02 / Alpha Expansion + `tatacoa.encrypted.v1` y su hardening de password integrado y validado dentro del alcance documentado. Sprint 03 — Usable Alpha está aprobado/planificado y todavía no está implementado.
+> **Estado:** Sprint 01 + Sprint 02 / Alpha Expansion conforman el baseline implementado. `tatacoa.encrypted.v1` y su hardening están integrados y cuentan con QA técnico previo, pero su validación final como experiencia de usuario permanece pendiente hasta disponer de la Usable Alpha de Sprint 03. Sprint 03 está aprobado/planificado y todavía no está implementado.
 
 ## Misión
 
@@ -54,7 +54,9 @@ TATACOA no requiere SaaS, cuenta cloud ni conexión permanente para sus funcione
 | [ALPHA-IMPLEMENTATION.md](docs/ALPHA-IMPLEMENTATION.md) | implementación/QA de Sprint 01 |
 | [SPRINT-02-IMPLEMENTATION.md](docs/SPRINT-02-IMPLEMENTATION.md) | implementación de Sprint 02 |
 | [ENCRYPTED-V1-IMPLEMENTATION.md](docs/ENCRYPTED-V1-IMPLEMENTATION.md) | estado de Encrypted Bundle v1 |
-| [ALPHA-USER-QA-GUIDE.md](docs/ALPHA-USER-QA-GUIDE.md) | recorrido de QA humano |
+| [ALPHA-USER-QA-GUIDE.md](docs/ALPHA-USER-QA-GUIDE.md) | recorrido reproducible de QA técnico/humano existente; la validación integral de usuario se completa sobre Usable Alpha |
+| [CURRENT-STATE.md](docs/CURRENT-STATE.md) | fuente operativa del estado actual y siguiente paso |
+| [SPRINT-03-PLAN.md](docs/SPRINT-03-PLAN.md) | alcance aprobado y gates de Sprint 03 |
 | [SECURITY.md](SECURITY.md) | política y reporte de vulnerabilidades |
 | [AGENTS.md](AGENTS.md) | reglas para agentes y automatizaciones |
 

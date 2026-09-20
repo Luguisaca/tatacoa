@@ -2,7 +2,7 @@
 
 ## Estado
 
-**Política, contrato e implementación Encrypted v1 integrados y validados dentro del alcance documentado de la Alpha.**
+**Política y contrato Encrypted v1 integrados; QA técnico/humano previo completado y validación integral de producto pendiente en Usable Alpha.**
 
 ## Seguridad configurable
 
@@ -78,13 +78,22 @@ Las claves se zeroizan cuando las bibliotecas mantenidas lo permiten. Esto reduc
 
 Alpha no promete cifrado nativo del workspace. Se recomendarán permisos del SO y full-disk encryption donde aplique. No afirmar protección at-rest que TATACOA no implemente.
 
-## Post-V1
+## Sprint 03 — integridad temporal
+
+RFC 3161 / trusted timestamping fue promovido desde Post-V1 a Sprint 03 como **diseño + primera implementación funcional**.
+
+Antes de implementar el sellado existe un gate de Validación Humana: con investigación de fuentes oficiales debe aprobarse qué objeto(s) se timestamp-ean y en qué momento exacto del ciclo. El diseño posterior debe concretar política/TSA, representación persistida, verificación y comportamiento offline/fallo.
+
+Una TSA es una dependencia externa explícita: su indisponibilidad o la ausencia de red no puede destruir, falsear ni degradar silenciosamente evidencia existente, ni convertir conectividad en requisito para funciones locales no relacionadas.
+
+## Post-V1 / horizonte
 
 - destinatarios con clave pública;
 - firmas;
-- trusted timestamp RFC 3161;
 - workspace cifrado;
 - integración con hardware keys/PKCS#11/TPM/KMS tras investigación.
+
+RFC 3161 ya no pertenece a esta lista.
 
 ## Distinciones
 

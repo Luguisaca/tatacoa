@@ -66,4 +66,13 @@ La verificación de hash demuestra integridad respecto al valor registrado; no d
 
 ## Evolución
 
-Firmas digitales y RFC 3161 están post-V1/arquitectura-ready. Su futura incorporación no debe romper bundles anteriores ni confundir propiedades criptográficas distintas.
+Las firmas digitales permanecen en el horizonte Post-V1.
+
+RFC 3161 / trusted timestamping fue promovido a Sprint 03 como **diseño + primera implementación funcional**. Su incorporación debe mantener compatibilidad con bundles anteriores y conservar la separación entre integridad, autoría, trusted time y cadena de custodia.
+
+Antes de codificar el sellado debe superarse un gate de Validación Humana basado en fuentes oficiales para definir:
+
+- qué objeto(s) exactos se timestamp-ean;
+- en qué momento exacto del ciclo se solicita el timestamp.
+
+Después de ese gate, el contrato debe especificar representación persistida, verificación, política/TSA y comportamiento ante operación offline, fallo o indisponibilidad de TSA. La ausencia de trusted timestamp debe ser explícita y nunca convertir evidencia existente en algo distinto de lo que sus propiedades realmente demuestran.

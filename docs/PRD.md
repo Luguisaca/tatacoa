@@ -61,7 +61,7 @@ El alcance implementado de SP1/SP2 incluye, según sus documentos de estado:
 - Replay Recipe foundation/versionada;
 - provenance y relaciones implementadas en el alcance documentado.
 
-`tatacoa.encrypted.v1` está implementado pero pendiente de QA humano independiente. Implementado no significa aprobado.
+`tatacoa.encrypted.v1` está implementado e integrado y cuenta con pruebas automatizadas y QA técnico/humano previo. Su **validación integral como experiencia de producto permanece pendiente** hasta poder probarlo dentro del flujo real de usuario de Sprint 03 / Usable Alpha. Implementado y probado técnicamente no equivale todavía a aprobado como producto.
 
 ## Capacidades aprobadas para SP3 — no implementadas
 
@@ -74,11 +74,11 @@ La siguiente etapa busca una **Usable Alpha**:
 - flujo gráfico basado en trabajo real de pentesting;
 - interoperabilidad de datos soportados entre CLI y Desktop;
 - pausa/reanudación y persistencia segura del trabajo;
-- recuperación tras cierre/fallo sin falsear estados de evidencia;
-- resumen/contexto de continuidad para retest y reanudación;
-- apertura/importación autorizada de paquetes compatibles preservando políticas, integridad y provenance.
+- recuperación tras cierre voluntario, accidental o fallo desde el último estado seguro disponible, sin falsear estados de evidencia;
+- resumen/contexto bajo demanda al abrir, reanudar o realizar retest: acciones realizadas, ejecuciones/evidencia relevantes, contexto conocido, pendientes y punto de continuidad;
+- apertura/importación autorizada de paquetes compatibles como proyectos continuables, preservando políticas, integridad y provenance original.
 
-RFC 3161 entra en investigación/diseño activo durante esta evolución por su relevancia para integridad temporal. Su mecanismo concreto no se considera aprobado hasta completar investigación y decisión humana.
+RFC 3161 entra en Sprint 03 como **diseño + primera implementación funcional** de trusted timestamping. Antes de implementar esa parte debe aprobarse qué objeto(s) se timestamp-ean y en qué momento. La solución debe permitir verificación posterior y registrar de forma explícita ausencia/fallo de TSA sin falsear ni destruir evidencia; la conectividad de una TSA no convierte Internet en requisito general de TATACOA.
 
 ## Estados de captura
 
@@ -130,7 +130,7 @@ Integridad, manifest y procedencia permanecen activos. El cifrado puede ser opci
 - plugins arbitrarios de terceros;
 - convertir IA en autoridad de validación.
 
-Reporting avanzado, colaboración controlada, firmas, RFC 3161 y otras capacidades del horizonte **no son “no objetivos permanentes”**: su estado y secuencia se gobiernan desde [ROADMAP.md](ROADMAP.md).
+Reporting avanzado, colaboración controlada, firmas y otras capacidades del horizonte **no son “no objetivos permanentes”**: su estado y secuencia se gobiernan desde [ROADMAP.md](ROADMAP.md). RFC 3161 ya fue promovido a Sprint 03 y se rige por el gate documentado.
 
 ## Plataformas
 

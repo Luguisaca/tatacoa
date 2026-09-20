@@ -2,7 +2,7 @@
 
 ## Estado
 
-`tatacoa.encrypted.v1` está integrado en el baseline Alpha consolidado y fue validado dentro del alcance documentado mediante pruebas automatizadas y QA humano. No se declara certificación, validación FIPS, garantía forense ni protección del workspace.
+`tatacoa.encrypted.v1` está integrado en el baseline Alpha consolidado y cuenta con pruebas automatizadas y QA técnico/humano previo. La validación final como experiencia de producto permanece **PENDIENTE** hasta poder probarlo dentro del flujo real de usuario de Sprint 03 / Usable Alpha. Implementado y probado técnicamente no equivale todavía a aprobado como producto. No se declara certificación, validación FIPS, garantía forense ni protección del workspace.
 
 La guía reproducible para validarlo como usuario se encuentra en [`ALPHA-USER-QA-GUIDE.md`](ALPHA-USER-QA-GUIDE.md).
 
@@ -42,9 +42,9 @@ Se aplican los límites congelados del formato: envelope de 1 TiB, directorio ci
 - La resistencia efectiva depende también de la entropía de la password y de la seguridad del host.
 - Public/Sanitized, firmas, RFC 3161 y cifrado del workspace continúan fuera de este incremento.
 
-## Hardening de password — integrado y validado
+## Hardening de password — integrado; QA técnico previo completado
 
-El hardening posterior a la implementación base de Encrypted v1 quedó integrado en `main` y validado dentro del alcance de QA de la Alpha.
+El hardening posterior a la implementación base de Encrypted v1 quedó integrado en el baseline y superó el QA técnico/humano previo documentado. Su validación integral de usuario se realizará sobre la Usable Alpha.
 
 Política vigente de creación:
 
@@ -59,8 +59,10 @@ La validación permanece en `tatacoa-core`; CLI consume el Security Profile del 
 
 La política evita reglas arbitrarias de composición: una passphrase suficientemente larga y no predecible puede ser válida sin exigir combinaciones artificiales de mayúsculas, números o símbolos.
 
-### Cierre de QA e integración
+### Estado de QA e integración
 
-El gate del incremento se completó con CI aplicable y QA humano del baseline consolidado, incluyendo Security Profiles, exportación/verificación, aceptación y rechazo de passwords según política, fallo cerrado ante password incorrecta y regresión de Encrypted v1. El estado vigente es **VALIDATED dentro del alcance documentado**.
+El incremento completó CI aplicable y QA técnico/humano previo del baseline consolidado, incluyendo Security Profiles, exportación/verificación, aceptación y rechazo de passwords según política, fallo cerrado ante password incorrecta y regresión de Encrypted v1. Esos resultados se conservan como evidencia técnica y no se repiten ni invalidan por semántica documental.
 
-La guía reproducible permanece en [`ALPHA-USER-QA-GUIDE.md`](ALPHA-USER-QA-GUIDE.md). La validación no amplía las garantías más allá de los entornos y casos efectivamente probados.
+El estado vigente es **IMPLEMENTED / QA PENDING** para validación integral como usuario. El gate final se ejecutará cuando Sprint 03 permita recorrer TATACOA como producto real y comprobar Encrypted v1 dentro de creación/apertura de trabajo, continuidad, exportación/importación y recuperación aplicables.
+
+La guía reproducible permanece en [`ALPHA-USER-QA-GUIDE.md`](ALPHA-USER-QA-GUIDE.md). Ningún PASS amplía las garantías más allá de los entornos y casos efectivamente probados.

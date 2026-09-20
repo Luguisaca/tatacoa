@@ -4,7 +4,7 @@
 
 Esta guía permite validar TATACOA como usuario final, sin asumir conocimiento interno del código. Cubre el recorrido `ENGAGEMENT → SCOPE → ENVIRONMENT → TARGET → SESSION → EXECUTION`, export Plain y Encrypted v1, verificación offline, Security Profiles y pruebas negativas controladas.
 
-Esta guía conserva el procedimiento reproducible utilizado para el QA humano de la Alpha. El baseline consolidado fue validado dentro del alcance documentado; futuras ejecuciones de esta guía sirven para regresión y no amplían por sí solas las garantías existentes. Registre el entorno, los resultados y cualquier diferencia observada. Use datos ficticios y herramientas autorizadas; nunca incorpore secretos o información real de clientes.
+Esta guía conserva el procedimiento reproducible utilizado para el QA técnico/humano previo de la Alpha. Los resultados obtenidos siguen siendo evidencia válida de los casos ejecutados, pero la validación integral como producto queda pendiente hasta disponer del flujo real de usuario de Sprint 03 / Usable Alpha. Futuras ejecuciones sirven para regresión y no amplían por sí solas las garantías existentes. Registre el entorno, los resultados y cualquier diferencia observada. Use datos ficticios y herramientas autorizadas; nunca incorpore secretos o información real de clientes.
 
 ## Preparación
 
@@ -307,3 +307,4 @@ Un PASS en WSL2 no sustituye Kali o Parrot. Un fallo debe conservarse como halla
 - Elimine las copias de QA únicamente después de revisar la ruta exacta y cuando ya no sean necesarias.
 - No interprete `VERIFICATION: VALID` como firma de autor, timestamp confiable, autorización de la prueba o Validación Humana de Evidence.
 - Entregue el reporte y los hallazgos para revisión antes de declarar Alpha aprobada.
+- El gate integral de Encrypted v1 debe repetirse/confirmarse dentro del flujo de usuario de la Usable Alpha cuando Sprint 03 lo haga posible; no basta con que el componente funcione de forma aislada.
