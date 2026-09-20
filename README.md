@@ -2,6 +2,8 @@
 
 **Alpha en desarrollo.** Sobre Sprint 02 se añadió la implementación persistente de bundles `tatacoa.encrypted.v1`, aún pendiente de QA humano independiente. El estado y sus límites están documentados en `docs/SPRINT-02-IMPLEMENTATION.md` y `docs/ENCRYPTED-V1-IMPLEMENTATION.md`.
 
+La ejecución manual como usuario está descrita en `docs/ALPHA-USER-QA-GUIDE.md`, con recorrido completo, matriz por Security Profile, pruebas negativas y plantilla de resultados.
+
 Sprint 01 fue validado en Windows 11 x64 y en WSL2/Ubuntu x86_64 como integración Linux temprana, incluyendo verificación offline, controles negativos y portabilidad bidireccional de bundles entre ambos entornos.
 
 La validación en WSL2 se considera una aprobación temprana de integración Linux para este Sprint. Kali Linux y Parrot OS continúan como targets de QA específicos y WSL2 no los sustituye. El detalle, alcance y límites de los resultados están documentados en `docs/ALPHA-IMPLEMENTATION.md`.

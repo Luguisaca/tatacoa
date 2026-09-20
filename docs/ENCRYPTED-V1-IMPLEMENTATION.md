@@ -4,6 +4,8 @@
 
 La rama de desarrollo implementa exportación y verificación persistente de `tatacoa.encrypted.v1`. El trabajo tiene pruebas automatizadas, pero continúa pendiente de revisión y QA humano independiente. No se declara certificación, validación FIPS ni protección del workspace.
 
+La guía reproducible para validarlo como usuario se encuentra en [`ALPHA-USER-QA-GUIDE.md`](ALPHA-USER-QA-GUIDE.md).
+
 ## Superficie implementada
 
 - `tatacoa-core` escribe un único archivo Encrypted v1 mediante staging exclusivo y rename final; nunca reemplaza un destino existente.
