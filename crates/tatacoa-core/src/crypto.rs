@@ -90,7 +90,10 @@ fn is_obviously_weak_password(password: &str) -> bool {
     if chars.iter().all(|character| *character == chars[0]) {
         return true;
     }
-    if is_repeated_pattern(&chars) || is_monotonic_ascii_sequence(&chars) {
+    if is_repeated_pattern(&chars)
+        || is_monotonic_ascii_sequence(&chars)
+        || is_cyclic_numeric_sequence(&chars)
+    {
         return true;
     }
     const COMMON: &[&str] = &[
@@ -115,6 +118,22 @@ fn is_repeated_pattern(chars: &[char]) -> bool {
             .iter()
             .enumerate()
             .all(|(index, character)| *character == chars[index % period])
+    })
+}
+
+fn is_cyclic_numeric_sequence(chars: &[char]) -> bool {
+    if chars.len() < 4 || !chars.iter().all(|character| character.is_ascii_digit()) {
+        return false;
+    }
+
+    const CYCLES: &[&[u8]] = &[b"0123456789", b"123456789"];
+    CYCLES.iter().any(|cycle| {
+        chars.iter().enumerate().all(|(index, character)| {
+            let Some(start) = cycle.iter().position(|digit| *digit == chars[0] as u8) else {
+                return false;
+            };
+            *character as u8 == cycle[(start + index) % cycle.len()]
+        })
     })
 }
 
