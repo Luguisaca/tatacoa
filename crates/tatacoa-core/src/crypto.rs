@@ -5,6 +5,7 @@ use aes_gcm::{Aes256Gcm, Key, Nonce};
 use argon2::{Algorithm, Argon2, Params, Version};
 use hkdf::Hkdf;
 use sha2::Sha256;
+use std::io::{Read, Write};
 use zeroize::{Zeroize, ZeroizeOnDrop, Zeroizing};
 
 pub(crate) const ARGON2_MEMORY_KIB: u32 = 65_536;
@@ -87,6 +88,13 @@ pub(crate) fn derive_kek(
 
 pub(crate) fn generate_bundle_key() -> Result<SecretKey> {
     SecretKey::random()
+}
+
+pub(crate) fn random_stream_nonce() -> Result<[u8; STREAM_NONCE_BYTES]> {
+    let mut nonce = [0_u8; STREAM_NONCE_BYTES];
+    getrandom::fill(&mut nonce)
+        .map_err(|_| Error::Cryptography("system random generation unavailable"))?;
+    Ok(nonce)
 }
 
 pub(crate) fn protect_bundle_key(
@@ -253,6 +261,181 @@ pub(crate) fn decrypt_stream(
     Ok(plaintext)
 }
 
+pub(crate) fn encrypt_stream_io(
+    dek: &SecretKey,
+    nonce: &[u8; STREAM_NONCE_BYTES],
+    plaintext_length: u64,
+    chunk_bytes: usize,
+    associated_data: &[u8],
+    reader: &mut dyn Read,
+    writer: &mut dyn Write,
+) -> Result<u64> {
+    if chunk_bytes == 0 {
+        return Err(Error::Cryptography("stream encryption failed"));
+    }
+    let mut key = Key::<Aes256Gcm>::from(*dek.as_bytes());
+    let stream_nonce =
+        aead_stream::Nonce::<Aes256Gcm, aead_stream::StreamBE32<Aes256Gcm>>::from(*nonce);
+    let mut encryptor = EncryptorBE32::<Aes256Gcm>::new(&key, &stream_nonce);
+    key.zeroize();
+    let mut remaining = plaintext_length;
+    let mut written = 0_u64;
+
+    if remaining == 0 {
+        let ciphertext = encryptor
+            .encrypt_last(Payload {
+                msg: &[],
+                aad: associated_data,
+            })
+            .map_err(|_| Error::Cryptography("stream encryption failed"))?;
+        writer
+            .write_all(&ciphertext)
+            .map_err(|source| Error::io("write encrypted stream", source))?;
+        return u64::try_from(ciphertext.len())
+            .map_err(|_| Error::Cryptography("stream encryption failed"));
+    }
+
+    while remaining > chunk_bytes as u64 {
+        let read_length = chunk_bytes;
+        let mut plaintext = Zeroizing::new(vec![0_u8; read_length]);
+        reader
+            .read_exact(&mut plaintext)
+            .map_err(|source| Error::io("read plaintext stream", source))?;
+        remaining -= read_length as u64;
+        let ciphertext = encryptor
+            .encrypt_next(Payload {
+                msg: plaintext.as_slice(),
+                aad: associated_data,
+            })
+            .map_err(|_| Error::Cryptography("stream encryption failed"))?;
+        writer
+            .write_all(&ciphertext)
+            .map_err(|source| Error::io("write encrypted stream", source))?;
+        written = written
+            .checked_add(
+                u64::try_from(ciphertext.len())
+                    .map_err(|_| Error::Cryptography("stream encryption failed"))?,
+            )
+            .ok_or(Error::Cryptography("stream encryption failed"))?;
+    }
+    let final_length =
+        usize::try_from(remaining).map_err(|_| Error::Cryptography("stream encryption failed"))?;
+    let mut final_plaintext = Zeroizing::new(vec![0_u8; final_length]);
+    reader
+        .read_exact(&mut final_plaintext)
+        .map_err(|source| Error::io("read plaintext stream", source))?;
+    let final_ciphertext = encryptor
+        .encrypt_last(Payload {
+            msg: final_plaintext.as_slice(),
+            aad: associated_data,
+        })
+        .map_err(|_| Error::Cryptography("stream encryption failed"))?;
+    writer
+        .write_all(&final_ciphertext)
+        .map_err(|source| Error::io("write encrypted stream", source))?;
+    written = written
+        .checked_add(
+            u64::try_from(final_ciphertext.len())
+                .map_err(|_| Error::Cryptography("stream encryption failed"))?,
+        )
+        .ok_or(Error::Cryptography("stream encryption failed"))?;
+    Ok(written)
+}
+
+pub(crate) fn decrypt_stream_io(
+    dek: &SecretKey,
+    nonce: &[u8; STREAM_NONCE_BYTES],
+    plaintext_length: u64,
+    chunk_bytes: usize,
+    associated_data: &[u8],
+    reader: &mut dyn Read,
+    writer: &mut dyn Write,
+) -> Result<u64> {
+    if chunk_bytes == 0 {
+        return Err(Error::Cryptography("bundle authentication failed"));
+    }
+    let mut key = Key::<Aes256Gcm>::from(*dek.as_bytes());
+    let stream_nonce =
+        aead_stream::Nonce::<Aes256Gcm, aead_stream::StreamBE32<Aes256Gcm>>::from(*nonce);
+    let mut decryptor = DecryptorBE32::<Aes256Gcm>::new(&key, &stream_nonce);
+    key.zeroize();
+    let mut remaining = plaintext_length;
+    let mut written = 0_u64;
+
+    if remaining == 0 {
+        let mut ciphertext = vec![0_u8; 16];
+        reader
+            .read_exact(&mut ciphertext)
+            .map_err(|_| Error::Cryptography("bundle authentication failed"))?;
+        let plaintext = decryptor
+            .decrypt_last(Payload {
+                msg: &ciphertext,
+                aad: associated_data,
+            })
+            .map_err(|_| Error::Cryptography("bundle authentication failed"))?;
+        if !plaintext.is_empty() {
+            return Err(Error::Cryptography("bundle authentication failed"));
+        }
+        return Ok(0);
+    }
+
+    while remaining > chunk_bytes as u64 {
+        let plaintext_chunk = chunk_bytes;
+        let ciphertext_length = plaintext_chunk
+            .checked_add(16)
+            .ok_or(Error::Cryptography("bundle authentication failed"))?;
+        let mut ciphertext = vec![0_u8; ciphertext_length];
+        reader
+            .read_exact(&mut ciphertext)
+            .map_err(|_| Error::Cryptography("bundle authentication failed"))?;
+        remaining -= plaintext_chunk as u64;
+        let mut plaintext = decryptor
+            .decrypt_next(Payload {
+                msg: &ciphertext,
+                aad: associated_data,
+            })
+            .map_err(|_| Error::Cryptography("bundle authentication failed"))?;
+        if plaintext.len() != plaintext_chunk {
+            plaintext.zeroize();
+            return Err(Error::Cryptography("bundle authentication failed"));
+        }
+        writer
+            .write_all(&plaintext)
+            .map_err(|source| Error::io("write authenticated plaintext staging", source))?;
+        written = written
+            .checked_add(plaintext_chunk as u64)
+            .ok_or(Error::Cryptography("bundle authentication failed"))?;
+        plaintext.zeroize();
+    }
+    let final_plaintext_length = usize::try_from(remaining)
+        .map_err(|_| Error::Cryptography("bundle authentication failed"))?;
+    let final_ciphertext_length = final_plaintext_length
+        .checked_add(16)
+        .ok_or(Error::Cryptography("bundle authentication failed"))?;
+    let mut final_ciphertext = vec![0_u8; final_ciphertext_length];
+    reader
+        .read_exact(&mut final_ciphertext)
+        .map_err(|_| Error::Cryptography("bundle authentication failed"))?;
+    let mut final_plaintext = decryptor
+        .decrypt_last(Payload {
+            msg: &final_ciphertext,
+            aad: associated_data,
+        })
+        .map_err(|_| Error::Cryptography("bundle authentication failed"))?;
+    if final_plaintext.len() != final_plaintext_length {
+        final_plaintext.zeroize();
+        return Err(Error::Cryptography("bundle authentication failed"));
+    }
+    writer
+        .write_all(&final_plaintext)
+        .map_err(|source| Error::io("write authenticated plaintext staging", source))?;
+    written = written
+        .checked_add(remaining)
+        .ok_or(Error::Cryptography("bundle authentication failed"))?;
+    final_plaintext.zeroize();
+    Ok(written)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -345,6 +528,53 @@ mod tests {
             ],
         };
         assert!(decrypt_stream(&dek, &reordered, HEADER).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn streaming_io_is_bounded_and_fails_on_truncation() -> Result<()> {
+        let bundle_key = generate_bundle_key()?;
+        let dek = derive_object_dek(&bundle_key, b"artifact", b"art_io")?;
+        let nonce = random_stream_nonce()?;
+        let plaintext = vec![0x42; 3 * 1024 + 17];
+        let mut encrypted = Vec::new();
+        let encrypted_length = encrypt_stream_io(
+            &dek,
+            &nonce,
+            plaintext.len() as u64,
+            1024,
+            HEADER,
+            &mut plaintext.as_slice(),
+            &mut encrypted,
+        )?;
+        assert_eq!(encrypted_length, encrypted.len() as u64);
+        let mut recovered = Vec::new();
+        assert_eq!(
+            decrypt_stream_io(
+                &dek,
+                &nonce,
+                plaintext.len() as u64,
+                1024,
+                HEADER,
+                &mut encrypted.as_slice(),
+                &mut recovered,
+            )?,
+            plaintext.len() as u64
+        );
+        assert_eq!(recovered, plaintext);
+        encrypted.pop();
+        assert!(
+            decrypt_stream_io(
+                &dek,
+                &nonce,
+                plaintext.len() as u64,
+                1024,
+                HEADER,
+                &mut encrypted.as_slice(),
+                &mut Vec::new(),
+            )
+            .is_err()
+        );
         Ok(())
     }
 
