@@ -94,9 +94,17 @@ fn is_obviously_weak_password(password: &str) -> bool {
         return true;
     }
     const COMMON: &[&str] = &[
-        "password", "password123", "password1234", "qwerty", "qwerty123",
-        "qwerty123456", "123456789012", "123456789123", "letmein",
-        "administrator", "changeme",
+        "password",
+        "password123",
+        "password1234",
+        "qwerty",
+        "qwerty123",
+        "qwerty123456",
+        "123456789012",
+        "123456789123",
+        "letmein",
+        "administrator",
+        "changeme",
     ];
     COMMON.iter().any(|candidate| normalized == *candidate)
 }
@@ -112,12 +120,20 @@ fn is_repeated_pattern(chars: &[char]) -> bool {
 }
 
 fn is_monotonic_ascii_sequence(chars: &[char]) -> bool {
-    if chars.len() < 4 || !chars.iter().all(|character| character.is_ascii_alphanumeric()) {
+    if chars.len() < 4
+        || !chars
+            .iter()
+            .all(|character| character.is_ascii_alphanumeric())
+    {
         return false;
     }
     let bytes: Vec<u8> = chars.iter().map(|character| *character as u8).collect();
-    let ascending = bytes.windows(2).all(|pair| pair[1] == pair[0].wrapping_add(1));
-    let descending = bytes.windows(2).all(|pair| pair[0] == pair[1].wrapping_add(1));
+    let ascending = bytes
+        .windows(2)
+        .all(|pair| pair[1] == pair[0].wrapping_add(1));
+    let descending = bytes
+        .windows(2)
+        .all(|pair| pair[0] == pair[1].wrapping_add(1));
     ascending || descending
 }
 
@@ -570,11 +586,8 @@ mod tests {
 
         for weak in ["00000000000000", "11111111111111", "12345678912345"] {
             assert!(
-                SecretPassword::for_export_profile(
-                    SecurityProfile::Professional,
-                    weak.to_owned()
-                )
-                .is_err()
+                SecretPassword::for_export_profile(SecurityProfile::Professional, weak.to_owned())
+                    .is_err()
             );
         }
         assert!(
