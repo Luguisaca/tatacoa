@@ -560,32 +560,47 @@ mod tests {
 
     #[test]
     fn profile_password_policy_scales_with_security_profile() {
-        assert!(SecretPassword::for_export_profile(
-            SecurityProfile::LabLearning,
-            "000000000000".to_owned()
-        ).is_ok());
+        assert!(
+            SecretPassword::for_export_profile(
+                SecurityProfile::LabLearning,
+                "000000000000".to_owned()
+            )
+            .is_ok()
+        );
 
         for weak in ["00000000000000", "11111111111111", "12345678912345"] {
-            assert!(SecretPassword::for_export_profile(
-                SecurityProfile::Professional,
-                weak.to_owned()
-            ).is_err());
+            assert!(
+                SecretPassword::for_export_profile(
+                    SecurityProfile::Professional,
+                    weak.to_owned()
+                )
+                .is_err()
+            );
         }
-        assert!(SecretPassword::for_export_profile(
-            SecurityProfile::Professional,
-            "correct horse battery staple".to_owned()
-        ).is_ok());
+        assert!(
+            SecretPassword::for_export_profile(
+                SecurityProfile::Professional,
+                "correct horse battery staple".to_owned()
+            )
+            .is_ok()
+        );
 
         for weak in ["0000000000000000", "1111111111111111", "1234123412341234"] {
-            assert!(SecretPassword::for_export_profile(
-                SecurityProfile::HighSensitivity,
-                weak.to_owned()
-            ).is_err());
+            assert!(
+                SecretPassword::for_export_profile(
+                    SecurityProfile::HighSensitivity,
+                    weak.to_owned()
+                )
+                .is_err()
+            );
         }
-        assert!(SecretPassword::for_export_profile(
-            SecurityProfile::HighSensitivity,
-            "evidence glacier orbit lantern".to_owned()
-        ).is_ok());
+        assert!(
+            SecretPassword::for_export_profile(
+                SecurityProfile::HighSensitivity,
+                "evidence glacier orbit lantern".to_owned()
+            )
+            .is_ok()
+        );
     }
 
     #[test]
