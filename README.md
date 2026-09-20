@@ -4,7 +4,7 @@
 
 TATACOA es un producto de **LUGUISACA — luguisaca.com** para organizar el trabajo real de una evaluación de seguridad autorizada: contexto, ejecuciones, artefactos, evidencia verificable, conocimiento y reproducción/retest, con una arquitectura local-first y Validación Humana como autoridad.
 
-> **Estado:** Alpha en desarrollo. Sprint 01 fue implementado y validado en los entornos documentados. Sprint 02 / Alpha Expansion está implementado. `tatacoa.encrypted.v1` está implementado y continúa pendiente de QA humano independiente. Las capacidades previstas para Sprint 03 no deben interpretarse como implementadas.
+> **Estado:** baseline Alpha de Sprint 01 + Sprint 02 / Alpha Expansion + `tatacoa.encrypted.v1` y su hardening de password integrado y validado dentro del alcance documentado. Sprint 03 — Usable Alpha está aprobado/planificado y todavía no está implementado.
 
 ## Misión
 
