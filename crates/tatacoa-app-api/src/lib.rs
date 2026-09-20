@@ -3,10 +3,15 @@
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use tatacoa_core::{
-    CaptureStatus, Engagement, EngagementId, ExecutionId, Manifest, Result, SecurityProfile,
-    Session, SessionId, create_engagement, create_environment, create_scope, create_session,
-    create_target, execute, list_engagements, list_execution_manifests, list_sessions,
+    ArtifactId, ArtifactPreview, CaptureStatus, Engagement, EngagementId, ExecutionId, ExportMode,
+    KnowledgeCard, KnowledgeCardInput, KnowledgeReference, KnowledgeReviewStatus, Manifest,
+    PlainExportAuthorization, ReplayPlaceholder, ReplayRecipe, ReplayRecipeInput, Result,
+    SecretPassword, SecurityProfile, Session, SessionId, create_engagement, create_environment,
+    create_knowledge_card, create_replay_recipe, create_scope, create_session, create_target,
+    execute, export_bundle, export_encrypted_bundle, list_engagements, list_execution_manifests,
+    list_sessions, load_execution_manifest, read_artifact_preview,
 };
+use zeroize::Zeroize;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -55,6 +60,49 @@ pub struct WorkSummary {
     pub engagement: Engagement,
     pub sessions: Vec<Session>,
     pub executions: Vec<ExecutionSummary>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct KnowledgeRequest {
+    pub engagement_id: EngagementId,
+    pub execution_id: ExecutionId,
+    pub source_reviewed: bool,
+    pub what: String,
+    pub why: String,
+    pub objective: String,
+    pub how: String,
+    pub observe: String,
+    pub proves: String,
+    pub does_not_prove: String,
+    pub errors: String,
+    pub validation: String,
+    pub defensive_context: String,
+    pub references: Vec<KnowledgeReference>,
+    pub related_techniques: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReplayRequest {
+    pub engagement_id: EngagementId,
+    pub execution_id: ExecutionId,
+    pub executable: String,
+    pub argv_template: Vec<String>,
+    pub placeholders: Vec<ReplayPlaceholder>,
+    pub prerequisites: Vec<String>,
+    pub authorization_limits: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ExportRequest {
+    pub engagement_id: EngagementId,
+    pub execution_id: ExecutionId,
+    pub destination: PathBuf,
+    pub mode: ExportMode,
+    pub acknowledge_plaintext: bool,
+    pub password: Option<String>,
 }
 
 pub struct AppService {
@@ -143,6 +191,103 @@ impl AppService {
             executions,
         })
     }
+
+    pub fn execution(
+        &self,
+        engagement_id: &EngagementId,
+        execution_id: &ExecutionId,
+    ) -> Result<Manifest> {
+        load_execution_manifest(&self.workspace, engagement_id, execution_id)
+    }
+
+    pub fn artifact_preview(
+        &self,
+        engagement_id: &EngagementId,
+        execution_id: &ExecutionId,
+        artifact_id: &ArtifactId,
+    ) -> Result<ArtifactPreview> {
+        read_artifact_preview(&self.workspace, engagement_id, execution_id, artifact_id)
+    }
+
+    pub fn create_knowledge(&self, request: KnowledgeRequest) -> Result<KnowledgeCard> {
+        create_knowledge_card(
+            &self.workspace,
+            &request.engagement_id,
+            &request.execution_id,
+            KnowledgeCardInput {
+                review_status: if request.source_reviewed {
+                    KnowledgeReviewStatus::SourceReviewed
+                } else {
+                    KnowledgeReviewStatus::Draft
+                },
+                what: request.what,
+                why: request.why,
+                objective: request.objective,
+                how: request.how,
+                observe: request.observe,
+                proves: request.proves,
+                does_not_prove: request.does_not_prove,
+                errors: request.errors,
+                validation: request.validation,
+                defensive_context: request.defensive_context,
+                references: request.references,
+                related_techniques: request.related_techniques,
+            },
+        )
+    }
+
+    pub fn create_replay(&self, request: ReplayRequest) -> Result<ReplayRecipe> {
+        create_replay_recipe(
+            &self.workspace,
+            &request.engagement_id,
+            &request.execution_id,
+            ReplayRecipeInput {
+                executable: request.executable,
+                argv_template: request.argv_template,
+                placeholders: request.placeholders,
+                prerequisites: request.prerequisites,
+                authorization_limits: request.authorization_limits,
+            },
+        )
+    }
+
+    pub fn export(&self, request: ExportRequest) -> Result<()> {
+        let manifest = load_execution_manifest(
+            &self.workspace,
+            &request.engagement_id,
+            &request.execution_id,
+        )?;
+        match request.mode {
+            ExportMode::Plain => {
+                if let Some(mut password) = request.password {
+                    password.zeroize();
+                    return Err(tatacoa_core::Error::InvalidManifest(
+                        "PLAIN export must not receive a password".to_owned(),
+                    ));
+                }
+                export_bundle(
+                    &self.workspace,
+                    &manifest,
+                    &request.destination,
+                    PlainExportAuthorization {
+                        acknowledged_plaintext: request.acknowledge_plaintext,
+                    },
+                )
+            }
+            ExportMode::Encrypted => {
+                let password = request.password.ok_or_else(|| {
+                    tatacoa_core::Error::InvalidManifest(
+                        "ENCRYPTED export requires a password".to_owned(),
+                    )
+                })?;
+                let secret = SecretPassword::for_export_profile(
+                    manifest.engagement.security_profile,
+                    password,
+                )?;
+                export_encrypted_bundle(&self.workspace, &manifest, &request.destination, &secret)
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -185,6 +330,55 @@ mod tests {
             argv: vec!["--list".to_owned()],
             max_stream_bytes: Some(64 * 1024),
         })?;
+        let artifact = manifest.artifacts[0].clone();
+        let preview =
+            service.artifact_preview(&work.engagement.id, &manifest.execution.id, &artifact.id)?;
+        assert_eq!(preview.artifact.id, artifact.id);
+
+        let card = service.create_knowledge(KnowledgeRequest {
+            engagement_id: work.engagement.id.clone(),
+            execution_id: manifest.execution.id.clone(),
+            source_reviewed: false,
+            what: "Captured test output".to_owned(),
+            why: "Preserve operator context".to_owned(),
+            objective: "Understand the local test run".to_owned(),
+            how: "Review the captured output".to_owned(),
+            observe: "Process output".to_owned(),
+            proves: "The process produced this output".to_owned(),
+            does_not_prove: "Any security finding".to_owned(),
+            errors: "Output may be incomplete".to_owned(),
+            validation: "Manual review remains required".to_owned(),
+            defensive_context: "Use only in this test workspace".to_owned(),
+            references: vec![KnowledgeReference {
+                classification: tatacoa_core::SourceClassification::OperatorNote,
+                locator: "local:test".to_owned(),
+                title: "Operator test note".to_owned(),
+            }],
+            related_techniques: Vec::new(),
+        })?;
+        assert_eq!(card.execution_id, manifest.execution.id);
+
+        let recipe = service.create_replay(ReplayRequest {
+            engagement_id: work.engagement.id.clone(),
+            execution_id: manifest.execution.id.clone(),
+            executable: executable.to_string_lossy().into_owned(),
+            argv_template: vec!["--list".to_owned()],
+            placeholders: Vec::new(),
+            prerequisites: vec!["Local test binary".to_owned()],
+            authorization_limits: vec!["Only this test workspace".to_owned()],
+        })?;
+        assert_eq!(recipe.source_execution_id, manifest.execution.id);
+
+        let bundle = root.join("plain-bundle");
+        service.export(ExportRequest {
+            engagement_id: work.engagement.id.clone(),
+            execution_id: manifest.execution.id.clone(),
+            destination: bundle.clone(),
+            mode: ExportMode::Plain,
+            acknowledge_plaintext: false,
+            password: None,
+        })?;
+        assert!(bundle.join("manifest.json").is_file());
         let reopened = AppService::open(root);
         let listed = reopened.list_work()?;
         assert_eq!(listed.len(), 1);
@@ -193,6 +387,20 @@ mod tests {
         assert_eq!(summary.executions.len(), 1);
         assert_eq!(summary.executions[0].id, manifest.execution.id);
         assert_eq!(summary.executions[0].artifact_count, 2);
+
+        fs::write(
+            root.join("engagements")
+                .join(work.engagement.id.as_str())
+                .join("objects")
+                .join(format!("{}.bin", artifact.id)),
+            b"tampered",
+        )
+        .map_err(|source| tatacoa_core::Error::io("tamper test artifact", source))?;
+        assert!(
+            service
+                .artifact_preview(&work.engagement.id, &manifest.execution.id, &artifact.id)
+                .is_err()
+        );
         Ok(())
     }
 }

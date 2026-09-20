@@ -2,8 +2,14 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::str::FromStr;
-use tatacoa_app_api::{AppService, NewWorkRequest, RunRequest, WorkContext, WorkSummary};
-use tatacoa_core::{Engagement, EngagementId};
+use tatacoa_app_api::{
+    AppService, ExportRequest, KnowledgeRequest, NewWorkRequest, ReplayRequest, RunRequest,
+    WorkContext, WorkSummary,
+};
+use tatacoa_core::{
+    ArtifactId, ArtifactPreview, Engagement, EngagementId, ExecutionId, KnowledgeCard, Manifest,
+    ReplayRecipe,
+};
 
 type CommandResult<T> = Result<T, String>;
 
@@ -39,13 +45,69 @@ fn run_tool(workspace: String, request: RunRequest) -> CommandResult<WorkSummary
         .map_err(|error| error.to_string())
 }
 
+#[tauri::command]
+fn execution(
+    workspace: String,
+    engagement_id: String,
+    execution_id: String,
+) -> CommandResult<Manifest> {
+    let engagement_id =
+        EngagementId::from_str(&engagement_id).map_err(|error| error.to_string())?;
+    let execution_id = ExecutionId::from_str(&execution_id).map_err(|error| error.to_string())?;
+    AppService::open(workspace)
+        .execution(&engagement_id, &execution_id)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn artifact_preview(
+    workspace: String,
+    engagement_id: String,
+    execution_id: String,
+    artifact_id: String,
+) -> CommandResult<ArtifactPreview> {
+    let engagement_id =
+        EngagementId::from_str(&engagement_id).map_err(|error| error.to_string())?;
+    let execution_id = ExecutionId::from_str(&execution_id).map_err(|error| error.to_string())?;
+    let artifact_id = ArtifactId::from_str(&artifact_id).map_err(|error| error.to_string())?;
+    AppService::open(workspace)
+        .artifact_preview(&engagement_id, &execution_id, &artifact_id)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn create_knowledge(workspace: String, request: KnowledgeRequest) -> CommandResult<KnowledgeCard> {
+    AppService::open(workspace)
+        .create_knowledge(request)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn create_replay(workspace: String, request: ReplayRequest) -> CommandResult<ReplayRecipe> {
+    AppService::open(workspace)
+        .create_replay(request)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn export_execution(workspace: String, request: ExportRequest) -> CommandResult<()> {
+    AppService::open(workspace)
+        .export(request)
+        .map_err(|error| error.to_string())
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             list_work,
             create_work,
             summarize,
-            run_tool
+            run_tool,
+            execution,
+            artifact_preview,
+            create_knowledge,
+            create_replay,
+            export_execution
         ])
         .run(tauri::generate_context!())
         .unwrap_or_else(|error| eprintln!("TATACOA desktop failed: {error}"));

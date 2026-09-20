@@ -64,3 +64,33 @@ QA humano propuesto:
 4. cerrar y reabrir el Desktop y confirmar que el resumen se reconstruye desde disco.
 
 Este bloque aún no cubre consulta del contenido de artifacts, Knowledge/Replay, exportación desde Desktop, continuidad explícita ni importación. Los contratos exactos de continuidad, protección de reapertura e importación siguen siendo decisiones pendientes documentadas y no se implementan por inferencia.
+
+## Bloque 03 — capacidades de producto existentes en Desktop
+
+Rama local: `feat/sp3-03-product-capabilities`, creada desde el bloque 02.
+
+Implementado:
+
+- detalle validado de cada execution y sus artifacts;
+- vista previa de texto limitada a 1 MiB, calculada mientras se verifica tamaño y SHA-256 del artifact completo; si el objeto cambió después de la captura, el Core niega la vista previa;
+- creación manual de Knowledge Cards con clasificación explícita de fuente y revisión humana opcional;
+- creación de Replay Recipes con prerequisites, placeholders y límites de autorización, sin ejecución automática;
+- exportación Plain o Encrypted v1 desde Desktop, gobernada por las políticas existentes del Security Profile;
+- confirmación local de password Encrypted, limpieza inmediata de campos y request Rust sin `Debug`/`Clone` para reducir exposición accidental;
+- el frontend continúa sin autoridad sobre IDs, relaciones, provenance, política de exportación, password policy o criptografía.
+
+QA técnico:
+
+- flujo App API ampliado: crear → ejecutar → verificar/leer artifact → crear Knowledge → crear Replay → exportar → reabrir/resumir: PASS;
+- prueba negativa: artifact modificado después de captura no puede previsualizarse: PASS;
+- sintaxis JavaScript, check y Clippy estricto: PASS.
+
+QA humano propuesto:
+
+1. abrir una execution y comparar stdout/stderr con la herramienta ejecutada;
+2. crear una Knowledge Card como borrador y comprobar que no se presenta como Evidence validada;
+3. crear una Replay Recipe con límites explícitos y comprobar que guardarla no la ejecuta;
+4. probar Plain en cada perfil y confirmar los rechazos/acknowledgements esperados;
+5. probar Encrypted v1, confirmar que los campos password se limpian y verificar el bundle con password correcta e incorrecta.
+
+Límite siguiente: continuidad/recuperación, protección para reabrir trabajos e importación continuable tienen decisiones pendientes explícitas en `DECISIONS.md`. No se define su formato o política por inferencia.

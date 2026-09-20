@@ -1,8 +1,8 @@
 use crate::{
-    Artifact, Engagement, EngagementId, Error, ExecutionId, ExportMode,
-    LEGACY_MANIFEST_SCHEMA_VERSION, MANIFEST_SCHEMA_VERSION, Manifest, PlainExportAuthorization,
-    Result, SecurityProfile, authorize_plain_export, validate_artifact_provenance,
-    validate_knowledge_card, validate_replay_recipe,
+    Artifact, ArtifactId, ArtifactPreview, Engagement, EngagementId, Error, ExecutionId,
+    ExportMode, LEGACY_MANIFEST_SCHEMA_VERSION, MANIFEST_SCHEMA_VERSION, Manifest,
+    PlainExportAuthorization, Result, SecurityProfile, authorize_plain_export,
+    validate_artifact_provenance, validate_knowledge_card, validate_replay_recipe,
 };
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -11,7 +11,10 @@ use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::{Component, Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use sha2::{Digest as _, Sha256};
+
 const MAX_METADATA_BYTES: u64 = 2 * 1024 * 1024;
+pub const MAX_ARTIFACT_PREVIEW_BYTES: u64 = 1024 * 1024;
 
 pub fn unix_ms_observed() -> Result<u128> {
     SystemTime::now()
@@ -156,6 +159,61 @@ pub fn load_execution_manifest(
         ));
     }
     Ok(manifest)
+}
+
+pub fn read_artifact_preview(
+    workspace: &Path,
+    engagement_id: &EngagementId,
+    execution_id: &ExecutionId,
+    artifact_id: &ArtifactId,
+) -> Result<ArtifactPreview> {
+    let manifest = load_execution_manifest(workspace, engagement_id, execution_id)?;
+    let artifact = manifest
+        .artifacts
+        .iter()
+        .find(|artifact| &artifact.id == artifact_id)
+        .cloned()
+        .ok_or_else(|| {
+            Error::InvalidManifest("artifact is not declared by execution".to_owned())
+        })?;
+    let path = artifact_source_path(workspace, engagement_id, &artifact)?;
+    let mut file = File::open(path).map_err(|source| Error::io("open artifact preview", source))?;
+    let mut hasher = Sha256::new();
+    let mut total = 0_u64;
+    let mut preview = Vec::with_capacity(
+        usize::try_from(artifact.size_bytes.min(MAX_ARTIFACT_PREVIEW_BYTES)).unwrap_or(0),
+    );
+    let mut buffer = [0_u8; 64 * 1024];
+    loop {
+        let read = file
+            .read(&mut buffer)
+            .map_err(|source| Error::io("read artifact preview", source))?;
+        if read == 0 {
+            break;
+        }
+        total = total
+            .checked_add(read as u64)
+            .ok_or_else(|| Error::InvalidManifest("artifact size overflow".to_owned()))?;
+        hasher.update(&buffer[..read]);
+        let remaining = MAX_ARTIFACT_PREVIEW_BYTES.saturating_sub(preview.len() as u64) as usize;
+        preview.extend_from_slice(&buffer[..read.min(remaining)]);
+    }
+    let mut digest = String::with_capacity(64);
+    for byte in hasher.finalize() {
+        use std::fmt::Write as _;
+        write!(&mut digest, "{byte:02x}")
+            .map_err(|error| Error::Execution(format!("format SHA-256 digest: {error}")))?;
+    }
+    if total != artifact.size_bytes || digest != artifact.digest.value {
+        return Err(Error::InvalidManifest(
+            "artifact changed after capture; preview denied".to_owned(),
+        ));
+    }
+    Ok(ArtifactPreview {
+        artifact,
+        bytes: preview,
+        truncated_for_preview: total > MAX_ARTIFACT_PREVIEW_BYTES,
+    })
 }
 
 pub fn list_execution_manifests(

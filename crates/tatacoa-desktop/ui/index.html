@@ -33,6 +33,32 @@
       <h3>Ejecutar herramienta autorizada</h3>
       <form id="run-form"><label>Sesión<select id="session" required></select></label><label>Ejecutable<input id="executable" required placeholder="rustc"></label><label>Argumentos (uno por línea)<textarea id="argv" placeholder="--version"></textarea></label><button type="submit">Revisar y ejecutar</button></form>
       <h3>Ejecuciones</h3><div id="executions"></div>
+      <section id="execution-detail" hidden>
+        <h3>Artifact / evidencia capturada</h3>
+        <p id="execution-meta"></p><div id="artifacts"></div>
+        <pre id="artifact-content" tabindex="0">Seleccione un artifact para verificarlo y abrir una vista previa.</pre>
+        <details><summary>Crear Knowledge Card manual</summary>
+          <form id="knowledge-form">
+            <label><input type="checkbox" id="source-reviewed"> Fuentes revisadas por una persona</label>
+            <div class="field-grid">
+              <label>Qué<textarea name="what" required></textarea></label><label>Por qué<textarea name="why" required></textarea></label>
+              <label>Objetivo<textarea name="objective" required></textarea></label><label>Cómo<textarea name="how" required></textarea></label>
+              <label>Observar<textarea name="observe" required></textarea></label><label>Qué demuestra<textarea name="proves" required></textarea></label>
+              <label>Qué no demuestra<textarea name="does_not_prove" required></textarea></label><label>Errores<textarea name="errors" required></textarea></label>
+              <label>Validación<textarea name="validation" required></textarea></label><label>Contexto defensivo<textarea name="defensive_context" required></textarea></label>
+            </div>
+            <label>Clasificación de fuente<select id="reference-classification"><option>UPSTREAM_OFFICIAL</option><option>STANDARD</option><option>GOVERNMENT</option><option>PROJECT_DOCUMENTATION</option><option>OPERATOR_NOTE</option><option>AI_DRAFT</option><option>COMMUNITY</option></select></label>
+            <label>Título de fuente<input id="reference-title" required></label><label>Localizador/URL<input id="reference-locator" required></label>
+            <label>Técnicas relacionadas (una por línea)<textarea id="related-techniques"></textarea></label><button type="submit">Guardar Knowledge Card</button>
+          </form>
+        </details>
+        <details><summary>Crear Replay Recipe (no la ejecuta)</summary>
+          <form id="replay-form"><label>Ejecutable<input id="replay-executable" required></label><label>Argumentos template (uno por línea)<textarea id="replay-argv"></textarea></label><label>Placeholders (NAME|SECRET|REQUIRED|DESCRIPCIÓN, uno por línea)<textarea id="replay-placeholders"></textarea></label><label>Prerequisitos (uno por línea)<textarea id="replay-prerequisites"></textarea></label><label>Límites de autorización (uno por línea)<textarea id="replay-limits" required></textarea></label><button type="submit">Guardar receta sin ejecutar</button></form>
+        </details>
+        <details><summary>Exportar ejecución</summary>
+          <form id="export-form"><label>Destino local<input id="export-destination" required></label><label>Modo<select id="export-mode"><option value="PLAIN">Plain</option><option value="ENCRYPTED">Encrypted v1</option></select></label><label><input type="checkbox" id="plain-ack"> Reconozco que Plain no cifra el contenido</label><div id="password-fields" hidden><label>Password<input id="export-password" type="password" autocomplete="new-password"></label><label>Confirmación<input id="export-confirmation" type="password" autocomplete="new-password"></label></div><button type="submit">Exportar según política</button></form>
+        </details>
+      </section>
     </article>
   </section>
 </main>

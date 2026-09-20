@@ -140,6 +140,14 @@ pub struct Artifact {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+pub struct ArtifactPreview {
+    pub artifact: Artifact,
+    pub bytes: Vec<u8>,
+    pub truncated_for_preview: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Manifest {
     pub schema_version: String,
     pub export_mode: ExportMode,

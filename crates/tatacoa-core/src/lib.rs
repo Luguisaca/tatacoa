@@ -21,8 +21,9 @@ mod validation;
 mod workspace;
 
 pub use bundle::{
-    create_engagement, export_bundle, list_engagements, list_execution_manifests, load_engagement,
-    load_execution_manifest, read_bundle_manifest,
+    MAX_ARTIFACT_PREVIEW_BYTES, create_engagement, export_bundle, list_engagements,
+    list_execution_manifests, load_engagement, load_execution_manifest, read_artifact_preview,
+    read_bundle_manifest,
 };
 pub use capture::{GenericExecutionAdapter, compute_sha256, execute};
 pub use context::{Environment, ExecutionContext, ExecutionContextIds, Scope, Session, Target};
@@ -39,9 +40,9 @@ pub use knowledge::{
     KnowledgeReviewStatus, SourceClassification,
 };
 pub use model::{
-    Artifact, ArtifactClassification, ArtifactProvenance, ArtifactRole, CaptureStatus, Digest,
-    Engagement, EvidenceState, Execution, ExportMode, Invocation, Manifest, ProvenanceKind,
-    SecurityProfile,
+    Artifact, ArtifactClassification, ArtifactPreview, ArtifactProvenance, ArtifactRole,
+    CaptureStatus, Digest, Engagement, EvidenceState, Execution, ExportMode, Invocation, Manifest,
+    ProvenanceKind, SecurityProfile,
 };
 pub use paths::{ensure_safe_relative_path, safe_join_existing};
 pub use policy::{

@@ -7,6 +7,7 @@ rust-version.workspace = true
 [dependencies]
 serde.workspace = true
 tatacoa-core = { path = "../tatacoa-core" }
+zeroize.workspace = true
 
 [lints]
 workspace = true
