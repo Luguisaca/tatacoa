@@ -21,7 +21,7 @@ Estas decisiones provienen del Discovery y de decisiones humanas posteriores apr
 | D-013 | No plugins arbitrarios de terceros V1 | APPROVED |
 | D-014 | Knowledge/Learning es parte del producto | APPROVED |
 | D-015 | Replay es capacidad central | APPROVED |
-| D-016 | Firma permanece en horizonte; RFC 3161 pasa a investigación/diseño activo para la evolución de Alpha, sin mecanismo concreto aprobado todavía | SUPERSEDED/PARTIAL |
+| D-016 | Firma permanece en horizonte; RFC 3161 deja POST-V1 y entra en SP3 como diseño + primera implementación funcional. El objeto y momento exactos del timestamp requieren decisión humana previa al código | APPROVED/PARTIAL |
 | D-017 | Core V1 multiplataforma Windows + Linux; compatibilidad de adapters/herramientas se declara por separado | APPROVED |
 | D-018 | Open specs para manifest/provenance/verifier | APPROVED |
 | D-019 | Claims de certificación solo con evidencia formal | APPROVED |
@@ -36,14 +36,17 @@ Estas decisiones provienen del Discovery y de decisiones humanas posteriores apr
 | D-028 | Crear `tatacoa-desktop` con Tauri 2 en SP3 | APPROVED |
 | D-029 | CLI y Desktop son interfaces/instalaciones independientes de primera clase; CLI no requiere GUI/Tauri y Desktop no requiere CLI preinstalado | APPROVED |
 | D-030 | Funciones locales deben poder operar sin SaaS/cuenta cloud/conexión permanente; dependencias de red futuras deben ser explícitas | APPROVED |
-| D-031 | Continuidad del trabajo — pausa, persistencia segura, reanudación, recuperación y contexto/resumen — es capacidad de producto | APPROVED |
+| D-031 | Continuidad del trabajo — guardado seguro, pausa, reanudación, recuperación tras cierre/fallo y resumen bajo demanda para continuidad/retest — es capacidad de producto | APPROVED |
+| D-035 | Un paquete TATACOA compatible recibido por una persona autorizada debe poder abrirse como proyecto continuable sin reescribir provenance ni confiar ciegamente en su contenido | APPROVED |
+| D-036 | Sprint 03 debe avanzar dentro del alcance aprobado y detenerse solo ante bloqueo real, decisión humana/arquitectónica/de seguridad no resuelta o acción que requiera aprobación | APPROVED |
+| D-037 | La validación integral de Encrypted v1 como producto se difiere hasta poder probarla dentro del flujo real de Usable Alpha; los PASS técnicos previos se conservan como evidencia | APPROVED |
 | D-032 | El roadmap es acumulativo: un sprint extiende la dirección del producto y no puede redefinir silenciosamente arquitectura/decisiones previas | APPROVED |
 | D-033 | Capacidades futuras conocidas se mantienen como horizonte sin asignarlas automáticamente a un sprint ni tratarlas como implementadas | APPROVED |
 | D-034 | El hardening de creación Encrypted amplía D-025 por Security Profile: LAB_LEARNING mínimo 12; PROFESSIONAL mínimo 14; HIGH_SENSITIVITY mínimo 16; PROFESSIONAL/HIGH_SENSITIVITY rechazan passwords evidentemente predecibles; CUSTOM permanece fail-closed. Se conserva máximo 1024 bytes, ausencia de reglas compositivas arbitrarias, ausencia de normalización Unicode silenciosa y compatibilidad de verify con passwords históricas | APPROVED |
 
 ## Decisiones pendientes de diseño/spike
 
-- RFC 3161: objeto(s) a timestamp-ear, momento del flujo, política/TSA, representación, verificación y comportamiento offline;
+- RFC 3161: objeto(s) a timestamp-ear y momento exacto del flujo requieren decisión humana previa al código; política/TSA, representación, verificación y comportamiento offline se concretan dentro del diseño aprobado de SP3;
 - modelo de protección/autenticación para reabrir trabajos protegidos;
 - persistencia exacta del estado de continuidad y recuperación;
 - límites/contratos de importación de paquetes compatibles;
