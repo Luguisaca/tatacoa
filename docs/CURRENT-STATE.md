@@ -2,11 +2,11 @@
 
 ## Fecha de corte
 
-2026-09-20
+2026-09-21
 
 ## Rama incremental actual
 
-`feat/sp3-14-replay-retest-flow`, heredada linealmente de SP3-01…SP3-13. HUMAN-QA-05 permanece FAIL hasta revalidación de usuario.
+`feat/sp3-15-guided-export-timestamp`, heredada linealmente de SP3-01…SP3-14. HUMAN-QA-05 permanece FAIL hasta revalidación de usuario.
 
 Este documento es la fuente operativa para saber dónde está el proyecto y qué sigue. No sustituye PROJECT, PRD, ROADMAP, ARCHITECTURE ni DECISIONS.
 
@@ -104,8 +104,10 @@ SP3-13 reorganiza Desktop para hacer visibles continuidad, actividad, contexto a
 
 SP3-14 prepara Replay/Retest con reutilización de invocación y límite registrado del Scope sin exigir campos avanzados en el camino normal. Las recetas pueden precargar una nueva ejecución, pero nunca la ejecutan; la revisión contextual y la confirmación siguen obligatorias. Hay comparación read-only de metadatos registrados, sin conclusión automática ni vínculo persistido de retest. QA técnico PASS; QA humano pendiente.
 
+SP3-15 integra la entrega desde la Execution abierta: Desktop consulta la política efectiva de Core para ofrecer modos de exportación y elegir el predeterminado, muestra el reconocimiento Plain solo cuando corresponde y conserva el resultado sin tapar la captura. El timestamp queda como paso opcional, explícito y sin red para la verificación; sus opciones de confianza y checks detallados permanecen accesibles. No cambia el contrato criptográfico ni eleva `HISTORICALLY_VALIDATED`. QA técnico de frontera PASS; QA humano integral pendiente.
+
 ## Siguiente paso
 
-Revalidar HUMAN-QA-05/SP3-12 sobre el flujo Execution → Artifact/Evidence → comprensión/contexto → Replay/Retest de `feat/sp3-12-offline-tool-assistance`. Export/Encrypted v1/RFC 3161 no avanzan hasta completar esa revalidación humana.
+Revalidar HUMAN-QA-05 y el recorrido integral SP3-13…SP3-15 como usuario en Windows: Workspace → contexto autorizado → ejecución → artifacts/ayuda → nota opcional → Replay/Retest → continuidad → exportación → timestamp/verificación. No declarar Usable Alpha PASS sin esa prueba humana. La restricción anterior de no avanzar Export/Encrypted/RFC 3161 antes de HUMAN-QA-05 fue sustituida por la autorización explícita del bloque de integración Desktop; los contratos de seguridad permanecen intactos.
 
 `HISTORICALLY_VALIDATED` permanece bloqueado por gate humano y la importación continuable conserva decisiones de materialización/formato pendientes. Ningún merge a `main` ocurre sin aprobación humana explícita.

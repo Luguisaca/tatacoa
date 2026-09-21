@@ -9,8 +9,9 @@ use tatacoa_core::{
     KnowledgeReference, KnowledgeReviewStatus, Manifest, PlainExportAuthorization,
     ReplayPlaceholder, ReplayRecipe, ReplayRecipeInput, Result, SecretPassword, SecurityProfile,
     Session, SessionId, SourceClassification, TimestampObject, TimestampReport, ToolAssistance,
-    TsaConfig, TsaTrustPolicy, assist_execution, create_engagement, create_environment,
-    create_knowledge_card, create_replay_recipe, create_scope, create_session, create_target,
+    TsaConfig, TsaTrustPolicy, assist_execution, authorize_encrypted_export,
+    authorize_plain_export, create_engagement, create_environment, create_knowledge_card,
+    create_replay_recipe, create_scope, create_session, create_target, default_export_mode,
     execute, export_bundle, export_encrypted_bundle, inspect_continuity, list_engagements,
     list_execution_manifests, list_sessions, load_associated_knowledge, load_associated_replay,
     load_execution_context, load_execution_manifest, pause_work, read_artifact_preview,
@@ -145,6 +146,16 @@ pub struct ReplayFromExecutionRequest {
     pub placeholders: Vec<ReplayPlaceholder>,
     pub prerequisites: Vec<String>,
     pub authorization_limits: Vec<String>,
+}
+
+/// Descriptive guidance derived from Core policy. Export still rechecks policy.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ExportGuidance {
+    pub default_mode: Option<ExportMode>,
+    pub plain_available: bool,
+    pub plain_requires_acknowledgement: bool,
+    pub encrypted_available: bool,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -332,6 +343,35 @@ impl AppService {
     ) -> Result<ToolAssistance> {
         let manifest = self.execution(engagement_id, execution_id)?;
         Ok(assist_execution(&manifest, None, None))
+    }
+
+    pub fn export_guidance(
+        &self,
+        engagement_id: &EngagementId,
+        execution_id: &ExecutionId,
+    ) -> Result<ExportGuidance> {
+        let manifest = self.execution(engagement_id, execution_id)?;
+        let profile = manifest.engagement.security_profile;
+        let plain_without_ack = authorize_plain_export(
+            profile,
+            PlainExportAuthorization {
+                acknowledged_plaintext: false,
+            },
+        )
+        .is_ok();
+        let plain_with_ack = authorize_plain_export(
+            profile,
+            PlainExportAuthorization {
+                acknowledged_plaintext: true,
+            },
+        )
+        .is_ok();
+        Ok(ExportGuidance {
+            default_mode: default_export_mode(profile).ok(),
+            plain_available: plain_with_ack,
+            plain_requires_acknowledgement: !plain_without_ack && plain_with_ack,
+            encrypted_available: authorize_encrypted_export(profile).is_ok(),
+        })
     }
 
     pub fn artifact_preview(
@@ -689,6 +729,11 @@ mod tests {
             argv: vec!["--list".to_owned()],
             max_stream_bytes: Some(64 * 1024),
         })?;
+        let guidance = service.export_guidance(&work.engagement.id, &manifest.execution.id)?;
+        assert_eq!(guidance.default_mode, Some(ExportMode::Plain));
+        assert!(guidance.plain_available);
+        assert!(!guidance.plain_requires_acknowledgement);
+        assert!(guidance.encrypted_available);
         let artifact = manifest.artifacts[0].clone();
         let generic = service.execution_assistance(&work.engagement.id, &manifest.execution.id)?;
         assert_eq!(generic.level, AssistanceLevel::Generic);
@@ -811,6 +856,11 @@ mod tests {
         assert!(
             service
                 .execution_assistance(&other_work.engagement.id, &manifest.execution.id)
+                .is_err()
+        );
+        assert!(
+            service
+                .export_guidance(&other_work.engagement.id, &manifest.execution.id)
                 .is_err()
         );
         assert!(

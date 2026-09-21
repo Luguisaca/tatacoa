@@ -374,3 +374,14 @@ Rama `feat/sp3-14-replay-retest-flow`, desde SP3-13. **Implementado; QA humano p
 - comparación read-only entre executions del mismo engagement muestra estado, exit code y diferencias de digest/tamaño registrados sin deducir vulnerabilidad, reproducción ni Evidence validada. La relación de comparación no se persiste como nuevo modelo de retest.
 
 QA de frontera: `node --check`, `cargo fmt`, check, Clippy estricto y tests App API/Desktop: PASS. La prueba negativa incluye aislamiento entre engagements para asistencia y creación de Replay. HUMAN-QA-05 continúa FAIL hasta revalidación humana acumulativa.
+
+## Bloque 15 — entrega guiada y timestamp explícito
+
+Rama `feat/sp3-15-guided-export-timestamp`, desde SP3-14. **Implementado; QA humano pendiente.**
+
+- App API expone orientación descriptiva de exportación derivada exclusivamente de las funciones de política de Core. La exportación real vuelve a autorizar en Core. En LAB_LEARNING el modo inicial es Plain; en PROFESSIONAL y HIGH_SENSITIVITY es Encrypted; CUSTOM no ofrece exportación sin política aprobada. Plain en PROFESSIONAL exige reconocimiento explícito y HIGH_SENSITIVITY lo prohíbe.
+- Desktop presenta el destino y protección dentro de la entrega de la Execution activa, conserva feedback del bundle sin borrar el resultado capturado ni resetear el modo y limpia inputs de password tras el intento.
+- El sidecar RFC 3161 permanece opcional. Exportar no contacta TSA; solicitar exige URL explícita. La verificación es offline y separada. El resultado visible nombra el assurance reportado, y los checks/policies/anchors de confianza siguen disponibles en detalles técnicos. Ausencia o fallo de TSA no invalida el bundle; `HISTORICALLY_VALIDATED` continúa bloqueado.
+- Pruebas negativas: aislamiento entre engagements para orientación de exportación; Desktop no habilita modo prohibido, no inicia TSA en exportación y no borra el resultado de Execution. El contrato criptográfico/formatos no se modificó.
+
+QA de frontera: `node --check`, `cargo fmt --check`, check, Clippy estricto y pruebas App API/Desktop: PASS. HUMAN-QA-05 y Sprint 03 **no** se declaran PASS; se requiere el guion humano integral de producto antes de cualquier integración.

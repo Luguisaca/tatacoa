@@ -3,7 +3,7 @@
 
 use std::str::FromStr;
 use tatacoa_app_api::{
-    AppService, AuthorizationReview, ExportRequest, KnowledgeFromExecutionRequest,
+    AppService, AuthorizationReview, ExportGuidance, ExportRequest, KnowledgeFromExecutionRequest,
     KnowledgeRequest, NewWorkRequest, NoteFromExecutionRequest, ReplayFromExecutionRequest,
     ReplayRequest, RunRequest, TimestampRequest, TimestampVerifyRequest, WorkContext, WorkSummary,
 };
@@ -211,6 +211,20 @@ fn export_execution(workspace: String, request: ExportRequest) -> CommandResult<
 }
 
 #[tauri::command]
+fn export_guidance(
+    workspace: String,
+    engagement_id: String,
+    execution_id: String,
+) -> CommandResult<ExportGuidance> {
+    let engagement_id =
+        EngagementId::from_str(&engagement_id).map_err(|error| error.to_string())?;
+    let execution_id = ExecutionId::from_str(&execution_id).map_err(|error| error.to_string())?;
+    AppService::open(workspace)
+        .export_guidance(&engagement_id, &execution_id)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 fn request_timestamp(
     workspace: String,
     request: TimestampRequest,
@@ -283,6 +297,7 @@ fn main() {
             create_replay_from_execution,
             create_note_from_execution,
             export_execution,
+            export_guidance,
             request_timestamp,
             verify_timestamp,
             pause_work,
@@ -384,5 +399,36 @@ mod tests {
         assert!(javascript.contains("pendingRecipe=recipe;cancelRun()"));
         assert!(javascript.contains("await getAuthorizationReview()"));
         assert!(javascript.contains("Comparación de metadatos registrados"));
+    }
+
+    #[test]
+    fn guided_delivery_uses_core_policy_and_explicit_tsa_action() {
+        let html = include_str!("../ui/index.html");
+        let javascript = include_str!("../ui/app.js");
+        for id in [
+            "export-policy",
+            "export-result",
+            "plain-ack-row",
+            "timestamp-step",
+            "timestamp-summary",
+        ] {
+            assert!(html.contains(&format!("id=\"{id}\"")));
+        }
+        assert!(javascript.contains("invoke('export_guidance'"));
+        assert!(javascript.contains("select.value=guidance.default_mode"));
+        assert!(javascript.contains("select.querySelector('option[value=\"PLAIN\"]').disabled"));
+        assert!(javascript.contains("byId('timestamp-step').open=true"));
+        assert!(javascript.contains("if(!byId('timestamp-tsa').value)"));
+        assert!(javascript.contains("request:timestampRequest(false)"));
+        let export_flow = javascript
+            .split("async function exportExecution(event)")
+            .nth(1)
+            .unwrap_or("")
+            .split("function timestampRequest(")
+            .next()
+            .unwrap_or("");
+        assert!(!export_flow.is_empty());
+        assert!(!export_flow.contains("event.target.reset()"));
+        assert!(!javascript.contains("text(byId('execution-meta'),'Exportación"));
     }
 }
