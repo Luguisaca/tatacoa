@@ -140,3 +140,24 @@ Implementado:
 - documentación de importación corregida para separar D-040 de los detalles todavía abiertos.
 
 Capabilities Tauri: permanecen en `core:default`. Los diálogos se exponen mediante dos comandos Rust acotados; el frontend no recibe permisos genéricos de filesystem ni diálogo.
+
+## Bloque 07 — foundation funcional RFC 3161
+
+Rama local: `feat/sp3-07-rfc3161-foundation`, creada desde el bloque 06.
+
+Implementado en Core:
+
+- solicitud DER v1 con `messageImprint` SHA-256, nonce CSPRNG de 128 bits y `certReq=true`;
+- objeto Plain sin double-hash y Encrypted v1 sobre SHA-256 de los bytes exactos;
+- TSA HTTPS explícita, `ureq 3`, `rustls >=0.23.45`, `ring`, roots WebPKI explícitos, timeout acotado, sin proxy ni redirects;
+- límite de 4 MiB y `application/timestamp-reply` obligatorio;
+- parseo DER → `TimeStampResp` → CMS `SignedData` → `TSTInfo` con RustCrypto;
+- checks de status, tipos CMS/TSTInfo, SHA-256, `messageImprint` y nonce;
+- sidecar `.tsr` atómico, `create_new`, solo cuando alcanza `BOUND`;
+- verificación offline sin red y reporte por check, no booleano.
+
+Límite deliberado: no afirma `SIGNATURE_VALID`, `TRUSTED` ni `HISTORICALLY_VALIDATED`. Firma CMS, ESSCertIDv2, certificado, path RFC 5280, EKU, trust TSA y revocación histórica permanecen `NOT_EVALUATED`/`INDETERMINATE` hasta resolver los gates abiertos. Los roots TLS no son trust anchors TSA.
+
+Dependencias incorporadas: `x509-tsp 0.1.0`, `der 0.7.10`, `cms 0.2.3`, `x509-cert 0.2.5`, `ureq 3.4.2`, `rustls >=0.23.45` y provider `ring`. No se implementó ASN.1, CMS, X.509 ni criptografía propia.
+
+QA humano pendiente: usar una TSA de laboratorio configurada conscientemente, confirmar creación del `.tsr`, ausencia de sidecar ante fallo/binding incorrecto y que ninguna interfaz presente `BOUND` como firma/trust válido.

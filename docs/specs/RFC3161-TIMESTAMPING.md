@@ -2,7 +2,7 @@
 
 ## Estado
 
-**OBJETO Y MOMENTO APROBADOS; transporte/verificación en implementación.**
+**OBJETO, MOMENTO Y FOUNDATION BOUND IMPLEMENTADOS; FIRMA/TRUST/HISTÓRICO PENDIENTES DE GATES.**
 
 RFC 3161 aporta una afirmación de tiempo confiable sobre un `messageImprint`; no demuestra autoría ni reemplaza integridad, provenance o Validación Humana.
 
@@ -29,3 +29,24 @@ Los 32 bytes obtenidos por `SHA-256(root-encoding)` son directamente el `message
 El imprint se calcula después de finalizar atómicamente y verificar localmente el bundle. Solo una TSA configurada explícitamente puede recibirlo. Ausencia de configuración, red o respuesta válida se reporta sin invalidar, borrar ni modificar el bundle existente. Nunca existe fallback a hora local como trusted timestamp.
 
 La solicitud debe usar SHA-256, nonce generado por TATACOA y `certReq=true`. La verificación debe comprobar status, imprint, algoritmo, nonce, firma/cadena/certificado de timestamp y política aceptada conforme a RFC 3161 y RFC 5816.
+
+## Transporte y límites de SP3-07
+
+- TSA sin valor predeterminado y configurada explícitamente mediante URL HTTPS;
+- HTTP síncrono con timeout entre 1 ms y 120 segundos;
+- TLS `rustls` con provider `ring` y roots WebPKI explícitos para autenticar el servidor TLS;
+- sin redirects, proxy implícito ni downgrade a HTTP;
+- media types RFC 3161 obligatorios;
+- máximo 4 MiB para respuesta y sidecar;
+- sidecar DER `.tsr` atómico y sin sobrescritura;
+- verificación offline sin conexiones.
+
+Los roots TLS no son trust anchors TSA. Una respuesta alcanza `BOUND` al coincidir estructura, SHA-256, imprint y —durante la solicitud— nonce; esto no demuestra firma, identidad, EKU, cadena, trust o revocación.
+
+## Assurance y checks
+
+Niveles: `PRESENT → BOUND → SIGNATURE_VALID → TRUSTED → HISTORICALLY_VALIDATED`.
+
+Cada check usa `PASS`, `FAIL`, `NOT_EVALUATED`, `INDETERMINATE` o `UNSUPPORTED`. SP3-07 no eleva por encima de `BOUND`. Al verificar solo un `.tsr` offline, el nonce queda `NOT_EVALUATED` porque no se conserva la petición original; el `messageImprint` sí se recalcula desde el objeto.
+
+Permanecen sujetos a gate humano la allowlist definitiva de algoritmos de firma TSA y el mecanismo de revocación/validación histórica. Un algoritmo no soportado se reporta `UNSUPPORTED`, no como firma inválida.

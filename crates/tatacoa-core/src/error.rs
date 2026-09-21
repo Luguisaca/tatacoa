@@ -16,6 +16,7 @@ pub enum Error {
     InvalidManifest(String),
     Conflict(String),
     Cryptography(&'static str),
+    Timestamp(String),
     Execution(String),
 }
 
@@ -37,6 +38,7 @@ impl Display for Error {
             Self::Cryptography(message) => {
                 write!(formatter, "cryptographic operation failed: {message}")
             }
+            Self::Timestamp(message) => write!(formatter, "timestamp operation failed: {message}"),
             Self::Execution(message) => write!(formatter, "execution failed: {message}"),
         }
     }

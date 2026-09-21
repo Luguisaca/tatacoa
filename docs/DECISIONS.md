@@ -21,7 +21,7 @@ Estas decisiones provienen del Discovery y de decisiones humanas posteriores apr
 | D-013 | No plugins arbitrarios de terceros V1 | APPROVED |
 | D-014 | Knowledge/Learning es parte del producto | APPROVED |
 | D-015 | Replay es capacidad central | APPROVED |
-| D-016 | Firma permanece en horizonte; RFC 3161 deja POST-V1 y entra en SP3 como diseño + primera implementación funcional. El objeto y momento exactos del timestamp requieren decisión humana previa al código | APPROVED/PARTIAL |
+| D-016 | Firma permanece en horizonte; RFC 3161 entra en SP3 como diseño + primera implementación funcional. Objeto y momento fueron aprobados en D-038; firma/trust/histórico progresan según D-043 | APPROVED/PARTIAL |
 | D-017 | Core V1 multiplataforma Windows + Linux; compatibilidad de adapters/herramientas se declara por separado | APPROVED |
 | D-018 | Open specs para manifest/provenance/verifier | APPROVED |
 | D-019 | Claims de certificación solo con evidencia formal | APPROVED |
@@ -44,13 +44,15 @@ Estas decisiones provienen del Discovery y de decisiones humanas posteriores apr
 | D-039 | Continuidad usa persistencia explícita/versionada sin secretos y recuperación determinista; reanudar operaciones requiere nueva validación de autorización | APPROVED |
 | D-040 | Importación aplica verify-before-trust, nunca ejecuta automáticamente y exige nueva validación de autorización antes de continuar operaciones | APPROVED |
 | D-041 | Reapertura por perfil: LAB no exige autenticación adicional; PROFESSIONAL exige revalidación contextual antes de operar; HIGH_SENSITIVITY declara que el workspace local aún no tiene protección criptográfica persistente; CUSTOM niega capacidades de protección sin política. Reabrir nunca autoriza ejecutar | APPROVED |
+| D-042 | RFC 3161 usa `x509-tsp 0.1`/RustCrypto estable, transporte síncrono `ureq 3` con `rustls >=0.23.45`, provider `ring`, WebPKI roots explícitos solo para TLS, HTTPS/timeout/TSA explícitos, sin redirects/proxy implícito. Confianza TLS y confianza TSA permanecen separadas | APPROVED |
+| D-043 | El assurance RFC 3161 progresa `PRESENT → BOUND → SIGNATURE_VALID → TRUSTED → HISTORICALLY_VALIDATED`; checks usan `PASS/FAIL/NOT_EVALUATED/INDETERMINATE/UNSUPPORTED`. SP3-07 solo puede afirmar hasta `BOUND` mientras sigan abiertos los gates de algoritmos de firma y validación histórica | APPROVED/PARTIAL |
 | D-032 | El roadmap es acumulativo: un sprint extiende la dirección del producto y no puede redefinir silenciosamente arquitectura/decisiones previas | APPROVED |
 | D-033 | Capacidades futuras conocidas se mantienen como horizonte sin asignarlas automáticamente a un sprint ni tratarlas como implementadas | APPROVED |
 | D-034 | El hardening de creación Encrypted amplía D-025 por Security Profile: LAB_LEARNING mínimo 12; PROFESSIONAL mínimo 14; HIGH_SENSITIVITY mínimo 16; PROFESSIONAL/HIGH_SENSITIVITY rechazan passwords evidentemente predecibles; CUSTOM permanece fail-closed. Se conserva máximo 1024 bytes, ausencia de reglas compositivas arbitrarias, ausencia de normalización Unicode silenciosa y compatibilidad de verify con passwords históricas | APPROVED |
 
 ## Decisiones pendientes de diseño/spike
 
-- modelo de protección/autenticación para reabrir trabajos protegidos;
+- endurecimiento futuro de protección persistente del workspace más allá de la política de reapertura D-041;
 - importación: permanecen abiertos materialización/formato, compatibilidad y versiones, estados, provenance recibido y condiciones exactas para convertir un paquete ya verificado en proyecto continuable; D-040 ya congela verify-before-trust, ausencia de autoejecución y revalidación de autorización;
 - estrategia async solo si la necesidad lo exige;
 - política de release signing;

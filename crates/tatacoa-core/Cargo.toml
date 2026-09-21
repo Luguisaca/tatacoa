@@ -8,12 +8,19 @@ rust-version.workspace = true
 aead-stream.workspace = true
 aes-gcm.workspace = true
 argon2.workspace = true
+cms.workspace = true
+cmpv2.workspace = true
+der.workspace = true
 getrandom.workspace = true
 hkdf.workspace = true
+rustls.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
+ureq.workspace = true
 uuid.workspace = true
+x509-cert.workspace = true
+x509-tsp.workspace = true
 zeroize.workspace = true
 
 [lints]

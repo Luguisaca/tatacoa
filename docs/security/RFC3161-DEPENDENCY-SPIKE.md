@@ -2,7 +2,7 @@
 
 ## Estado
 
-**PROPUESTA — GATE HUMANO.** Investigación realizada el 2026-09-20. Ninguna dependencia de esta matriz fue incorporada al producto.
+**GATE APROBADO — INTEGRACIÓN PARCIAL EN SP3-07.** Investigación realizada el 2026-09-20. Validación Humana aprobó el stack RustCrypto estable, `ureq 3`, `rustls >=0.23.45` y `ring`. Los gates de allowlist definitiva de firmas y validación histórica/revocación continúan abiertos.
 
 Toolchain TATACOA: Rust 1.98. Todas las opciones listadas declaran un MSRV compatible. Las fuentes primarias consultadas fueron metadata crates.io, documentación/repositorios upstream RustCrypto, rustls, reqwest/ureq y RustSec.
 
@@ -38,7 +38,7 @@ Para transporte, `ureq 3.4.2` con rustls explícito es la opción de menor super
 
 `rustls-webpki` valida el servidor TLS, no debe reutilizarse como afirmación de que el certificado firmante TSA fue validado con todas las reglas de RFC 3161/5816. La verificación offline del `.tsr` debe separar confianza TLS de confianza TSA.
 
-## Recomendación para el siguiente prototipo, no aprobada todavía
+## Selección aprobada para el prototipo
 
 1. `x509-tsp 0.1.0`, `der 0.7.10`, `cms 0.2.3`, `x509-cert 0.2.x` para representación compatible.
 2. `ureq 3.4.2` con features mínimas y rustls explícito para POST síncrono; sin TSA default, redirects automáticos ni conexión durante verificación offline.
@@ -49,12 +49,9 @@ Para transporte, `ureq 3.4.2` con rustls explícito es la opción de menor super
 
 La ruta recomendada añade dos grupos: formatos RustCrypto y transporte `ureq`/rustls. Introducirá versiones 0.7/0.2 del stack de formatos en paralelo si otras dependencias futuras adoptan 0.8/0.3. El transporte agrega rustls/provider y roots configurados, pero evita Tokio/Hyper. Windows y Linux están soportados por estas opciones puramente Rust; la alternativa OpenSSL introduce requisitos de empaquetado nativo.
 
-## Gate humano
+## Gates humanos que permanecen abiertos
 
-Se requiere decidir:
+Se resolvieron stack, transporte y provider TLS. Todavía se requiere decidir:
 
-1. stack RustCrypto estable anterior ahora, o esperar/usar la línea pre-release compatible;
-2. `ureq` síncrono o `reqwest` + runtime;
-3. modelo de trust anchors TSA y validación histórica/revocación;
-4. provider criptográfico TLS (`ring` o `aws-lc-rs`) y política de roots;
-5. si el prototipo puede limitar inicialmente algoritmos de firma TSA compatibles sin afirmar soporte RFC 3161 general.
+1. allowlist definitiva de algoritmos de firma TSA;
+2. contrato/mecanismo definitivo de revocación y validación histórica para afirmar `HISTORICALLY_VALIDATED`.
