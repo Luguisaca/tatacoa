@@ -219,7 +219,7 @@ fn verify_message_digest(
         })
 }
 
-fn find_signer_certificate<'a>(
+pub(crate) fn find_signer_certificate<'a>(
     signed: &'a SignedData,
     signer: &SignerInfo,
 ) -> Option<&'a Certificate> {

@@ -2,7 +2,7 @@
 
 ## Estado
 
-**OBJETO, MOMENTO, BOUND Y SIGNATURE_VALID IMPLEMENTADOS; TRUST EN IMPLEMENTACIÓN; HISTÓRICO EN GATE.**
+**OBJETO, MOMENTO, BOUND, SIGNATURE_VALID Y TRUSTED IMPLEMENTADOS; HISTÓRICO EN GATE.**
 
 RFC 3161 aporta una afirmación de tiempo confiable sobre un `messageImprint`; no demuestra autoría ni reemplaza integridad, provenance o Validación Humana.
 
@@ -55,4 +55,8 @@ Niveles: `PRESENT → BOUND → SIGNATURE_VALID → TRUSTED → HISTORICALLY_VAL
 
 Cada check usa `PASS`, `FAIL`, `NOT_EVALUATED`, `INDETERMINATE` o `UNSUPPORTED`. Al verificar solo un `.tsr` offline, el nonce queda `NOT_EVALUATED` porque no se conserva la petición original; el `messageImprint` sí se recalcula desde el objeto.
 
-`TRUSTED` permanece separado: requiere path PKIX contra anchors TSA explícitos, validez al `genTime`, EKU `id-kp-timeStamping` y policy aceptada. El trust HTTPS nunca autoriza automáticamente una TSA. `HISTORICALLY_VALIDATED` continúa en gate: sin evidencia histórica suficiente de revocación el resultado es `INDETERMINATE`, y la verificación offline nunca obtiene recursos de red.
+`TRUSTED` permanece separado y solo se alcanza al aportar anchors TSA DER y policies aceptadas explícitamente. Se exige path PKIX al `genTime`, EKU crítico que contenga exclusivamente `id-kp-timeStamping`, cadena válida y policy aceptada. Intermedios DER adicionales son opcionales y los certificados incluidos en CMS pueden participar en el path. La allowlist Alpha también limita los algoritmos de firma del path; un algoritmo fuera de ella es `UNSUPPORTED`. El trust HTTPS nunca autoriza automáticamente una TSA.
+
+CLI/verifier usan `--tsa-trust-anchor-der`, `--tsa-intermediate-der` y `--tsa-policy`, repetibles. Desktop expone los mismos conjuntos como rutas locales, sin importar certificados ni conectarse a red durante verify. Si la configuración de trust se omite, el máximo sigue siendo `SIGNATURE_VALID`.
+
+`HISTORICALLY_VALIDATED` continúa en gate: sin evidencia histórica suficiente de revocación el resultado es `INDETERMINATE`, y la verificación offline nunca obtiene CRL, OCSP u otros recursos de red.

@@ -3,7 +3,10 @@
 use clap::{Parser, ValueEnum};
 use std::path::PathBuf;
 use std::process::ExitCode;
-use tatacoa_core::{SecretPassword, TimestampObject, TimestampReport, verify_timestamp_sidecar};
+use tatacoa_core::{
+    SecretPassword, TimestampObject, TimestampReport, TsaTrustPolicy, verify_timestamp_sidecar,
+    verify_timestamp_sidecar_with_trust,
+};
 use tatacoa_verifier::{verify_bundle, verify_encrypted_bundle};
 
 #[derive(Debug, Parser)]
@@ -26,6 +29,18 @@ struct Cli {
     /// Object mode bound by the timestamp sidecar.
     #[arg(long, value_enum, requires = "timestamp_sidecar")]
     timestamp_mode: Option<TimestampMode>,
+
+    /// Explicit DER TSA trust anchor; may be repeated.
+    #[arg(long = "tsa-trust-anchor-der", requires = "timestamp_sidecar")]
+    trust_anchors: Vec<PathBuf>,
+
+    /// Explicit DER TSA intermediate; may be repeated.
+    #[arg(long = "tsa-intermediate-der", requires = "timestamp_sidecar")]
+    trust_intermediates: Vec<PathBuf>,
+
+    /// Accepted TSA policy OID; may be repeated.
+    #[arg(long = "tsa-policy", requires = "timestamp_sidecar")]
+    accepted_policies: Vec<String>,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -111,7 +126,26 @@ fn inspect_timestamp(cli: &Cli) -> Result<Option<TimestampReport>, tatacoa_core:
         TimestampMode::Plain => TimestampObject::PlainBundle(&cli.bundle),
         TimestampMode::Encrypted => TimestampObject::EncryptedBundle(&cli.bundle),
     };
-    verify_timestamp_sidecar(object, sidecar).map(Some)
+    if cli.trust_anchors.is_empty()
+        && cli.trust_intermediates.is_empty()
+        && cli.accepted_policies.is_empty()
+    {
+        return verify_timestamp_sidecar(object, sidecar).map(Some);
+    }
+    let anchors = cli
+        .trust_anchors
+        .iter()
+        .map(std::fs::read)
+        .collect::<std::io::Result<Vec<_>>>()
+        .map_err(|source| tatacoa_core::Error::io("read TSA trust anchor DER", source))?;
+    let intermediates = cli
+        .trust_intermediates
+        .iter()
+        .map(std::fs::read)
+        .collect::<std::io::Result<Vec<_>>>()
+        .map_err(|source| tatacoa_core::Error::io("read TSA intermediate DER", source))?;
+    let policy = TsaTrustPolicy::new(anchors, intermediates, cli.accepted_policies.clone())?;
+    verify_timestamp_sidecar_with_trust(object, sidecar, &policy).map(Some)
 }
 
 fn print_timestamp(report: &TimestampReport) {

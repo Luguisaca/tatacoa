@@ -201,3 +201,20 @@ Implementado en Core:
 Límite deliberado: `SIGNATURE_VALID` no implica confianza en la TSA. Path PKIX, anchor TSA explícito, validez al `genTime`, EKU y policy quedan para el siguiente bloque. `HISTORICALLY_VALIDATED` permanece cerrado y `historical_revocation` sigue `INDETERMINATE`.
 
 QA humano propuesto: solicitar a una TSA explícita cuyo perfil esté en la allowlist, confirmar `SIGNATURE_VALID`; alterar el sidecar y confirmar `cms_signature=FAIL`; probar una TSA fuera de allowlist y confirmar `UNSUPPORTED`, nunca `TRUSTED`.
+
+## Bloque 10 — confianza TSA explícita
+
+Rama local: `feat/sp3-10-timestamp-trust`, creada desde el bloque 09.
+
+Implementado:
+
+- `TsaTrustPolicy` exige uno o más anchors DER y una o más policies OID aceptadas; no existe trust store TSA predeterminado;
+- path PKIX validado con `rustls-webpki 0.103.15` al `genTime` del token, usando certificados CMS e intermedios DER explícitos;
+- certificado firmante con EKU crítico y exclusivamente `id-kp-timeStamping`;
+- separación de checks `policy`, `timestamping_eku` y `tsa_trust`; `TRUSTED` solo si los tres y `SIGNATURE_VALID` pasan;
+- configuración explícita en Core, App API, CLI, verifier y Desktop; la verificación permanece offline;
+- la allowlist Alpha se aplica también a firmas del path y conserva `UNSUPPORTED` separado de `FAIL`.
+
+Límite deliberado: no se aportan CRL/OCSP, no se consulta red y no se afirma `HISTORICALLY_VALIDATED`; `historical_revocation=INDETERMINATE` incluso para un timestamp `TRUSTED`.
+
+QA humano propuesto: convertir/exportar la cadena autorizada a DER, verificar con anchor y policy correctos y confirmar `TRUSTED`; repetir sin configuración (`SIGNATURE_VALID`), con policy ajena, anchor ajeno, certificado fuera de vigencia al `genTime`, EKU no crítico/no exclusivo y cadena incompleta, confirmando que nunca eleva a `TRUSTED`.

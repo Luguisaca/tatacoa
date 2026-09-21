@@ -311,11 +311,13 @@ $Sidecar = "$PlainBundle.tsr"
 & $Verifier $PlainBundle --timestamp-sidecar $Sidecar --timestamp-mode plain
 ```
 
+Para evaluar `TRUSTED`, agregue tanto a solicitud/verificación como al verifier los parámetros explícitos `--tsa-trust-anchor-der C:\ruta\anchor.der --tsa-policy 1.2.3...`; repita `--tsa-intermediate-der` cuando la cadena lo necesite. No use certificados del trust store HTTPS por inferencia. Desktop ofrece los mismos campos como una ruta/OID por línea.
+
 Resultados esperados:
 
 - se crea un único `.tsr` DER solo después de que la respuesta coincida con objeto y nonce y cumpla el contrato `SIGNATURE_VALID`;
 - una TSA compatible muestra `SIGNATURE_VALID`, con los checks CMS, ESSCertIDv2, certificado firmante, atributos y firma en `PASS`;
-- EKU, path PKIX, trust TSA y validación histórica todavía permanecen `NOT_EVALUATED` o `INDETERMINATE`; nunca deben inferirse del trust HTTPS;
+- sin política de trust explícita, EKU/path/trust permanecen `NOT_EVALUATED`; con anchor/policy correctos pueden llegar a `TRUSTED`, pero validación histórica permanece `INDETERMINATE`;
 - la verificación offline no contacta la TSA;
 - alterar el bundle, usar modo incorrecto, truncar/corromper el sidecar o exceder 4 MiB falla sin aceptar el timestamp;
 - repetir la solicitud contra un sidecar existente no lo sobrescribe;

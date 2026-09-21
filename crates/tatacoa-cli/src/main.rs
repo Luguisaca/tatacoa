@@ -9,10 +9,10 @@ use tatacoa_core::{
     EngagementId, EnvironmentId, ExecutionId, ExportMode, KnowledgeCardInput, KnowledgeReference,
     KnowledgeReviewStatus, PlainExportAuthorization, ReplayPlaceholder, ReplayRecipeInput, ScopeId,
     SecretPassword, SecurityProfile, SessionId, SourceClassification, TargetId, TimestampObject,
-    TimestampReport, TsaConfig, create_engagement, create_environment, create_knowledge_card,
-    create_replay_recipe, create_scope, create_session, create_target, default_export_mode,
-    execute, export_bundle, export_encrypted_bundle, load_execution_manifest, request_timestamp,
-    verify_timestamp_sidecar,
+    TimestampReport, TsaConfig, TsaTrustPolicy, create_engagement, create_environment,
+    create_knowledge_card, create_replay_recipe, create_scope, create_session, create_target,
+    default_export_mode, execute, export_bundle, export_encrypted_bundle, load_execution_manifest,
+    request_timestamp, verify_timestamp_sidecar, verify_timestamp_sidecar_with_trust,
 };
 use tatacoa_verifier::{verify_bundle, verify_encrypted_bundle};
 use zeroize::Zeroize;
@@ -198,6 +198,15 @@ enum Commands {
         tsa: String,
         #[arg(long, default_value_t = 30)]
         timeout_seconds: u64,
+        /// Explicit DER TSA trust anchor; may be repeated.
+        #[arg(long = "tsa-trust-anchor-der")]
+        trust_anchors: Vec<PathBuf>,
+        /// Explicit DER intermediate; may be repeated.
+        #[arg(long = "tsa-intermediate-der")]
+        trust_intermediates: Vec<PathBuf>,
+        /// Accepted TSA policy OID; may be repeated.
+        #[arg(long = "tsa-policy")]
+        accepted_policies: Vec<String>,
     },
     /// Inspect and bind an RFC 3161 sidecar offline; this command never uses the network.
     TimestampVerify {
@@ -207,6 +216,12 @@ enum Commands {
         sidecar: PathBuf,
         #[arg(long, value_enum)]
         mode: TimestampMode,
+        #[arg(long = "tsa-trust-anchor-der")]
+        trust_anchors: Vec<PathBuf>,
+        #[arg(long = "tsa-intermediate-der")]
+        trust_intermediates: Vec<PathBuf>,
+        #[arg(long = "tsa-policy")]
+        accepted_policies: Vec<String>,
     },
     /// Verify a bundle offline without executing its contents.
     Verify { bundle: PathBuf },
@@ -461,8 +476,16 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             mode,
             tsa,
             timeout_seconds,
+            trust_anchors,
+            trust_intermediates,
+            accepted_policies,
         } => {
-            let config = TsaConfig::new(tsa, Duration::from_secs(timeout_seconds))?;
+            let mut config = TsaConfig::new(tsa, Duration::from_secs(timeout_seconds))?;
+            if let Some(policy) =
+                load_trust_policy(&trust_anchors, &trust_intermediates, accepted_policies)?
+            {
+                config = config.with_trust_policy(policy);
+            }
             let report = request_timestamp(timestamp_object(mode, &bundle), &sidecar, &config)?;
             print_timestamp_report(&report);
             println!("sidecar={}", sidecar.display());
@@ -471,8 +494,16 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             bundle,
             sidecar,
             mode,
+            trust_anchors,
+            trust_intermediates,
+            accepted_policies,
         } => {
-            let report = verify_timestamp_sidecar(timestamp_object(mode, &bundle), &sidecar)?;
+            let object = timestamp_object(mode, &bundle);
+            let report =
+                match load_trust_policy(&trust_anchors, &trust_intermediates, accepted_policies)? {
+                    Some(policy) => verify_timestamp_sidecar_with_trust(object, &sidecar, &policy)?,
+                    None => verify_timestamp_sidecar(object, &sidecar)?,
+                };
             print_timestamp_report(&report);
         }
         Commands::Verify { bundle } => {
@@ -493,6 +524,29 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     Ok(())
+}
+
+fn load_trust_policy(
+    anchors: &[PathBuf],
+    intermediates: &[PathBuf],
+    accepted_policies: Vec<String>,
+) -> Result<Option<TsaTrustPolicy>, Box<dyn std::error::Error>> {
+    if anchors.is_empty() && intermediates.is_empty() && accepted_policies.is_empty() {
+        return Ok(None);
+    }
+    let anchors = anchors
+        .iter()
+        .map(std::fs::read)
+        .collect::<std::io::Result<Vec<_>>>()?;
+    let intermediates = intermediates
+        .iter()
+        .map(std::fs::read)
+        .collect::<std::io::Result<Vec<_>>>()?;
+    Ok(Some(TsaTrustPolicy::new(
+        anchors,
+        intermediates,
+        accepted_policies,
+    )?))
 }
 
 fn timestamp_object(mode: TimestampMode, bundle: &std::path::Path) -> TimestampObject<'_> {

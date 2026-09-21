@@ -57,6 +57,7 @@ impl TimestampObject<'_> {
 pub struct TsaConfig {
     endpoint: String,
     timeout: Duration,
+    trust_policy: Option<TsaTrustPolicy>,
 }
 
 impl TsaConfig {
@@ -80,11 +81,56 @@ impl TsaConfig {
         Ok(Self {
             endpoint: endpoint.to_owned(),
             timeout,
+            trust_policy: None,
         })
     }
 
     pub fn endpoint(&self) -> &str {
         &self.endpoint
+    }
+
+    pub fn with_trust_policy(mut self, trust_policy: TsaTrustPolicy) -> Self {
+        self.trust_policy = Some(trust_policy);
+        self
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TsaTrustPolicy {
+    pub(crate) trust_anchors: Vec<Vec<u8>>,
+    pub(crate) intermediates: Vec<Vec<u8>>,
+    pub(crate) accepted_policy_oids: Vec<ObjectIdentifier>,
+}
+
+impl TsaTrustPolicy {
+    pub fn new(
+        trust_anchors_der: Vec<Vec<u8>>,
+        intermediates_der: Vec<Vec<u8>>,
+        accepted_policy_oids: Vec<String>,
+    ) -> Result<Self> {
+        if trust_anchors_der.is_empty() || accepted_policy_oids.is_empty() {
+            return Err(Error::Timestamp(
+                "TSA trust requires at least one explicit anchor and accepted policy".to_owned(),
+            ));
+        }
+        for certificate in trust_anchors_der.iter().chain(&intermediates_der) {
+            x509_cert::Certificate::from_der(certificate).map_err(|error| {
+                Error::Timestamp(format!("decode explicit TSA trust certificate: {error}"))
+            })?;
+        }
+        let accepted_policy_oids = accepted_policy_oids
+            .into_iter()
+            .map(|value| {
+                ObjectIdentifier::new(&value).map_err(|_| {
+                    Error::Timestamp("accepted TSA policy must be a valid OID".to_owned())
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        Ok(Self {
+            trust_anchors: trust_anchors_der,
+            intermediates: intermediates_der,
+            accepted_policy_oids,
+        })
     }
 }
 
@@ -144,8 +190,16 @@ pub fn request_timestamp(
     let nonce = random_nonce()?;
     let request = encode_request(&imprint, &nonce)?;
     let response = send_request(config, &request)?;
-    let report = inspect_response(&response, &imprint, Some(&nonce))?;
-    if report.assurance != TimestampAssurance::SignatureValid {
+    let report = inspect_response(
+        &response,
+        &imprint,
+        Some(&nonce),
+        config.trust_policy.as_ref(),
+    )?;
+    if !matches!(
+        report.assurance,
+        TimestampAssurance::SignatureValid | TimestampAssurance::Trusted
+    ) {
         return Err(Error::Timestamp(
             "TSA response did not satisfy the SIGNATURE_VALID contract".to_owned(),
         ));
@@ -170,7 +224,25 @@ pub fn verify_timestamp_sidecar(
     let response =
         fs::read(sidecar).map_err(|source| Error::io("read RFC 3161 sidecar", source))?;
     let imprint = object.message_imprint()?;
-    inspect_response(&response, &imprint, None)
+    inspect_response(&response, &imprint, None, None)
+}
+
+pub fn verify_timestamp_sidecar_with_trust(
+    object: TimestampObject<'_>,
+    sidecar: &Path,
+    trust_policy: &TsaTrustPolicy,
+) -> Result<TimestampReport> {
+    let metadata =
+        fs::metadata(sidecar).map_err(|source| Error::io("inspect RFC 3161 sidecar", source))?;
+    if !metadata.is_file() || metadata.len() > MAX_TIMESTAMP_RESPONSE_BYTES {
+        return Err(Error::Timestamp(
+            "RFC 3161 sidecar exceeds the supported reader limit".to_owned(),
+        ));
+    }
+    let response =
+        fs::read(sidecar).map_err(|source| Error::io("read RFC 3161 sidecar", source))?;
+    let imprint = object.message_imprint()?;
+    inspect_response(&response, &imprint, None, Some(trust_policy))
 }
 
 fn encode_request(imprint: &[u8; 32], nonce: &[u8]) -> Result<Vec<u8>> {
@@ -253,6 +325,7 @@ fn inspect_response(
     bytes: &[u8],
     expected_imprint: &[u8; 32],
     expected_nonce: Option<&[u8]>,
+    trust_policy: Option<&TsaTrustPolicy>,
 ) -> Result<TimestampReport> {
     if bytes.is_empty() || bytes.len() as u64 > MAX_TIMESTAMP_RESPONSE_BYTES {
         return Err(Error::Timestamp(
@@ -316,6 +389,9 @@ fn inspect_response(
         && imprint == TimestampCheckStatus::Pass
         && !matches!(nonce, TimestampCheckStatus::Fail);
     let signature_valid = signature.is_valid();
+    let trust = trust_policy.map(|policy| {
+        crate::timestamp_trust::evaluate_trust(&signed, &tst, policy, signature_valid)
+    });
     let checks = vec![
         check(
             "structure",
@@ -335,8 +411,10 @@ fn inspect_response(
         ),
         check(
             "policy",
-            TimestampCheckStatus::NotEvaluated,
-            "no acceptance policy is frozen",
+            trust
+                .as_ref()
+                .map_or(TimestampCheckStatus::NotEvaluated, |value| value.policy),
+            "compared with the explicit TSA evidence policy",
         ),
         check(
             "cms_signature",
@@ -375,13 +453,17 @@ fn inspect_response(
         },
         check(
             "tsa_trust",
-            TimestampCheckStatus::NotEvaluated,
+            trust
+                .as_ref()
+                .map_or(TimestampCheckStatus::NotEvaluated, |value| value.path),
             "TSA trust is separate from TLS trust",
         ),
         check(
             "timestamping_eku",
-            TimestampCheckStatus::NotEvaluated,
-            "requires signer/path validation",
+            trust
+                .as_ref()
+                .map_or(TimestampCheckStatus::NotEvaluated, |value| value.eku),
+            "critical and exclusive id-kp-timeStamping",
         ),
         check(
             "historical_revocation",
@@ -390,7 +472,9 @@ fn inspect_response(
         ),
     ];
     Ok(TimestampReport {
-        assurance: if bound && signature_valid {
+        assurance: if bound && signature_valid && trust.is_some_and(|value| value.is_trusted()) {
+            TimestampAssurance::Trusted
+        } else if bound && signature_valid {
             TimestampAssurance::SignatureValid
         } else if bound {
             TimestampAssurance::Bound
@@ -560,6 +644,35 @@ mod tests {
         ]
     }
 
+    fn fixture_signer_certificate() -> Result<Vec<u8>> {
+        let fixture = signature_fixture();
+        let response = TimeStampResp::from_der(&fixture)
+            .map_err(|error| Error::Timestamp(format!("decode fixture response: {error}")))?;
+        let token = response
+            .time_stamp_token
+            .ok_or_else(|| Error::Timestamp("fixture token missing".to_owned()))?;
+        let signed = SignedData::from_der(
+            &token
+                .content
+                .to_der()
+                .map_err(|error| Error::Timestamp(format!("decode fixture CMS: {error}")))?,
+        )
+        .map_err(|error| Error::Timestamp(format!("decode fixture SignedData: {error}")))?;
+        let certificate = signed
+            .certificates
+            .as_ref()
+            .and_then(|values| {
+                values.0.iter().find_map(|choice| match choice {
+                    cms::cert::CertificateChoices::Certificate(certificate) => Some(certificate),
+                    _ => None,
+                })
+            })
+            .ok_or_else(|| Error::Timestamp("fixture signer certificate missing".to_owned()))?;
+        certificate
+            .to_der()
+            .map_err(|error| Error::Timestamp(format!("encode fixture certificate: {error}")))
+    }
+
     #[test]
     fn request_is_sha256_certreq_and_contains_nonce() -> Result<()> {
         let imprint = [0x5a; 32];
@@ -602,18 +715,35 @@ mod tests {
             TsaConfig::new("https://tsa.invalid".to_owned(), Duration::from_secs(121)).is_err()
         );
         assert!(TsaConfig::new("https://tsa.invalid".to_owned(), Duration::from_secs(10)).is_ok());
+        assert!(TsaTrustPolicy::new(vec![], vec![], vec![]).is_err());
+        assert!(
+            TsaTrustPolicy::new(
+                vec![b"not a certificate".to_vec()],
+                vec![],
+                vec!["1.2.3.4".to_owned()]
+            )
+            .is_err()
+        );
+        assert!(
+            TsaTrustPolicy::new(
+                vec![fixture_signer_certificate().unwrap_or_default()],
+                vec![],
+                vec!["not-an-oid".to_owned()]
+            )
+            .is_err()
+        );
     }
 
     #[test]
     fn malformed_and_oversized_responses_fail_closed() {
-        assert!(inspect_response(b"not DER", &[0; 32], None).is_err());
+        assert!(inspect_response(b"not DER", &[0; 32], None, None).is_err());
         let oversized = vec![0; usize::try_from(MAX_TIMESTAMP_RESPONSE_BYTES + 1).unwrap_or(0)];
-        assert!(inspect_response(&oversized, &[0; 32], None).is_err());
+        assert!(inspect_response(&oversized, &[0; 32], None, None).is_err());
     }
 
     #[test]
     fn valid_cms_contract_reaches_signature_valid_but_not_trusted() -> Result<()> {
-        let report = inspect_response(&signature_fixture(), &fixture_imprint(), None)?;
+        let report = inspect_response(&signature_fixture(), &fixture_imprint(), None, None)?;
         assert_eq!(report.assurance, TimestampAssurance::SignatureValid);
         for name in [
             "cms_signature",
@@ -652,7 +782,7 @@ mod tests {
             .last_mut()
             .expect("the timestamp fixture is non-empty");
         *last ^= 1;
-        let report = inspect_response(&response, &fixture_imprint(), None)?;
+        let report = inspect_response(&response, &fixture_imprint(), None, None)?;
         assert_eq!(report.assurance, TimestampAssurance::Bound);
         assert_eq!(
             report
@@ -669,6 +799,67 @@ mod tests {
                 .find(|check| check.name == "signature_algorithm")
                 .map(|check| check.status),
             Some(TimestampCheckStatus::Pass)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn explicit_anchor_policy_eku_and_gen_time_reach_trusted() -> Result<()> {
+        let trust = TsaTrustPolicy::new(
+            vec![fixture_signer_certificate()?],
+            vec![],
+            vec!["1.3.6.1.4.1.55555.1".to_owned()],
+        )?;
+        let report =
+            inspect_response(&signature_fixture(), &fixture_imprint(), None, Some(&trust))?;
+        assert_eq!(report.assurance, TimestampAssurance::Trusted);
+        for name in ["policy", "timestamping_eku", "tsa_trust"] {
+            assert_eq!(
+                report
+                    .checks
+                    .iter()
+                    .find(|check| check.name == name)
+                    .map(|check| check.status),
+                Some(TimestampCheckStatus::Pass),
+                "check {name}"
+            );
+        }
+        assert_eq!(
+            report
+                .checks
+                .iter()
+                .find(|check| check.name == "historical_revocation")
+                .map(|check| check.status),
+            Some(TimestampCheckStatus::Indeterminate)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn unaccepted_policy_does_not_reach_trusted() -> Result<()> {
+        let trust = TsaTrustPolicy::new(
+            vec![fixture_signer_certificate()?],
+            vec![],
+            vec!["1.3.6.1.4.1.55555.999".to_owned()],
+        )?;
+        let report =
+            inspect_response(&signature_fixture(), &fixture_imprint(), None, Some(&trust))?;
+        assert_eq!(report.assurance, TimestampAssurance::SignatureValid);
+        assert_eq!(
+            report
+                .checks
+                .iter()
+                .find(|check| check.name == "policy")
+                .map(|check| check.status),
+            Some(TimestampCheckStatus::Fail)
+        );
+        assert_eq!(
+            report
+                .checks
+                .iter()
+                .find(|check| check.name == "tsa_trust")
+                .map(|check| check.status),
+            Some(TimestampCheckStatus::NotEvaluated)
         );
         Ok(())
     }

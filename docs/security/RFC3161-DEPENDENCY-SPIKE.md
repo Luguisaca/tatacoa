@@ -43,7 +43,7 @@ Para transporte, `ureq 3.4.2` con rustls explícito es la opción de menor super
 1. `x509-tsp 0.1.0`, `der 0.7.10`, `cms 0.2.3`, `x509-cert 0.2.x` para representación compatible.
 2. `ureq 3.4.2` con features mínimas y rustls explícito para POST síncrono; sin TSA default, redirects automáticos ni conexión durante verificación offline.
 3. Mantener trust anchors/política TSA como configuración explícita. No usar el almacén WebPKI del transporte como trust store implícito de la TSA.
-4. Antes de código funcional, cerrar qué validación de cadena/revocación histórica se exige y seleccionar la biblioteca que la implemente; el stack RustCrypto de parseo no basta.
+4. SP3-10 usa `rustls-webpki 0.103.15` para path PKIX al `genTime` con anchor/policy TSA explícitos y EKU RFC 3161. Revocación histórica permanece fuera de esa afirmación y en gate.
 
 ## Impacto estimado
 

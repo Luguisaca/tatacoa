@@ -20,6 +20,7 @@ mod policy;
 mod replay;
 mod timestamp;
 mod timestamp_signature;
+mod timestamp_trust;
 mod validation;
 mod workspace;
 
@@ -60,7 +61,8 @@ pub use replay::{REPLAY_SCHEMA_VERSION, ReplayPlaceholder, ReplayRecipe, ReplayR
 pub use timestamp::{
     MAX_TIMESTAMP_RESPONSE_BYTES, PLAIN_ROOT_VERSION, PlainRootDigest, TimestampAssurance,
     TimestampCheck, TimestampCheckStatus, TimestampObject, TimestampReport, TsaConfig,
-    compute_plain_root, request_timestamp, verify_timestamp_sidecar,
+    TsaTrustPolicy, compute_plain_root, request_timestamp, verify_timestamp_sidecar,
+    verify_timestamp_sidecar_with_trust,
 };
 pub(crate) use validation::{
     validate_artifact_provenance, validate_knowledge_card, validate_replay_recipe,

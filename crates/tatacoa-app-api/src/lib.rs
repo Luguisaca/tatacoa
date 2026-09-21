@@ -8,12 +8,12 @@ use tatacoa_core::{
     EngagementId, ExecutionContext, ExecutionId, ExportMode, KnowledgeCard, KnowledgeCardInput,
     KnowledgeReference, KnowledgeReviewStatus, Manifest, PlainExportAuthorization,
     ReplayPlaceholder, ReplayRecipe, ReplayRecipeInput, Result, SecretPassword, SecurityProfile,
-    Session, SessionId, TimestampObject, TimestampReport, TsaConfig, create_engagement,
-    create_environment, create_knowledge_card, create_replay_recipe, create_scope, create_session,
-    create_target, execute, export_bundle, export_encrypted_bundle, inspect_continuity,
-    list_engagements, list_execution_manifests, list_sessions, load_execution_context,
-    load_execution_manifest, pause_work, read_artifact_preview, request_timestamp, resume_work,
-    verify_timestamp_sidecar,
+    Session, SessionId, TimestampObject, TimestampReport, TsaConfig, TsaTrustPolicy,
+    create_engagement, create_environment, create_knowledge_card, create_replay_recipe,
+    create_scope, create_session, create_target, execute, export_bundle, export_encrypted_bundle,
+    inspect_continuity, list_engagements, list_execution_manifests, list_sessions,
+    load_execution_context, load_execution_manifest, pause_work, read_artifact_preview,
+    request_timestamp, resume_work, verify_timestamp_sidecar, verify_timestamp_sidecar_with_trust,
 };
 use zeroize::Zeroize;
 
@@ -125,6 +125,12 @@ pub struct TimestampRequest {
     pub mode: ExportMode,
     pub tsa_endpoint: String,
     pub timeout_seconds: u64,
+    #[serde(default)]
+    pub trust_anchor_der: Vec<PathBuf>,
+    #[serde(default)]
+    pub trust_intermediate_der: Vec<PathBuf>,
+    #[serde(default)]
+    pub accepted_policy_oids: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -133,6 +139,12 @@ pub struct TimestampVerifyRequest {
     pub bundle: PathBuf,
     pub sidecar: PathBuf,
     pub mode: ExportMode,
+    #[serde(default)]
+    pub trust_anchor_der: Vec<PathBuf>,
+    #[serde(default)]
+    pub trust_intermediate_der: Vec<PathBuf>,
+    #[serde(default)]
+    pub accepted_policy_oids: Vec<String>,
 }
 
 pub struct AppService {
@@ -349,10 +361,17 @@ impl AppService {
     }
 
     pub fn request_timestamp(&self, request: TimestampRequest) -> Result<TimestampReport> {
-        let config = TsaConfig::new(
+        let mut config = TsaConfig::new(
             request.tsa_endpoint,
             Duration::from_secs(request.timeout_seconds),
         )?;
+        if let Some(policy) = load_trust_policy(
+            &request.trust_anchor_der,
+            &request.trust_intermediate_der,
+            request.accepted_policy_oids,
+        )? {
+            config = config.with_trust_policy(policy);
+        }
         request_timestamp(
             timestamp_object(request.mode, &request.bundle),
             &request.sidecar,
@@ -361,11 +380,41 @@ impl AppService {
     }
 
     pub fn verify_timestamp(&self, request: TimestampVerifyRequest) -> Result<TimestampReport> {
-        verify_timestamp_sidecar(
-            timestamp_object(request.mode, &request.bundle),
-            &request.sidecar,
-        )
+        let object = timestamp_object(request.mode, &request.bundle);
+        match load_trust_policy(
+            &request.trust_anchor_der,
+            &request.trust_intermediate_der,
+            request.accepted_policy_oids,
+        )? {
+            Some(policy) => verify_timestamp_sidecar_with_trust(object, &request.sidecar, &policy),
+            None => verify_timestamp_sidecar(object, &request.sidecar),
+        }
     }
+}
+
+fn load_trust_policy(
+    anchors: &[PathBuf],
+    intermediates: &[PathBuf],
+    accepted_policy_oids: Vec<String>,
+) -> Result<Option<TsaTrustPolicy>> {
+    if anchors.is_empty() && intermediates.is_empty() && accepted_policy_oids.is_empty() {
+        return Ok(None);
+    }
+    let anchors = anchors
+        .iter()
+        .map(|path| {
+            std::fs::read(path)
+                .map_err(|source| tatacoa_core::Error::io("read TSA trust anchor DER", source))
+        })
+        .collect::<Result<Vec<_>>>()?;
+    let intermediates = intermediates
+        .iter()
+        .map(|path| {
+            std::fs::read(path)
+                .map_err(|source| tatacoa_core::Error::io("read TSA intermediate DER", source))
+        })
+        .collect::<Result<Vec<_>>>()?;
+    TsaTrustPolicy::new(anchors, intermediates, accepted_policy_oids).map(Some)
 }
 
 fn timestamp_object(mode: ExportMode, bundle: &Path) -> TimestampObject<'_> {
@@ -490,6 +539,9 @@ mod tests {
                     bundle: bundle.clone(),
                     sidecar: malformed_sidecar,
                     mode: ExportMode::Plain,
+                    trust_anchor_der: vec![],
+                    trust_intermediate_der: vec![],
+                    accepted_policy_oids: vec![],
                 })
                 .is_err()
         );
@@ -502,6 +554,9 @@ mod tests {
                     mode: ExportMode::Plain,
                     tsa_endpoint: "http://tsa.invalid".to_owned(),
                     timeout_seconds: 30,
+                    trust_anchor_der: vec![],
+                    trust_intermediate_der: vec![],
+                    accepted_policy_oids: vec![],
                 })
                 .is_err()
         );
