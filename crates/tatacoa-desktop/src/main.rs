@@ -230,3 +230,24 @@ fn main() {
         .run(tauri::generate_context!())
         .unwrap_or_else(|error| eprintln!("TATACOA desktop failed: {error}"));
 }
+
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn desktop_security_profile_values_match_app_api_wire_contract() {
+        let html = include_str!("../ui/index.html");
+        for value in ["LAB_LEARNING", "PROFESSIONAL", "HIGH_SENSITIVITY"] {
+            assert!(
+                html.contains(&format!("value=\"{value}\"")),
+                "desktop is missing SecurityProfile wire value {value}"
+            );
+        }
+        for stale in ["LabLearning", "Professional", "HighSensitivity"] {
+            assert!(
+                !html.contains(&format!("value=\"{stale}\"")),
+                "desktop still exposes stale SecurityProfile value {stale}"
+            );
+        }
+    }
+}
