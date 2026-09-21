@@ -249,5 +249,8 @@ mod tests {
                 "desktop still exposes stale SecurityProfile value {stale}"
             );
         }
+        assert!(html.contains("id=\"execution-review\" hidden"));
+        assert!(html.contains("id=\"confirm-run\""));
+        assert!(html.contains("Confirmar y ejecutar"));
     }
 }
