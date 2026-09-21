@@ -218,3 +218,21 @@ Implementado:
 Límite deliberado: no se aportan CRL/OCSP, no se consulta red y no se afirma `HISTORICALLY_VALIDATED`; `historical_revocation=INDETERMINATE` incluso para un timestamp `TRUSTED`.
 
 QA humano propuesto: convertir/exportar la cadena autorizada a DER, verificar con anchor y policy correctos y confirmar `TRUSTED`; repetir sin configuración (`SIGNATURE_VALID`), con policy ajena, anchor ajeno, certificado fuera de vigencia al `genTime`, EKU no crítico/no exclusivo y cadena incompleta, confirmando que nunca eleva a `TRUSTED`.
+
+## HUMAN QA — hallazgos acumulativos
+
+### HUMAN-QA-01 — Desktop sin wiring IPC al iniciar
+
+Estado: **FIX APLICADO — REVALIDACIÓN HUMANA PENDIENTE**.
+
+Durante QA humano acumulativo sobre SP3-10, Desktop renderizó correctamente pero los controles iniciales no ejecutaban acciones y no llegaban invocaciones al backend Rust.
+
+Causa confirmada: el frontend Vanilla JS usa `window.__TAURI__.core.invoke`, mientras `app.withGlobalTauri` no estaba habilitado en `tauri.conf.json`. En Tauri 2 esa exposición global está deshabilitada por defecto.
+
+Corrección aplicada en la misma rama SP3-10:
+
+- habilitar `app.withGlobalTauri: true`;
+- conservar CSP, capabilities y comandos existentes sin ampliar permisos;
+- no modificar Core, App API, RFC 3161 ni reglas de seguridad/dominio.
+
+Revalidación humana requerida: reiniciar Desktop y confirmar que `Seleccionar carpeta…` abre el diálogo nativo, que `Abrir workspace` alcanza el backend y que el flujo mínimo puede continuar. Este hallazgo no se considera PASS hasta completar esa comprobación.
