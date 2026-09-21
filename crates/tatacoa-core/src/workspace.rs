@@ -260,7 +260,7 @@ pub fn create_replay_recipe(
     Ok(recipe)
 }
 
-pub(crate) fn load_associated_knowledge(
+pub fn load_associated_knowledge(
     workspace: &Path,
     engagement_id: &EngagementId,
     execution_id: &ExecutionId,
@@ -276,7 +276,7 @@ pub(crate) fn load_associated_knowledge(
         .collect()
 }
 
-pub(crate) fn load_associated_replay(
+pub fn load_associated_replay(
     workspace: &Path,
     engagement_id: &EngagementId,
     execution_id: &ExecutionId,

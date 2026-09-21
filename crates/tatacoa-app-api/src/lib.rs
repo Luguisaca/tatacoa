@@ -12,8 +12,9 @@ use tatacoa_core::{
     create_engagement, create_environment, create_knowledge_card, create_replay_recipe,
     create_scope, create_session, create_target, execute, export_bundle, export_encrypted_bundle,
     inspect_continuity, list_engagements, list_execution_manifests, list_sessions,
-    load_execution_context, load_execution_manifest, pause_work, read_artifact_preview,
-    request_timestamp, resume_work, verify_timestamp_sidecar, verify_timestamp_sidecar_with_trust,
+    load_associated_knowledge, load_associated_replay, load_execution_context,
+    load_execution_manifest, pause_work, read_artifact_preview, request_timestamp, resume_work,
+    verify_timestamp_sidecar, verify_timestamp_sidecar_with_trust,
 };
 use zeroize::Zeroize;
 
@@ -101,6 +102,38 @@ pub struct ReplayRequest {
     pub execution_id: ExecutionId,
     pub executable: String,
     pub argv_template: Vec<String>,
+    pub placeholders: Vec<ReplayPlaceholder>,
+    pub prerequisites: Vec<String>,
+    pub authorization_limits: Vec<String>,
+}
+
+/// Human interpretation added to facts already captured by an Execution.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct KnowledgeFromExecutionRequest {
+    pub engagement_id: EngagementId,
+    pub execution_id: ExecutionId,
+    pub source_reviewed: bool,
+    pub why: String,
+    pub objective: String,
+    pub observe: String,
+    pub proves: String,
+    pub does_not_prove: String,
+    pub validation: String,
+    pub defensive_context: String,
+    pub references: Vec<KnowledgeReference>,
+    pub related_techniques: Vec<String>,
+}
+
+/// Replay preparation that reuses the source invocation unless the operator
+/// explicitly supplies a deliberate override.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReplayFromExecutionRequest {
+    pub engagement_id: EngagementId,
+    pub execution_id: ExecutionId,
+    pub executable_override: Option<String>,
+    pub argv_template_override: Option<Vec<String>>,
     pub placeholders: Vec<ReplayPlaceholder>,
     pub prerequisites: Vec<String>,
     pub authorization_limits: Vec<String>,
@@ -271,6 +304,19 @@ impl AppService {
         load_execution_manifest(&self.workspace, engagement_id, execution_id)
     }
 
+    pub fn execution_workspace(
+        &self,
+        engagement_id: &EngagementId,
+        execution_id: &ExecutionId,
+    ) -> Result<Manifest> {
+        let mut manifest = self.execution(engagement_id, execution_id)?;
+        manifest.knowledge_cards =
+            load_associated_knowledge(&self.workspace, engagement_id, execution_id)?;
+        manifest.replay_recipes =
+            load_associated_replay(&self.workspace, engagement_id, execution_id)?;
+        Ok(manifest)
+    }
+
     pub fn artifact_preview(
         &self,
         engagement_id: &EngagementId,
@@ -320,6 +366,78 @@ impl AppService {
                 authorization_limits: request.authorization_limits,
             },
         )
+    }
+
+    pub fn create_knowledge_from_execution(
+        &self,
+        request: KnowledgeFromExecutionRequest,
+    ) -> Result<KnowledgeCard> {
+        let manifest = self.execution(&request.engagement_id, &request.execution_id)?;
+        let execution = &manifest.execution;
+        let arguments = execution
+            .invocation
+            .argv
+            .iter()
+            .enumerate()
+            .map(|(index, argument)| format!("argv[{index}]={argument:?}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let how = if arguments.is_empty() {
+            format!(
+                "Captured invocation: executable={:?}, no arguments, shell={}",
+                execution.invocation.executable, execution.invocation.shell
+            )
+        } else {
+            format!(
+                "Captured invocation: executable={:?}, {arguments}, shell={}",
+                execution.invocation.executable, execution.invocation.shell
+            )
+        };
+        self.create_knowledge(KnowledgeRequest {
+            engagement_id: request.engagement_id,
+            execution_id: request.execution_id,
+            source_reviewed: request.source_reviewed,
+            what: format!(
+                "Execution {} captured by adapter {} with {} artifact(s)",
+                execution.id,
+                execution.adapter,
+                manifest.artifacts.len()
+            ),
+            why: request.why,
+            objective: request.objective,
+            how,
+            observe: request.observe,
+            proves: request.proves,
+            does_not_prove: request.does_not_prove,
+            errors: format!(
+                "Recorded capture status: {:?}; recorded exit code: {:?}",
+                execution.capture_status, execution.exit_code
+            ),
+            validation: request.validation,
+            defensive_context: request.defensive_context,
+            references: request.references,
+            related_techniques: request.related_techniques,
+        })
+    }
+
+    pub fn create_replay_from_execution(
+        &self,
+        request: ReplayFromExecutionRequest,
+    ) -> Result<ReplayRecipe> {
+        let manifest = self.execution(&request.engagement_id, &request.execution_id)?;
+        self.create_replay(ReplayRequest {
+            engagement_id: request.engagement_id,
+            execution_id: request.execution_id,
+            executable: request
+                .executable_override
+                .unwrap_or(manifest.execution.invocation.executable),
+            argv_template: request
+                .argv_template_override
+                .unwrap_or(manifest.execution.invocation.argv),
+            placeholders: request.placeholders,
+            prerequisites: request.prerequisites,
+            authorization_limits: request.authorization_limits,
+        })
     }
 
     pub fn export(&self, request: ExportRequest) -> Result<()> {
@@ -481,18 +599,15 @@ mod tests {
             service.artifact_preview(&work.engagement.id, &manifest.execution.id, &artifact.id)?;
         assert_eq!(preview.artifact.id, artifact.id);
 
-        let card = service.create_knowledge(KnowledgeRequest {
+        let card = service.create_knowledge_from_execution(KnowledgeFromExecutionRequest {
             engagement_id: work.engagement.id.clone(),
             execution_id: manifest.execution.id.clone(),
             source_reviewed: false,
-            what: "Captured test output".to_owned(),
             why: "Preserve operator context".to_owned(),
             objective: "Understand the local test run".to_owned(),
-            how: "Review the captured output".to_owned(),
             observe: "Process output".to_owned(),
             proves: "The process produced this output".to_owned(),
             does_not_prove: "Any security finding".to_owned(),
-            errors: "Output may be incomplete".to_owned(),
             validation: "Manual review remains required".to_owned(),
             defensive_context: "Use only in this test workspace".to_owned(),
             references: vec![KnowledgeReference {
@@ -503,17 +618,41 @@ mod tests {
             related_techniques: Vec::new(),
         })?;
         assert_eq!(card.execution_id, manifest.execution.id);
+        assert!(card.what.contains(manifest.execution.id.as_str()));
+        assert!(card.how.contains(&format!(
+            "executable={:?}",
+            manifest.execution.invocation.executable
+        )));
+        assert!(card.how.contains("argv[0]=\"--list\""));
+        assert!(card.errors.contains("Recorded capture status"));
 
-        let recipe = service.create_replay(ReplayRequest {
+        let recipe = service.create_replay_from_execution(ReplayFromExecutionRequest {
             engagement_id: work.engagement.id.clone(),
             execution_id: manifest.execution.id.clone(),
-            executable: executable.to_string_lossy().into_owned(),
-            argv_template: vec!["--list".to_owned()],
+            executable_override: None,
+            argv_template_override: None,
             placeholders: Vec::new(),
             prerequisites: vec!["Local test binary".to_owned()],
             authorization_limits: vec!["Only this test workspace".to_owned()],
         })?;
         assert_eq!(recipe.source_execution_id, manifest.execution.id);
+        assert_eq!(recipe.executable, manifest.execution.invocation.executable);
+        assert_eq!(recipe.argv_template, manifest.execution.invocation.argv);
+        let expected_context = manifest.execution.context.ok_or_else(|| {
+            tatacoa_core::Error::InvalidManifest("test execution has no context".to_owned())
+        })?;
+        assert_eq!(recipe.context, expected_context);
+
+        let execution_workspace =
+            service.execution_workspace(&work.engagement.id, &manifest.execution.id)?;
+        assert_eq!(execution_workspace.knowledge_cards, vec![card]);
+        assert_eq!(execution_workspace.replay_recipes, vec![recipe]);
+        assert!(
+            execution_workspace
+                .artifacts
+                .iter()
+                .all(|item| item.evidence_state == tatacoa_core::EvidenceState::Captured)
+        );
 
         let bundle = root.join("plain-bundle");
         service.export(ExportRequest {

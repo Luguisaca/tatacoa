@@ -3,8 +3,9 @@
 
 use std::str::FromStr;
 use tatacoa_app_api::{
-    AppService, AuthorizationReview, ExportRequest, KnowledgeRequest, NewWorkRequest,
-    ReplayRequest, RunRequest, TimestampRequest, TimestampVerifyRequest, WorkContext, WorkSummary,
+    AppService, AuthorizationReview, ExportRequest, KnowledgeFromExecutionRequest,
+    KnowledgeRequest, NewWorkRequest, ReplayFromExecutionRequest, ReplayRequest, RunRequest,
+    TimestampRequest, TimestampVerifyRequest, WorkContext, WorkSummary,
 };
 use tatacoa_core::{
     ArtifactId, ArtifactPreview, ContinuityState, Engagement, EngagementId, ExecutionId,
@@ -118,6 +119,20 @@ fn execution(
 }
 
 #[tauri::command]
+fn execution_workspace(
+    workspace: String,
+    engagement_id: String,
+    execution_id: String,
+) -> CommandResult<Manifest> {
+    let engagement_id =
+        EngagementId::from_str(&engagement_id).map_err(|error| error.to_string())?;
+    let execution_id = ExecutionId::from_str(&execution_id).map_err(|error| error.to_string())?;
+    AppService::open(workspace)
+        .execution_workspace(&engagement_id, &execution_id)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 fn artifact_preview(
     workspace: String,
     engagement_id: String,
@@ -144,6 +159,26 @@ fn create_knowledge(workspace: String, request: KnowledgeRequest) -> CommandResu
 fn create_replay(workspace: String, request: ReplayRequest) -> CommandResult<ReplayRecipe> {
     AppService::open(workspace)
         .create_replay(request)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn create_knowledge_from_execution(
+    workspace: String,
+    request: KnowledgeFromExecutionRequest,
+) -> CommandResult<KnowledgeCard> {
+    AppService::open(workspace)
+        .create_knowledge_from_execution(request)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn create_replay_from_execution(
+    workspace: String,
+    request: ReplayFromExecutionRequest,
+) -> CommandResult<ReplayRecipe> {
+    AppService::open(workspace)
+        .create_replay_from_execution(request)
         .map_err(|error| error.to_string())
 }
 
@@ -218,9 +253,12 @@ fn main() {
             run_tool,
             authorization_review,
             execution,
+            execution_workspace,
             artifact_preview,
             create_knowledge,
             create_replay,
+            create_knowledge_from_execution,
+            create_replay_from_execution,
             export_execution,
             request_timestamp,
             verify_timestamp,
@@ -230,7 +268,6 @@ fn main() {
         .run(tauri::generate_context!())
         .unwrap_or_else(|error| eprintln!("TATACOA desktop failed: {error}"));
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -252,5 +289,35 @@ mod tests {
         assert!(html.contains("id=\"execution-review\" hidden"));
         assert!(html.contains("id=\"confirm-run\""));
         assert!(html.contains("Confirmar y ejecutar"));
+    }
+
+    #[test]
+    fn desktop_execution_workflow_reuses_recorded_facts_and_locates_outputs() {
+        let html = include_str!("../ui/index.html");
+        let javascript = include_str!("../ui/app.js");
+
+        for id in [
+            "execution-context",
+            "execution-feedback",
+            "knowledge-list",
+            "replay-list",
+            "replay-change-invocation",
+        ] {
+            assert!(html.contains(&format!("id=\"{id}\"")));
+        }
+        for redundant_field in [
+            "name=\"what\"",
+            "name=\"how\"",
+            "name=\"errors\"",
+            "id=\"replay-executable\"",
+            "id=\"replay-argv\"",
+        ] {
+            assert!(!html.contains(redundant_field));
+        }
+        assert!(javascript.contains("execution_workspace"));
+        assert!(javascript.contains("create_knowledge_from_execution"));
+        assert!(javascript.contains("create_replay_from_execution"));
+        assert!(javascript.contains("executable_override:changed?"));
+        assert!(javascript.contains("argv_template_override:changed?"));
     }
 }

@@ -69,7 +69,8 @@ pub(crate) use validation::{
 };
 pub use workspace::{
     create_environment, create_knowledge_card, create_replay_recipe, create_scope, create_session,
-    create_target, list_sessions, load_execution_context,
+    create_target, list_sessions, load_associated_knowledge, load_associated_replay,
+    load_execution_context,
 };
 
 pub const MANIFEST_SCHEMA_VERSION: &str = "tatacoa.alpha.v2";

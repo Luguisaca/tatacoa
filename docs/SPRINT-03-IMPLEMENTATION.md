@@ -282,7 +282,7 @@ Siguiente discriminación humana: repetir el gate ya corregido usando la ruta ab
 
 ### HUMAN-QA-05 — integración Desktop expone primitivas internas en vez del flujo de trabajo
 
-Estado: **FAIL DE PRODUCTO/UX — CORRECCIÓN DOCUMENTAL APROBADA; IMPLEMENTACIÓN PENDIENTE**.
+Estado: **FAIL DE PRODUCTO/UX — CORRECCIÓN IMPLEMENTADA; REVALIDACIÓN HUMANA PENDIENTE**.
 
 El QA humano acumulativo demostró que Execution/Artifact funcionan, incluida revisión contextual explícita, ejecución sin shell mediante ruta absoluta, captura COMPLETE y consulta de stdout/stderr. Sin embargo, al continuar hacia Knowledge/Replay/Export/Timestamp, Desktop presenta capacidades del dominio principalmente como formularios independientes.
 
@@ -305,3 +305,34 @@ Decisión humana durante QA:
 - reanudar QA integral cuando el flujo corregido permita trabajar sin transcribir información ya conocida por TATACOA.
 
 La corrección no autoriza IA local, reporting avanzado, auto-exploit, inferencia de autorización ni promoción automática a Evidence. Tampoco convierte Knowledge factual generado automáticamente en contenido validado.
+
+Corrección implementada incrementalmente en `feat/sp3-11-execution-workflow`:
+
+- `tatacoa-core` expone la lectura validada ya existente de Knowledge y Replay asociados, sin cambiar sus modelos, validadores ni autoridad;
+- `tatacoa-app-api` compone una vista de trabajo de la Execution con manifest, artifacts, Knowledge y Replay asociados;
+- Knowledge desde Execution deriva únicamente hechos registrados (`Execution`, adapter, artifacts, executable, argv, shell, estado de captura y exit code) y conserva como entrada humana relevancia, objetivo, interpretación, límites, validación, contexto defensivo y fuentes;
+- Replay/Retest reutiliza por defecto executable, argv, contexto tipado y `source_execution_id`; placeholders, secretos, prerequisites y límites de autorización siguen siendo decisiones humanas, y cualquier override de invocación es deliberado;
+- Desktop presenta esos elementos como un recorrido continuo, mantiene feedback visible después de guardar y lista los objetos creados dentro de la Execution;
+- las ayudas visibles se ajustan al perfil vigente sin introducir política nueva: explicación adicional en `LAB_LEARNING`, menor fricción en `PROFESSIONAL` y minimización de datos adicionales en `HIGH_SENSITIVITY`;
+- no existe promoción automática de artifacts: las pruebas confirman que permanecen en `CAPTURED`; crear una receta no la ejecuta.
+
+QA técnico de la corrección:
+
+- pruebas App API del flujo local end-to-end: PASS;
+- regresión Desktop sobre reutilización de hechos, ausencia de campos redundantes, feedback y localización: PASS;
+- sintaxis JavaScript (`node --check`): PASS;
+- `cargo fmt --check`: PASS;
+- `cargo check --locked --workspace --all-targets`: PASS;
+- `cargo clippy --locked --workspace --all-targets -- -D warnings`: PASS;
+- `cargo test --locked --workspace`: PASS (54 PASS, 3 helpers/benchmarks ignorados deliberadamente);
+- `cargo build --locked --workspace`: PASS usando `target/sp3-11-qa`; la salida predeterminada estaba bloqueada por una instancia Desktop abierta y no se cerró el proceso del usuario.
+
+Revalidación humana requerida — HUMAN-QA-05 permanece FAIL hasta completarla:
+
+1. abrir una Execution ya capturada y confirmar que contexto, executable, argv, resultado y artifacts aparecen sin transcripción;
+2. guardar Knowledge introduciendo solo interpretación y fuente, comprobar el feedback visible y localizar la tarjeta en la misma Execution;
+3. preparar Replay/Retest sin modificar la invocación, comprobar que reutiliza executable/argv y queda listado sin ejecutarse;
+4. activar la modificación deliberada, comprobar que se distingue del origen y que placeholders/prerequisitos/límites siguen bajo decisión humana;
+5. confirmar que ningún artifact fue promovido automáticamente desde `CAPTURED`.
+
+No se continuó Export/Encrypted/RFC 3161 en este bloque, conforme al gate de revalidación solicitado.
