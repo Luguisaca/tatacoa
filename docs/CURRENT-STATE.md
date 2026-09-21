@@ -88,6 +88,16 @@ Debe detenerse ante:
 
 RFC 3161 fue promovido desde este horizonte a SP3.
 
+## Hallazgo de QA humano de producto
+
+El QA humano acumulativo de Desktop confirmó el flujo contexto autorizado → revisión explícita → ejecución sin shell → captura → artifacts → consulta de stdout/stderr. También detectó una desviación de producto: Knowledge/Replay y otras capacidades aparecen principalmente como formularios que exponen primitivas internas y obligan a reintroducir información ya registrada.
+
+El hallazgo se clasifica como **FAIL de producto/UX para la Usable Alpha actual**, no como invalidación del Core ni de los PASS técnicos anteriores. `SPRINT-03-PLAN.md` contiene ahora el contrato operativo: Desktop debe acompañar el trabajo de la pentester, reutilizar automáticamente contexto/Execution/evidencia conocidos, reservar interacción humana para interpretación/validación/decisiones reales y mantener explícitos los gates de autorización/seguridad.
+
+El QA integral de Desktop queda pausado después de validar artifacts hasta implementar esta corrección de experiencia.
+
 ## Siguiente paso
 
-Completar QA humano del flujo RFC 3161 hasta `TRUSTED`. La falta de evidencia histórica permanece `INDETERMINATE`; implementar el contrato definitivo de `HISTORICALLY_VALIDATED` está bloqueado por gate humano. La importación continuable conserva decisiones de materialización/formato todavía pendientes. Ningún merge a `main` ocurre sin aprobación humana explícita.
+Implementar incrementalmente la corrección de experiencia Desktop definida en `SPRINT-03-PLAN.md`, comenzando por el flujo principal Execution → Evidence/Knowledge/Replay con reutilización de datos y feedback visible. Después reanudar QA humano acumulativo y continuar con export/Encrypted v1/RFC 3161.
+
+`HISTORICALLY_VALIDATED` permanece bloqueado por gate humano y la importación continuable conserva decisiones de materialización/formato pendientes. Ningún merge a `main` ocurre sin aprobación humana explícita.
