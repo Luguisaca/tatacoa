@@ -251,3 +251,30 @@ Corrección aplicada en SP3-10:
 - añadir una regresión Desktop que comprueba los valores públicos del selector y rechaza las variantes obsoletas observadas durante QA.
 
 Revalidación humana requerida: repetir el formulario documentado de creación LAB_LEARNING sobre un workspace de QA nuevo/no inicializado y confirmar que el contexto completo se crea y aparece en el resumen. El hallazgo no se considera PASS hasta completar esa comprobación.
+
+
+### HUMAN-QA-03 — revisión contextual no visible antes de ejecutar
+
+Estado: **FIX APLICADO — REVALIDACIÓN HUMANA PENDIENTE**.
+
+Durante QA humano, `Revisar y ejecutar` no presentó de forma observable la revisión contextual antes de alcanzar el intento de ejecución. El frontend dependía de `window.confirm()` como único gate visual.
+
+Corrección aplicada en SP3-10:
+
+- reemplazar el confirm nativo del navegador para ejecución por una revisión persistente dentro de la UI de TATACOA;
+- mostrar Engagement, Security Profile, Scope, límite autorizado, Environment, Target, Session, executable y argumentos efectivos antes de habilitar la acción final;
+- separar explícitamente `Revisar antes de ejecutar` de `Confirmar y ejecutar`, con opción de cancelar;
+- conservar App API/Core como autoridad y no mover reglas de autorización al frontend;
+- añadir regresión Desktop que exige la presencia del gate explícito.
+
+Revalidación humana requerida: pulsar `Revisar antes de ejecutar`, comprobar que todavía no existe nueva execution, revisar todos los campos mostrados y solo entonces pulsar `Confirmar y ejecutar`.
+
+### HUMAN-QA-04 — executable bare-name no resuelto en Desktop Windows
+
+Estado: **EN INVESTIGACIÓN — SIN CAMBIO DE SEGURIDAD/RESOLUCIÓN**.
+
+En el mismo recorrido, `rustc` devolvió `program not found` desde `std::process::Command`, aunque otra PowerShell del usuario resolvió `C:\\Users\\Inarix\\.cargo\\bin\\rustc.exe` y `rustc --version` correctamente.
+
+La implementación Core continúa ejecutando `Command::new(executable).args(argv)` sin shell y no modifica el entorno. No se introduce `cmd.exe`, shell implícito, búsqueda propia ni mutación de PATH para ocultar el hallazgo.
+
+Siguiente discriminación humana: repetir el gate ya corregido usando la ruta absoluta verificada de `rustc.exe`. Si la ruta absoluta ejecuta correctamente, clasificar el fallo bare-name como diferencia del entorno heredado por el proceso Desktop y diseñar por separado la UX/resolución permitida; si también falla, investigar el spawn de Windows antes de modificar Core.
