@@ -4,12 +4,12 @@
 use std::str::FromStr;
 use tatacoa_app_api::{
     AppService, AuthorizationReview, ExportRequest, KnowledgeFromExecutionRequest,
-    KnowledgeRequest, NewWorkRequest, ReplayFromExecutionRequest, ReplayRequest, RunRequest,
-    TimestampRequest, TimestampVerifyRequest, WorkContext, WorkSummary,
+    KnowledgeRequest, NewWorkRequest, NoteFromExecutionRequest, ReplayFromExecutionRequest,
+    ReplayRequest, RunRequest, TimestampRequest, TimestampVerifyRequest, WorkContext, WorkSummary,
 };
 use tatacoa_core::{
     ArtifactId, ArtifactPreview, ContinuityState, Engagement, EngagementId, ExecutionId,
-    KnowledgeCard, Manifest, ReplayRecipe, SessionId, TimestampReport,
+    KnowledgeCard, Manifest, ReplayRecipe, SessionId, TimestampReport, ToolAssistance,
 };
 use tauri_plugin_dialog::DialogExt;
 
@@ -133,6 +133,20 @@ fn execution_workspace(
 }
 
 #[tauri::command]
+fn execution_assistance(
+    workspace: String,
+    engagement_id: String,
+    execution_id: String,
+) -> CommandResult<ToolAssistance> {
+    let engagement_id =
+        EngagementId::from_str(&engagement_id).map_err(|error| error.to_string())?;
+    let execution_id = ExecutionId::from_str(&execution_id).map_err(|error| error.to_string())?;
+    AppService::open(workspace)
+        .execution_assistance(&engagement_id, &execution_id)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 fn artifact_preview(
     workspace: String,
     engagement_id: String,
@@ -179,6 +193,16 @@ fn create_replay_from_execution(
 ) -> CommandResult<ReplayRecipe> {
     AppService::open(workspace)
         .create_replay_from_execution(request)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn create_note_from_execution(
+    workspace: String,
+    request: NoteFromExecutionRequest,
+) -> CommandResult<KnowledgeCard> {
+    AppService::open(workspace)
+        .create_note_from_execution(request)
         .map_err(|error| error.to_string())
 }
 
@@ -254,11 +278,13 @@ fn main() {
             authorization_review,
             execution,
             execution_workspace,
+            execution_assistance,
             artifact_preview,
             create_knowledge,
             create_replay,
             create_knowledge_from_execution,
             create_replay_from_execution,
+            create_note_from_execution,
             export_execution,
             request_timestamp,
             verify_timestamp,
@@ -319,5 +345,11 @@ mod tests {
         assert!(javascript.contains("create_replay_from_execution"));
         assert!(javascript.contains("executable_override:changed?"));
         assert!(javascript.contains("argv_template_override:changed?"));
+        for id in ["assistance-facts", "assistance-documentation", "note-form"] {
+            assert!(html.contains(&format!("id=\"{id}\"")));
+        }
+        assert!(javascript.contains("execution_assistance"));
+        assert!(javascript.contains("create_note_from_execution"));
+        assert!(html.contains("Edición estructurada opcional"));
     }
 }

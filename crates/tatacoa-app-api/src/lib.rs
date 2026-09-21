@@ -8,13 +8,13 @@ use tatacoa_core::{
     EngagementId, ExecutionContext, ExecutionId, ExportMode, KnowledgeCard, KnowledgeCardInput,
     KnowledgeReference, KnowledgeReviewStatus, Manifest, PlainExportAuthorization,
     ReplayPlaceholder, ReplayRecipe, ReplayRecipeInput, Result, SecretPassword, SecurityProfile,
-    Session, SessionId, TimestampObject, TimestampReport, TsaConfig, TsaTrustPolicy,
-    create_engagement, create_environment, create_knowledge_card, create_replay_recipe,
-    create_scope, create_session, create_target, execute, export_bundle, export_encrypted_bundle,
-    inspect_continuity, list_engagements, list_execution_manifests, list_sessions,
-    load_associated_knowledge, load_associated_replay, load_execution_context,
-    load_execution_manifest, pause_work, read_artifact_preview, request_timestamp, resume_work,
-    verify_timestamp_sidecar, verify_timestamp_sidecar_with_trust,
+    Session, SessionId, SourceClassification, TimestampObject, TimestampReport, ToolAssistance,
+    TsaConfig, TsaTrustPolicy, assist_execution, create_engagement, create_environment,
+    create_knowledge_card, create_replay_recipe, create_scope, create_session, create_target,
+    execute, export_bundle, export_encrypted_bundle, inspect_continuity, list_engagements,
+    list_execution_manifests, list_sessions, load_associated_knowledge, load_associated_replay,
+    load_execution_context, load_execution_manifest, pause_work, read_artifact_preview,
+    request_timestamp, resume_work, verify_timestamp_sidecar, verify_timestamp_sidecar_with_trust,
 };
 use zeroize::Zeroize;
 
@@ -123,6 +123,14 @@ pub struct KnowledgeFromExecutionRequest {
     pub defensive_context: String,
     pub references: Vec<KnowledgeReference>,
     pub related_techniques: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct NoteFromExecutionRequest {
+    pub engagement_id: EngagementId,
+    pub execution_id: ExecutionId,
+    pub note: String,
 }
 
 /// Replay preparation that reuses the source invocation unless the operator
@@ -317,6 +325,15 @@ impl AppService {
         Ok(manifest)
     }
 
+    pub fn execution_assistance(
+        &self,
+        engagement_id: &EngagementId,
+        execution_id: &ExecutionId,
+    ) -> Result<ToolAssistance> {
+        let manifest = self.execution(engagement_id, execution_id)?;
+        Ok(assist_execution(&manifest, None, None))
+    }
+
     pub fn artifact_preview(
         &self,
         engagement_id: &EngagementId,
@@ -440,6 +457,36 @@ impl AppService {
         })
     }
 
+    pub fn create_note_from_execution(
+        &self,
+        request: NoteFromExecutionRequest,
+    ) -> Result<KnowledgeCard> {
+        if request.note.trim().is_empty() {
+            return Err(tatacoa_core::Error::InvalidManifest(
+                "operator note must not be empty".to_owned(),
+            ));
+        }
+        let execution_id = request.execution_id.clone();
+        self.create_knowledge_from_execution(KnowledgeFromExecutionRequest {
+            engagement_id: request.engagement_id,
+            execution_id: request.execution_id,
+            source_reviewed: false,
+            why: "Operator note; relevance not assessed".to_owned(),
+            objective: "Operator note; objective not specified".to_owned(),
+            observe: request.note,
+            proves: "Not assessed by operator".to_owned(),
+            does_not_prove: "No conclusion or vulnerability was validated".to_owned(),
+            validation: "Human validation pending".to_owned(),
+            defensive_context: "Not provided by operator".to_owned(),
+            references: vec![KnowledgeReference {
+                classification: SourceClassification::OperatorNote,
+                locator: format!("execution:{execution_id}"),
+                title: "Operator note linked to Execution".to_owned(),
+            }],
+            related_techniques: Vec::new(),
+        })
+    }
+
     pub fn export(&self, request: ExportRequest) -> Result<()> {
         let manifest = load_execution_manifest(
             &self.workspace,
@@ -547,6 +594,44 @@ mod tests {
     use super::*;
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
+    use tatacoa_core::{
+        AssistanceLevel, AssistanceStatus, FactKind, LocalDocumentation,
+        LocalDocumentationProvider, SpecializedAdapter,
+    };
+
+    struct TestDocumentation;
+    impl LocalDocumentationProvider for TestDocumentation {
+        fn documentation_for(&self, executable: &str) -> Option<LocalDocumentation> {
+            Some(LocalDocumentation {
+                executable: executable.to_owned(),
+                title: "Local test documentation".to_owned(),
+                source_path: Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../docs/specs/ADAPTERS-KNOWLEDGE-REPLAY.md"),
+            })
+        }
+    }
+
+    struct TestAdapter;
+    impl SpecializedAdapter for TestAdapter {
+        fn matches(&self, _executable: &str) -> bool {
+            true
+        }
+        fn identifier(&self) -> &'static str {
+            "test-only-adapter"
+        }
+    }
+
+    struct MissingDocumentation;
+    impl LocalDocumentationProvider for MissingDocumentation {
+        fn documentation_for(&self, executable: &str) -> Option<LocalDocumentation> {
+            Some(LocalDocumentation {
+                executable: executable.to_owned(),
+                title: "Unverifiable local file".to_owned(),
+                source_path: Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../docs/specs/this-file-does-not-exist.md"),
+            })
+        }
+    }
 
     #[test]
     fn user_workflow_creates_runs_reopens_and_summarizes() -> Result<()> {
@@ -595,6 +680,49 @@ mod tests {
             max_stream_bytes: Some(64 * 1024),
         })?;
         let artifact = manifest.artifacts[0].clone();
+        let generic = service.execution_assistance(&work.engagement.id, &manifest.execution.id)?;
+        assert_eq!(generic.level, AssistanceLevel::Generic);
+        assert_eq!(generic.documentation, AssistanceStatus::Unavailable);
+        assert_eq!(generic.adapter, AssistanceStatus::Unavailable);
+        assert!(
+            generic
+                .facts
+                .iter()
+                .all(|fact| fact.kind == FactKind::ObservedFact)
+        );
+        assert!(
+            generic
+                .facts
+                .iter()
+                .all(|fact| fact.source.starts_with("manifest."))
+        );
+        let documented = tatacoa_core::assist_execution(&manifest, Some(&TestDocumentation), None);
+        assert_eq!(documented.level, AssistanceLevel::Documented);
+        assert!(
+            documented
+                .facts
+                .iter()
+                .any(|fact| fact.kind == FactKind::DocumentedFact
+                    && fact.source.contains("#sha256="))
+        );
+        let unavailable =
+            tatacoa_core::assist_execution(&manifest, Some(&MissingDocumentation), None);
+        assert_eq!(unavailable.level, AssistanceLevel::Generic);
+        assert_eq!(unavailable.documentation, AssistanceStatus::Unavailable);
+        assert!(
+            unavailable
+                .facts
+                .iter()
+                .all(|fact| fact.kind == FactKind::ObservedFact)
+        );
+        let adapted =
+            tatacoa_core::assist_execution(&manifest, Some(&TestDocumentation), Some(&TestAdapter));
+        assert_eq!(adapted.level, AssistanceLevel::Adapted);
+        assert_eq!(adapted.adapter, AssistanceStatus::Available);
+        assert_eq!(
+            service.execution(&work.engagement.id, &manifest.execution.id)?,
+            manifest
+        );
         let preview =
             service.artifact_preview(&work.engagement.id, &manifest.execution.id, &artifact.id)?;
         assert_eq!(preview.artifact.id, artifact.id);
@@ -626,6 +754,27 @@ mod tests {
         assert!(card.how.contains("argv[0]=\"--list\""));
         assert!(card.errors.contains("Recorded capture status"));
 
+        assert!(
+            service
+                .create_note_from_execution(NoteFromExecutionRequest {
+                    engagement_id: work.engagement.id.clone(),
+                    execution_id: manifest.execution.id.clone(),
+                    note: "   ".to_owned(),
+                })
+                .is_err()
+        );
+        let note = service.create_note_from_execution(NoteFromExecutionRequest {
+            engagement_id: work.engagement.id.clone(),
+            execution_id: manifest.execution.id.clone(),
+            note: "Operator interpretation only".to_owned(),
+        })?;
+        assert_eq!(note.observe, "Operator interpretation only");
+        assert_eq!(note.review_status, KnowledgeReviewStatus::Draft);
+        assert_eq!(
+            note.references[0].classification,
+            SourceClassification::OperatorNote
+        );
+
         let recipe = service.create_replay_from_execution(ReplayFromExecutionRequest {
             engagement_id: work.engagement.id.clone(),
             execution_id: manifest.execution.id.clone(),
@@ -645,7 +794,9 @@ mod tests {
 
         let execution_workspace =
             service.execution_workspace(&work.engagement.id, &manifest.execution.id)?;
-        assert_eq!(execution_workspace.knowledge_cards, vec![card]);
+        assert_eq!(execution_workspace.knowledge_cards.len(), 2);
+        assert!(execution_workspace.knowledge_cards.contains(&card));
+        assert!(execution_workspace.knowledge_cards.contains(&note));
         assert_eq!(execution_workspace.replay_recipes, vec![recipe]);
         assert!(
             execution_workspace

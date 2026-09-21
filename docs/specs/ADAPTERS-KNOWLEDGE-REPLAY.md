@@ -27,6 +27,14 @@ El Core gobierna. Un adapter interpreta y enriquece.
 
 Primer adapter: **Generic Execution Adapter**. No comenzar Alpha por Nmap.
 
+### Foundation SP3-12 de asistencia offline
+
+La captura genérica no depende de conocer la herramienta. Tres capacidades permanecen separadas: hechos observados derivados del manifest de Execution, documentación local suministrada por un proveedor registrado explícitamente y adapter especializado opcional. La ausencia de las dos últimas produce `UNAVAILABLE` sin degradar captura ni integridad. `GENERIC`, `DOCUMENTED` y `ADAPTED` son niveles descriptivos de asistencia, no assurance ni estado de Evidence.
+
+Los hechos observados señalan el campo de manifest/artifact de origen. Un hecho documentado exige un archivo local regular, no symlink, legible como UTF-8 y limitado a 64 KiB; señala su ruta y el SHA-256 de los bytes leídos. Ese digest permite identificar los bytes, no certifica su veracidad. Si el archivo no existe, es inválido o supera el límite, la documentación queda `UNAVAILABLE`. La interpretación humana se registra por separado como Knowledge borrador. Ninguna documentación se convierte automáticamente en conclusión, vulnerabilidad o Evidence.
+
+La implementación inicial no registra proveedores/adapters de producción ni ejecuta probes. No presupone `--help`, `-h`, `--version`, `man` o sintaxis GNU. Los contratos de proveedor/adapter se prueban con fixtures locales; un adapter futuro debe justificar por herramienta cualquier identificación, version probe, help probe o parser antes de ejecutarlo. Un probe documental no pertenece al engagement, no altera provenance y no crea artifacts/evidencia de la Execution.
+
 Lifecycle:
 
 `PROPOSED → RESEARCHED → EXPERIMENTAL → VALIDATED → SUPPORTED → DEPRECATED`

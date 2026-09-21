@@ -336,3 +336,16 @@ Revalidación humana requerida — HUMAN-QA-05 permanece FAIL hasta completarla:
 5. confirmar que ningún artifact fue promovido automáticamente desde `CAPTURED`.
 
 No se continuó Export/Encrypted/RFC 3161 en este bloque, conforme al gate de revalidación solicitado.
+
+## Bloque 12 — foundation de asistencia offline y nota profesional
+
+Rama `feat/sp3-12-offline-tool-assistance`, desde SP3-11. Estado: **implementado; QA humano pendiente**. HUMAN-QA-05 continúa **FAIL de producto/UX** hasta que Luis revalide el recorrido.
+
+- Core agrega un contrato de asistencia read-only: hechos observados con referencia al campo del manifest/artifact, documentación local opcional con localizador y digest del contenido, y adapters opcionales. Ninguno ejecuta probes ni modifica Execution, RAW, Evidence o provenance. Sin proveedor/adaptor registrado, `UNAVAILABLE` es explícito y la captura genérica conserva su operatividad Windows/Linux.
+- App API expone asistencia genérica y una acción de nota breve. La nota se persiste como Knowledge Card existente en `DRAFT`, fuente `OPERATOR_NOTE`, con campos no evaluados marcados explícitamente; no infiere vulnerabilidades ni valida Evidence. La ficha estructurada anterior permanece disponible de forma opcional.
+- Desktop presenta primero hechos observados y estado de ayuda documental; después ofrece añadir nota profesional. Replay/Retest conserva reutilización de origen y override deliberado. `GENERIC/DOCUMENTED/ADAPTED` no se presentan como confianza o garantía de herramienta.
+- No se añadieron dependencias ni se registró un catálogo cerrado. Los proveedores/adapters de prueba son fixtures, no soporte de producción. No se asume ningún flag de help/version universal.
+
+QA técnico SP3-12 en Windows 11 x64: `cargo fmt --check`, `cargo check --locked --workspace --all-targets`, `cargo clippy --locked --workspace --all-targets -- -D warnings`, `cargo test --locked --workspace`, `cargo build --locked --workspace --target-dir target/sp3-11-qa` y `node --check` del frontend: **PASS**. La salida aislada evita reemplazar una instancia Desktop abierta. Las pruebas cubren proveedor local válido, fuente faltante → `UNAVAILABLE`, ausencia de adapter/probe, nota vacía rechazada, Knowledge `DRAFT` con `OPERATOR_NOTE`, manifest sin cambios y Evidence `CAPTURED`. Linux no se ejecutó en este host: solo está instalado el target Rust `x86_64-pc-windows-msvc`; el contrato usa `std` multiplataforma y requiere QA Linux posterior.
+
+QA Windows propuesto: ejecutar/capturar una herramienta de prueba mediante ruta absoluta; abrir la Execution y comprobar hechos con fuentes `manifest.*`, estado documental `UNAVAILABLE` y ausencia de probes/red; guardar una nota breve y localizarla como Knowledge `DRAFT`; verificar que artifacts permanecen `CAPTURED`; preparar Replay sin ejecutarlo y comprobar origen/override explícito. Repetir con un executable desconocido permitido por el scope: la asistencia debe continuar `GENERIC`, nunca impedir la captura.

@@ -39,10 +39,12 @@
         <h3>Execution → comprensión → Replay / Retest</h3>
         <p id="execution-meta"></p>
         <section class="recorded-context" aria-labelledby="recorded-title"><h4 id="recorded-title">Lo registrado por TATACOA</h4><pre id="execution-context"></pre></section>
+        <section class="recorded-context" aria-labelledby="assistance-title"><h4 id="assistance-title">Entender resultado</h4><p id="assistance-level"></p><div id="assistance-facts" class="related-objects"></div><p id="assistance-documentation"></p><p>Los hechos observados no son conclusiones ni Evidence validada. La interpretación humana permanece separada.</p></section>
         <h4>Artifacts / evidencia capturada</h4><div id="artifacts"></div>
         <pre id="artifact-content" tabindex="0">Seleccione un artifact para verificarlo y abrir una vista previa.</pre>
         <p id="execution-feedback" class="feedback" role="status" aria-live="polite"></p>
-        <details open><summary>Entender el resultado / añadir interpretación</summary>
+        <form id="note-form"><label>Añadir nota profesional o interpretación breve<textarea id="operator-note" required></textarea></label><button type="submit">Guardar nota como Knowledge borrador</button></form>
+        <details><summary>Edición estructurada opcional de Knowledge Card</summary>
           <p class="workflow-help" id="knowledge-help">TATACOA reutiliza Execution, contexto, invocación, resultado y artifacts. Añada únicamente la interpretación que requiere criterio humano.</p>
           <form id="knowledge-form">
             <label><input type="checkbox" id="source-reviewed"> Fuentes revisadas por una persona</label>

@@ -6,7 +6,7 @@
 
 ## Rama incremental actual
 
-`feat/sp3-10-timestamp-trust`, heredada linealmente de SP3-01…SP3-09.
+`feat/sp3-12-offline-tool-assistance`, heredada linealmente de SP3-01…SP3-11. HUMAN-QA-05 permanece FAIL hasta revalidación de usuario.
 
 Este documento es la fuente operativa para saber dónde está el proyecto y qué sigue. No sustituye PROJECT, PRD, ROADMAP, ARCHITECTURE ni DECISIONS.
 
@@ -98,8 +98,10 @@ La corrección incremental del flujo principal está implementada en `feat/sp3-1
 
 El QA técnico de esta corrección es PASS. **HUMAN-QA-05 continúa como FAIL de producto/UX pendiente de revalidación humana**; los PASS técnicos y humanos anteriores se conservan. Desktop muestra feedback persistente dentro de la Execution y permite localizar el Knowledge/Replay recién creado, pero la suficiencia del recorrido solo puede cerrarse con una nueva prueba de usuario.
 
+SP3-12 añade asistencia genérica offline de lectura: hechos de Execution con origen de manifest, niveles funcionales `GENERIC/DOCUMENTED/ADAPTED` y contratos opcionales de documentación local/adapters. No hay proveedor o adapter de producción registrado ni probes automáticos; una herramienta desconocida sigue ejecutándose/capturándose genéricamente y la ayuda documental indica `UNAVAILABLE`. Desktop muestra primero los hechos y permite guardar una nota breve como Knowledge borrador sin recorrer todos sus campos estructurados. Esto está implementado para QA técnico, no aprobado como experiencia de usuario.
+
 ## Siguiente paso
 
-Revalidar HUMAN-QA-05 sobre el flujo Execution → Artifact/Evidence → comprensión/contexto → Replay/Retest de `feat/sp3-11-execution-workflow`. Export/Encrypted v1/RFC 3161 no avanzan hasta completar esa revalidación humana.
+Revalidar HUMAN-QA-05/SP3-12 sobre el flujo Execution → Artifact/Evidence → comprensión/contexto → Replay/Retest de `feat/sp3-12-offline-tool-assistance`. Export/Encrypted v1/RFC 3161 no avanzan hasta completar esa revalidación humana.
 
 `HISTORICALLY_VALIDATED` permanece bloqueado por gate humano y la importación continuable conserva decisiones de materialización/formato pendientes. Ningún merge a `main` ocurre sin aprobación humana explícita.

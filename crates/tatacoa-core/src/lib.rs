@@ -21,6 +21,7 @@ mod replay;
 mod timestamp;
 mod timestamp_signature;
 mod timestamp_trust;
+mod tool_assistance;
 mod validation;
 mod workspace;
 
@@ -63,6 +64,10 @@ pub use timestamp::{
     TimestampCheck, TimestampCheckStatus, TimestampObject, TimestampReport, TsaConfig,
     TsaTrustPolicy, compute_plain_root, request_timestamp, verify_timestamp_sidecar,
     verify_timestamp_sidecar_with_trust,
+};
+pub use tool_assistance::{
+    AssistanceFact, AssistanceLevel, AssistanceStatus, FactKind, LocalDocumentation,
+    LocalDocumentationProvider, SpecializedAdapter, ToolAssistance, assist_execution,
 };
 pub(crate) use validation::{
     validate_artifact_provenance, validate_knowledge_card, validate_replay_recipe,
