@@ -19,6 +19,7 @@ mod paths;
 mod policy;
 mod replay;
 mod timestamp;
+mod timestamp_signature;
 mod validation;
 mod workspace;
 

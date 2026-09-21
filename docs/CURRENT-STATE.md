@@ -6,7 +6,7 @@
 
 ## Rama incremental actual
 
-`feat/sp3-08-timestamp-user-flow`, heredada linealmente de SP3-01…SP3-07.
+`feat/sp3-09-timestamp-signature`, heredada linealmente de SP3-01…SP3-08.
 
 Este documento es la fuente operativa para saber dónde está el proyecto y qué sigue. No sustituye PROJECT, PRD, ROADMAP, ARCHITECTURE ni DECISIONS.
 
@@ -15,7 +15,7 @@ Este documento es la fuente operativa para saber dónde está el proyecto y qué
 - Sprint 01: implementado y validado dentro de su alcance documentado.
 - Sprint 02 / Alpha Expansion: implementado y validado dentro de su alcance documentado.
 - Encrypted v1 + hardening de password: integrado y con QA técnico/humano previo; **validación integral de usuario pendiente** hasta disponer de la Usable Alpha.
-- Sprint 03 / Usable Alpha: en implementación incremental; App API, Desktop E2E, capacidades de producto, continuidad, hardening y foundation RFC 3161 hasta `BOUND` están implementados con QA técnico. QA humano integral y los gates RFC 3161 restantes siguen pendientes.
+- Sprint 03 / Usable Alpha: en implementación incremental; App API, Desktop E2E, capacidades de producto, continuidad, hardening y RFC 3161 hasta `SIGNATURE_VALID` están implementados con QA técnico. QA humano integral, `TRUSTED` y el gate histórico siguen pendientes.
 
 Los PASS técnicos existentes se conservan. Cambiar el estado documental de Encrypted v1 no invalida pruebas previas: reconoce que todavía falta probarlo dentro de una experiencia real de producto.
 
@@ -58,9 +58,9 @@ Un paquete TATACOA compatible recibido de otra persona debe poder validarse y, s
 
 ## RFC 3161
 
-Objeto, momento, stack RustCrypto, transporte síncrono, TLS `rustls` y provider `ring` fueron aprobados. SP3-07 implementa solicitud, sidecar y verificación offline hasta assurance `BOUND`; SP3-08 los expone al usuario sin TSA predeterminada ni red silenciosa.
+Objeto, momento, stack RustCrypto, transporte síncrono, TLS `rustls` y provider `ring` fueron aprobados. SP3-07 implementa solicitud, sidecar y verificación offline; SP3-08 los expone al usuario sin TSA predeterminada ni red silenciosa; SP3-09 valida el contrato CMS/RFC 3161 y eleva hasta `SIGNATURE_VALID`.
 
-Permanecen abiertos dos gates: allowlist definitiva de algoritmos de firma TSA y contrato/mecanismo definitivo de revocación/validación histórica. Hasta resolverlos no se afirma `SIGNATURE_VALID`, `TRUSTED` ni `HISTORICALLY_VALIDATED`.
+La allowlist de firma está cerrada. `TRUSTED` debe implementar path PKIX, anchor TSA explícito, validez al `genTime`, EKU y policy aceptada. El contrato definitivo de revocación/validación histórica permanece en gate; no se afirma `HISTORICALLY_VALIDATED`.
 
 ## Regla de ejecución para agentes
 
@@ -90,4 +90,4 @@ RFC 3161 fue promovido desde este horizonte a SP3.
 
 ## Siguiente paso
 
-Completar QA técnico y QA humano del flujo SP3-08. La implementación criptográfica RFC 3161 por encima de `BOUND` se detiene en los dos gates abiertos. La importación continuable conserva decisiones de materialización/formato todavía pendientes. Ningún merge a `main` ocurre sin aprobación humana explícita.
+Completar `TRUSTED` con configuración explícita y QA humano del flujo RFC 3161. Preparar infraestructura histórica sin elevar resultados sobre `INDETERMINATE`. La importación continuable conserva decisiones de materialización/formato todavía pendientes. Ningún merge a `main` ocurre sin aprobación humana explícita.

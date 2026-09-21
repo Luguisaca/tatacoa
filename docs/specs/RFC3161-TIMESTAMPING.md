@@ -2,7 +2,7 @@
 
 ## Estado
 
-**OBJETO, MOMENTO Y FOUNDATION BOUND IMPLEMENTADOS; FIRMA/TRUST/HISTÓRICO PENDIENTES DE GATES.**
+**OBJETO, MOMENTO, BOUND Y SIGNATURE_VALID IMPLEMENTADOS; TRUST EN IMPLEMENTACIÓN; HISTÓRICO EN GATE.**
 
 RFC 3161 aporta una afirmación de tiempo confiable sobre un `messageImprint`; no demuestra autoría ni reemplaza integridad, provenance o Validación Humana.
 
@@ -43,10 +43,16 @@ La solicitud debe usar SHA-256, nonce generado por TATACOA y `certReq=true`. La 
 
 Los roots TLS no son trust anchors TSA. Una respuesta alcanza `BOUND` al coincidir estructura, SHA-256, imprint y —durante la solicitud— nonce; esto no demuestra firma, identidad, EKU, cadena, trust o revocación.
 
+## Contrato `SIGNATURE_VALID`
+
+Se exige un único `SignerInfo`, certificado firmante identificado inequívocamente, `signedAttrs` DER, `content-type=id-ct-TSTInfo`, `message-digest` recalculado localmente, binding `SigningCertificateV2`/ESSCertIDv2 y firma criptográfica correcta. El ESSCertID heredado basado en SHA-1 se rechaza. La solicitud solo persiste el sidecar cuando la respuesta alcanza al menos `SIGNATURE_VALID`.
+
+Allowlist Alpha: RSA PKCS#1 v1.5 + SHA-256/384/512, RSA-PSS + SHA-256/384/512, ECDSA P-256 + SHA-256 y ECDSA P-384 + SHA-384. SHA-1 produce `FAIL`; DSA, Ed25519 y algoritmos no listados producen `UNSUPPORTED`. Una firma incorrecta con algoritmo soportado produce `FAIL`.
+
 ## Assurance y checks
 
 Niveles: `PRESENT → BOUND → SIGNATURE_VALID → TRUSTED → HISTORICALLY_VALIDATED`.
 
-Cada check usa `PASS`, `FAIL`, `NOT_EVALUATED`, `INDETERMINATE` o `UNSUPPORTED`. SP3-07 no eleva por encima de `BOUND`. Al verificar solo un `.tsr` offline, el nonce queda `NOT_EVALUATED` porque no se conserva la petición original; el `messageImprint` sí se recalcula desde el objeto.
+Cada check usa `PASS`, `FAIL`, `NOT_EVALUATED`, `INDETERMINATE` o `UNSUPPORTED`. Al verificar solo un `.tsr` offline, el nonce queda `NOT_EVALUATED` porque no se conserva la petición original; el `messageImprint` sí se recalcula desde el objeto.
 
-Permanecen sujetos a gate humano la allowlist definitiva de algoritmos de firma TSA y el mecanismo de revocación/validación histórica. Un algoritmo no soportado se reporta `UNSUPPORTED`, no como firma inválida.
+`TRUSTED` permanece separado: requiere path PKIX contra anchors TSA explícitos, validez al `genTime`, EKU `id-kp-timeStamping` y policy aceptada. El trust HTTPS nunca autoriza automáticamente una TSA. `HISTORICALLY_VALIDATED` continúa en gate: sin evidencia histórica suficiente de revocación el resultado es `INDETERMINATE`, y la verificación offline nunca obtiene recursos de red.

@@ -145,9 +145,9 @@ pub fn request_timestamp(
     let request = encode_request(&imprint, &nonce)?;
     let response = send_request(config, &request)?;
     let report = inspect_response(&response, &imprint, Some(&nonce))?;
-    if report.assurance != TimestampAssurance::Bound {
+    if report.assurance != TimestampAssurance::SignatureValid {
         return Err(Error::Timestamp(
-            "TSA response was not bound to the requested object and nonce".to_owned(),
+            "TSA response did not satisfy the SIGNATURE_VALID contract".to_owned(),
         ));
     }
     write_sidecar_new(sidecar, &response)?;
@@ -293,9 +293,12 @@ fn inspect_response(
     let content = signed
         .encap_content_info
         .econtent
+        .as_ref()
         .ok_or_else(|| Error::Timestamp("CMS token has detached TSTInfo".to_owned()))?;
     let tst = TstInfo::from_der(content.value())
         .map_err(|error| Error::Timestamp(format!("decode TSTInfo: {error}")))?;
+    let signature =
+        crate::timestamp_signature::evaluate_signature(&signed, content.value(), TST_INFO_OID);
 
     let algorithm = if tst.message_imprint.hash_algorithm.oid == SHA256_OID {
         TimestampCheckStatus::Pass
@@ -312,6 +315,7 @@ fn inspect_response(
     let bound = algorithm == TimestampCheckStatus::Pass
         && imprint == TimestampCheckStatus::Pass
         && !matches!(nonce, TimestampCheckStatus::Fail);
+    let signature_valid = signature.is_valid();
     let checks = vec![
         check(
             "structure",
@@ -336,14 +340,39 @@ fn inspect_response(
         ),
         check(
             "cms_signature",
-            TimestampCheckStatus::NotEvaluated,
-            "signature allowlist gate remains open",
+            signature.signature,
+            "cryptographic signature over CMS signedAttrs",
         ),
         check(
             "signer_certificate",
-            TimestampCheckStatus::NotEvaluated,
-            "ESSCertIDv2 identification is pending",
+            signature.signer_certificate,
+            "certificate selected unambiguously by SignerInfo",
         ),
+        check(
+            "ess_certificate",
+            signature.ess_certificate,
+            "SigningCertificateV2 binds the signer certificate",
+        ),
+        check(
+            "signed_attributes",
+            signature.signed_attributes,
+            "signedAttrs are present and DER-encoded for verification",
+        ),
+        check(
+            "content_type",
+            signature.content_type,
+            "signed content-type matches id-ct-TSTInfo",
+        ),
+        check(
+            "content_message_digest",
+            signature.message_digest,
+            "signed message-digest matches local TSTInfo digest",
+        ),
+        TimestampCheck {
+            name: "signature_algorithm".to_owned(),
+            status: signature.algorithm,
+            detail: signature.algorithm_detail,
+        },
         check(
             "tsa_trust",
             TimestampCheckStatus::NotEvaluated,
@@ -361,7 +390,9 @@ fn inspect_response(
         ),
     ];
     Ok(TimestampReport {
-        assurance: if bound {
+        assurance: if bound && signature_valid {
+            TimestampAssurance::SignatureValid
+        } else if bound {
             TimestampAssurance::Bound
         } else {
             TimestampAssurance::Present
@@ -501,8 +532,33 @@ fn decode_sha256(value: &str) -> Result<[u8; 32]> {
 }
 
 #[cfg(test)]
+#[allow(clippy::chunks_exact_to_as_chunks, clippy::expect_used)]
 mod tests {
     use super::*;
+
+    fn decode_hex(value: &str) -> Vec<u8> {
+        value
+            .trim()
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| {
+                u8::from_str_radix(std::str::from_utf8(pair).expect("ASCII hex"), 16)
+                    .expect("valid hex")
+            })
+            .collect()
+    }
+
+    fn signature_fixture() -> Vec<u8> {
+        decode_hex(include_str!("../tests/fixtures/rfc3161-rsa-sha256.tsr.hex"))
+    }
+
+    fn fixture_imprint() -> [u8; 32] {
+        [
+            0xf2, 0xb0, 0x4e, 0x5a, 0x87, 0xe6, 0xca, 0x68, 0x40, 0x67, 0x94, 0x71, 0xc7, 0xaa,
+            0x09, 0x57, 0xcb, 0xe5, 0xdd, 0xad, 0x1a, 0x9c, 0x64, 0xce, 0xff, 0x94, 0x50, 0xca,
+            0x3a, 0x34, 0xfc, 0x98,
+        ]
+    }
 
     #[test]
     fn request_is_sha256_certreq_and_contains_nonce() -> Result<()> {
@@ -553,6 +609,68 @@ mod tests {
         assert!(inspect_response(b"not DER", &[0; 32], None).is_err());
         let oversized = vec![0; usize::try_from(MAX_TIMESTAMP_RESPONSE_BYTES + 1).unwrap_or(0)];
         assert!(inspect_response(&oversized, &[0; 32], None).is_err());
+    }
+
+    #[test]
+    fn valid_cms_contract_reaches_signature_valid_but_not_trusted() -> Result<()> {
+        let report = inspect_response(&signature_fixture(), &fixture_imprint(), None)?;
+        assert_eq!(report.assurance, TimestampAssurance::SignatureValid);
+        for name in [
+            "cms_signature",
+            "signer_certificate",
+            "ess_certificate",
+            "signed_attributes",
+            "content_type",
+            "content_message_digest",
+            "signature_algorithm",
+        ] {
+            assert_eq!(
+                report
+                    .checks
+                    .iter()
+                    .find(|check| check.name == name)
+                    .map(|check| check.status),
+                Some(TimestampCheckStatus::Pass),
+                "check {name}"
+            );
+        }
+        assert_eq!(
+            report
+                .checks
+                .iter()
+                .find(|check| check.name == "tsa_trust")
+                .map(|check| check.status),
+            Some(TimestampCheckStatus::NotEvaluated)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn tampered_supported_signature_is_fail_not_unsupported() -> Result<()> {
+        let mut response = signature_fixture();
+        let last = response
+            .last_mut()
+            .expect("the timestamp fixture is non-empty");
+        *last ^= 1;
+        let report = inspect_response(&response, &fixture_imprint(), None)?;
+        assert_eq!(report.assurance, TimestampAssurance::Bound);
+        assert_eq!(
+            report
+                .checks
+                .iter()
+                .find(|check| check.name == "cms_signature")
+                .map(|check| check.status),
+            Some(TimestampCheckStatus::Fail)
+        );
+        assert_eq!(
+            report
+                .checks
+                .iter()
+                .find(|check| check.name == "signature_algorithm")
+                .map(|check| check.status),
+            Some(TimestampCheckStatus::Pass)
+        );
+        Ok(())
     }
 
     #[test]

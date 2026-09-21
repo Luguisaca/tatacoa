@@ -300,7 +300,7 @@ En Linux use `./target/debug/tatacoa` y `./target/debug/tatacoa-verify`; sustitu
 
 Un PASS en WSL2 no sustituye Kali o Parrot. Un fallo debe conservarse como hallazgo hasta determinar si corresponde al producto, al entorno o al procedimiento.
 
-## Caso 7 — RFC 3161 explícito (SP3-08)
+## Caso 7 — RFC 3161 explícito (SP3-09)
 
 Use únicamente una TSA de laboratorio/autorizada. TATACOA no configura una TSA predeterminada y exportar no debe producir tráfico de red.
 
@@ -311,17 +311,17 @@ $Sidecar = "$PlainBundle.tsr"
 & $Verifier $PlainBundle --timestamp-sidecar $Sidecar --timestamp-mode plain
 ```
 
-Resultados esperados en la foundation actual:
+Resultados esperados:
 
-- se crea un único `.tsr` DER solo después de que la respuesta coincida con objeto y nonce;
-- assurance máximo `BOUND`;
-- firma, certificado, EKU, trust y validación histórica permanecen `NOT_EVALUATED` o `INDETERMINATE`;
+- se crea un único `.tsr` DER solo después de que la respuesta coincida con objeto y nonce y cumpla el contrato `SIGNATURE_VALID`;
+- una TSA compatible muestra `SIGNATURE_VALID`, con los checks CMS, ESSCertIDv2, certificado firmante, atributos y firma en `PASS`;
+- EKU, path PKIX, trust TSA y validación histórica todavía permanecen `NOT_EVALUATED` o `INDETERMINATE`; nunca deben inferirse del trust HTTPS;
 - la verificación offline no contacta la TSA;
 - alterar el bundle, usar modo incorrecto, truncar/corromper el sidecar o exceder 4 MiB falla sin aceptar el timestamp;
 - repetir la solicitud contra un sidecar existente no lo sobrescribe;
 - una TSA ausente o fallida no modifica ni invalida el bundle exportado.
 
-Para Encrypted use `--mode encrypted`; el imprint corresponde a los bytes exactos del archivo final y no requiere descifrarlo. No interprete `BOUND` como firma válida, TSA confiable o validación histórica.
+Para Encrypted use `--mode encrypted`; el imprint corresponde a los bytes exactos del archivo final y no requiere descifrarlo. No interprete `SIGNATURE_VALID` como TSA confiable ni como validación histórica.
 
 ## Cierre y manejo de resultados
 

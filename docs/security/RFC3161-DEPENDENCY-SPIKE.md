@@ -2,7 +2,7 @@
 
 ## Estado
 
-**GATE APROBADO — INTEGRACIÓN PARCIAL EN SP3-07.** Investigación realizada el 2026-09-20. Validación Humana aprobó el stack RustCrypto estable, `ureq 3`, `rustls >=0.23.45` y `ring`. Los gates de allowlist definitiva de firmas y validación histórica/revocación continúan abiertos.
+**GATE DE FIRMA APROBADO — INTEGRACIÓN EN SP3-09.** Investigación iniciada el 2026-09-20. Validación Humana aprobó el stack RustCrypto estable, `ureq 3`, `rustls >=0.23.45`, `ring` y la allowlist D-044. El gate de validación histórica/revocación continúa abierto.
 
 Toolchain TATACOA: Rust 1.98. Todas las opciones listadas declaran un MSRV compatible. Las fuentes primarias consultadas fueron metadata crates.io, documentación/repositorios upstream RustCrypto, rustls, reqwest/ureq y RustSec.
 
@@ -15,7 +15,7 @@ Toolchain TATACOA: Rust 1.98. Todas las opciones listadas declaran un MSRV compa
 | `cms` | 0.2.3 / 0.3.0-pre.2 | Parsear CMS `SignedData` del token | RustCrypto; Apache-2.0 OR MIT; pre-release 0.3 requiere 1.85 | `der`, `spki`, `x509-cert`; builders opcionales amplían criptografía | Representación CMS y atributos | Parsear no equivale a verificar firma/certificado; 0.3 es pre-release y no coincide con `x509-tsp 0.1` |
 | `x509-cert` | 0.2.x / 0.3.0 | Certificados y extensiones RFC 5280 | RustCrypto; Apache-2.0 OR MIT; 0.3 requiere 1.85 | `der`, `spki`, `signature` opcional | Parseo X.509 y acceso a EKU/extensiones | No ofrece por sí solo un validador completo de path/revocación/política TSA |
 | `rustls` | **>=0.23.45** | TLS del transporte HTTP | Activo; Apache-2.0 OR ISC OR MIT; 1.71 | provider `ring` o `aws-lc-rs`, `rustls-webpki` | TLS y autenticación del servidor configurado | TLS no valida el token RFC 3161. Versiones 0.23.13–0.23.44 están afectadas por RUSTSEC-2026-0285 |
-| `rustls-webpki` | **>=0.103.10** | Validación WebPKI usada por TLS | Activo; ISC; 1.71 | provider criptográfico | Path validation para casos WebPKI/TLS | No equivale automáticamente a propósito `id-kp-timeStamping`, validación histórica o revocación TSA. Versiones anteriores tienen advisories 2026 de CRL/name constraints/panic |
+| `rustls-webpki` | **0.103.15 (mínimo aprobado 0.103.13)** | Firma y futura validación PKIX TSA, además del uso transitivo TLS | Activo; ISC; 1.71 | provider `ring` | Verificación de firmas y path validation | Requiere configuración TSA explícita; no aporta por sí solo política RFC 3161 ni validación histórica/revocación |
 | `reqwest` | 0.12.24 o 0.13.5 | POST `application/timestamp-query` y límites HTTP | Activo; MIT OR Apache-2.0; 1.64/1.85 | Tokio, Hyper, rustls opcional | Cliente maduro, timeouts y límites | Superficie grande e introduce runtime async incluso usando API blocking. Debe usar `default-features=false` y rustls explícito; `default-tls` queda prohibido |
 | `ureq` | 3.4.2 | Transporte HTTP síncrono acotado | Activo; MIT OR Apache-2.0; 1.85 | rustls opcional, `webpki-roots` opcional | Menor superficie y evita decidir async runtime | No aporta TSP/CMS; roots y provider deben configurarse explícitamente; redirects/proxy deben restringirse |
 | `tsp-http-client` | 0.1.0 | Construcción + envío TSP | Actividad limitada; MPL-2.0; MSRV no declarado | `ureq`, `x509-tsp`, `cms`, `der`, `chrono`, `rand` | Solicita y serializa una respuesta | Upstream declara que **no verifica la firma**; ejemplo usa TSA HTTP fija; licencia y política de transporte requieren revisión. No recomendado como autoridad |
@@ -25,7 +25,7 @@ Toolchain TATACOA: Rust 1.98. Todas las opciones listadas declaran un MSRV compa
 ## Advisories y mantenimiento
 
 - RustSec RUSTSEC-2026-0285 exige `rustls >=0.23.45` para la rama estable 0.23.
-- Para `rustls-webpki` se toma como piso 0.103.10 por los advisories 2026 de CRL, name constraints y parsing. Debe repetirse auditoría contra el `Cargo.lock` exacto antes de integrar.
+- Para `rustls-webpki` se toma como piso aprobado 0.103.13; SP3-09 fija 0.103.15 estable con features `ring` y `std`. No se adopta el prerelease 0.104.
 - No se identificó en la consulta manual un advisory específico vigente para `der`, `cms`, `x509-cert`, `x509-tsp`, `reqwest` o `ureq`; esto **no sustituye** `cargo audit`/RustSec sobre el lockfile resultante.
 - `cargo-audit` no está instalado en el entorno actual; no se instaló por conveniencia. La integración deberá ejecutar una auditoría automatizada del lockfile además de esta revisión manual.
 - `cms 0.3.0-pre.2` y `trackone-rfc3161 0.2.0-beta.1` son prereleases y elevan el riesgo de estabilidad.
@@ -53,5 +53,4 @@ La ruta recomendada añade dos grupos: formatos RustCrypto y transporte `ureq`/r
 
 Se resolvieron stack, transporte y provider TLS. Todavía se requiere decidir:
 
-1. allowlist definitiva de algoritmos de firma TSA;
-2. contrato/mecanismo definitivo de revocación y validación histórica para afirmar `HISTORICALLY_VALIDATED`.
+1. contrato/mecanismo definitivo de revocación y validación histórica para afirmar `HISTORICALLY_VALIDATED`.

@@ -185,3 +185,19 @@ QA humano propuesto:
 6. confirmar que los checks de firma/trust/histórico no aparecen como `PASS`.
 
 Bloqueado deliberadamente para el siguiente incremento criptográfico: allowlist de algoritmos de firma y contrato de revocación/validación histórica.
+
+## Bloque 09 — firma CMS/RFC 3161
+
+Rama local: `feat/sp3-09-timestamp-signature`, creada desde el bloque 08.
+
+Implementado en Core:
+
+- contrato CMS completo para `SIGNATURE_VALID`: único `SignerInfo`, certificado inequívoco, atributos firmados, content-type, message-digest local, ESSCertIDv2 y firma criptográfica;
+- allowlist D-044 con separación `FAIL`/`UNSUPPORTED` y validación estricta de parámetros RSA-PSS, RSA PKCS#1 v1.5 y ECDSA;
+- `rustls-webpki 0.103.15`/`ring 0.17.14` para primitivas mantenidas; no se implementaron primitivas propias;
+- persistencia de un sidecar solicitado solo cuando alcanza `SIGNATURE_VALID`;
+- fixture local RSA/SHA-256 y pruebas negativas de tampering, parámetros, duplicados y algoritmos rechazados/no soportados.
+
+Límite deliberado: `SIGNATURE_VALID` no implica confianza en la TSA. Path PKIX, anchor TSA explícito, validez al `genTime`, EKU y policy quedan para el siguiente bloque. `HISTORICALLY_VALIDATED` permanece cerrado y `historical_revocation` sigue `INDETERMINATE`.
+
+QA humano propuesto: solicitar a una TSA explícita cuyo perfil esté en la allowlist, confirmar `SIGNATURE_VALID`; alterar el sidecar y confirmar `cms_signature=FAIL`; probar una TSA fuera de allowlist y confirmar `UNSUPPORTED`, nunca `TRUSTED`.

@@ -2648,6 +2648,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
 
 [[package]]
+name = "pkcs1"
+version = "0.7.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c8ffb9f10fa047879315e6625af03c164b16962a5368d724ed16323b68ace47f"
+dependencies = [
+ "der",
+ "spki",
+]
+
+[[package]]
 name = "pkg-config"
 version = "0.3.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3636,7 +3646,10 @@ dependencies = [
  "der",
  "getrandom 0.4.3",
  "hkdf",
+ "pkcs1",
+ "ring",
  "rustls",
+ "rustls-webpki",
  "serde",
  "serde_json",
  "sha2 0.11.0",
