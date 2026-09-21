@@ -371,4 +371,18 @@ mod tests {
         assert!(javascript.contains("pendingResume"));
         assert!(!javascript.contains("confirm(`REVALIDACIÓN CONTEXTUAL"));
     }
+
+    #[test]
+    fn replay_preparation_is_optional_and_never_autoexecutes() {
+        let html = include_str!("../ui/index.html");
+        let javascript = include_str!("../ui/app.js");
+        assert!(html.contains("Opciones avanzadas solo si son necesarias"));
+        assert!(html.contains("id=\"replay-limits\""));
+        assert!(!html.contains("id=\"replay-limits\" required"));
+        assert!(javascript.contains("function prepareRetest(recipe)"));
+        assert!(javascript.contains("if(recipe.placeholders.length)return showError"));
+        assert!(javascript.contains("pendingRecipe=recipe;cancelRun()"));
+        assert!(javascript.contains("await getAuthorizationReview()"));
+        assert!(javascript.contains("Comparación de metadatos registrados"));
+    }
 }

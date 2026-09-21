@@ -362,3 +362,15 @@ Rama `feat/sp3-13-desktop-workflow-continuity`, desde SP3-12. **Implementado; QA
 - feedback de creación, captura, pausa y reanudación queda en el contexto de trabajo. No se cambian políticas ni estados de Evidence.
 
 QA técnico de frontera: sintaxis JavaScript, `cargo fmt --check`, `cargo check --locked --workspace --all-targets`, Clippy estricto y pruebas de App API/Desktop: PASS. HUMAN-QA-05 sigue FAIL hasta recorrido humano completo. Los bloques siguientes integran Replay y entrega sin alterar criptografía.
+
+## Bloque 14 — preparación de Replay/Retest desde Execution
+
+Rama `feat/sp3-14-replay-retest-flow`, desde SP3-13. **Implementado; QA humano pendiente.**
+
+- la preparación normal no exige transcribir executable, argv, contexto, placeholders, prerequisitos ni límites adicionales: App API reutiliza invocación y, cuando no se indican límites adicionales, el límite de autorización del Scope registrado; el Core conserva la exigencia de límites explícitos en toda receta;
+- las decisiones no triviales permanecen en opciones avanzadas, incluido override deliberado; parsing de booleanos de placeholders rechaza valores ambiguos;
+- cada receta queda visible junto a su Execution y ofrece “usar como base para retest”; ello solo prepara el formulario de ejecución, no ejecuta la herramienta. El gate de revisión contextual vuelve a mostrar el Scope actual, límites/prerequisitos de receta y cualquier cambio de invocación antes de la confirmación final;
+- recetas con placeholders o argumentos que el editor no puede representar exactamente no se convierten silenciosamente en una ejecución; se reporta el límite;
+- comparación read-only entre executions del mismo engagement muestra estado, exit code y diferencias de digest/tamaño registrados sin deducir vulnerabilidad, reproducción ni Evidence validada. La relación de comparación no se persiste como nuevo modelo de retest.
+
+QA de frontera: `node --check`, `cargo fmt`, check, Clippy estricto y tests App API/Desktop: PASS. La prueba negativa incluye aislamiento entre engagements para asistencia y creación de Replay. HUMAN-QA-05 continúa FAIL hasta revalidación humana acumulativa.

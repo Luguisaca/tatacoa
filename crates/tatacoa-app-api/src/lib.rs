@@ -442,6 +442,16 @@ impl AppService {
         request: ReplayFromExecutionRequest,
     ) -> Result<ReplayRecipe> {
         let manifest = self.execution(&request.engagement_id, &request.execution_id)?;
+        let authorization_limits = if request.authorization_limits.is_empty() {
+            let context = manifest.context.as_ref().ok_or_else(|| {
+                tatacoa_core::Error::InvalidManifest(
+                    "legacy execution has no scope boundary for replay preparation".to_owned(),
+                )
+            })?;
+            vec![context.scope.authorization_boundary.clone()]
+        } else {
+            request.authorization_limits
+        };
         self.create_replay(ReplayRequest {
             engagement_id: request.engagement_id,
             execution_id: request.execution_id,
@@ -453,7 +463,7 @@ impl AppService {
                 .unwrap_or(manifest.execution.invocation.argv),
             placeholders: request.placeholders,
             prerequisites: request.prerequisites,
-            authorization_limits: request.authorization_limits,
+            authorization_limits,
         })
     }
 
@@ -781,12 +791,41 @@ mod tests {
             executable_override: None,
             argv_template_override: None,
             placeholders: Vec::new(),
-            prerequisites: vec!["Local test binary".to_owned()],
-            authorization_limits: vec!["Only this test workspace".to_owned()],
+            prerequisites: Vec::new(),
+            authorization_limits: Vec::new(),
         })?;
         assert_eq!(recipe.source_execution_id, manifest.execution.id);
         assert_eq!(recipe.executable, manifest.execution.invocation.executable);
         assert_eq!(recipe.argv_template, manifest.execution.invocation.argv);
+        assert_eq!(recipe.authorization_limits, vec!["Only this test process"]);
+        let other_work = service.create_work(NewWorkRequest {
+            engagement_name: "Other isolated engagement".to_owned(),
+            security_profile: SecurityProfile::LabLearning,
+            scope_name: "Other scope".to_owned(),
+            authorization_boundary: "Only the other test process".to_owned(),
+            environment_name: "Other host".to_owned(),
+            target_label: "Other target".to_owned(),
+            target_locator: "other.local".to_owned(),
+            session_name: "Other session".to_owned(),
+        })?;
+        assert!(
+            service
+                .execution_assistance(&other_work.engagement.id, &manifest.execution.id)
+                .is_err()
+        );
+        assert!(
+            service
+                .create_replay_from_execution(ReplayFromExecutionRequest {
+                    engagement_id: other_work.engagement.id,
+                    execution_id: manifest.execution.id.clone(),
+                    executable_override: None,
+                    argv_template_override: None,
+                    placeholders: Vec::new(),
+                    prerequisites: Vec::new(),
+                    authorization_limits: Vec::new(),
+                })
+                .is_err()
+        );
         let expected_context = manifest.execution.context.ok_or_else(|| {
             tatacoa_core::Error::InvalidManifest("test execution has no context".to_owned())
         })?;
@@ -853,7 +892,7 @@ mod tests {
         assert!(!rejected_sidecar.exists());
         let reopened = AppService::open(root);
         let listed = reopened.list_work()?;
-        assert_eq!(listed.len(), 1);
+        assert_eq!(listed.len(), 2);
         let summary = reopened.summarize(&work.engagement.id)?;
         assert_eq!(summary.sessions, vec![work.session.clone()]);
         assert_eq!(summary.executions.len(), 1);

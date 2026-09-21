@@ -1,5 +1,5 @@
 const invoke=window.__TAURI__.core.invoke;
-let activeEngagement=null,activeExecution=null,activeProfile=null,pendingRun=null,pendingResume=null;
+let activeEngagement=null,activeExecution=null,activeProfile=null,activeManifest=null,knownExecutions=[],pendingRun=null,pendingResume=null,pendingRecipe=null;
 const byId=id=>document.getElementById(id),workspace=()=>byId('workspace').value.trim(),lines=value=>value.split('\n').map(x=>x.trim()).filter(Boolean);
 function showError(error){const box=byId('error');box.textContent=String(error);box.hidden=false}function clearError(){byId('error').hidden=true}function text(node,value){node.textContent=String(value)}
 async function openWorkspace(){clearError();if(!workspace())return showError('Indique la ruta del workspace.');try{const works=await invoke('list_work',{workspace:workspace()});text(byId('workspace-status'),`${works.length} trabajo(s) validado(s)`);const list=byId('work-list');list.replaceChildren();for(const work of works){const button=document.createElement('button');text(button,work.name);button.addEventListener('click',()=>loadSummary(work.id));list.append(button)}}catch(error){showError(error)}}
@@ -8,7 +8,7 @@ async function loadSummary(id,feedback=''){
   clearError();
   try{
     const value=await invoke('summarize',{workspace:workspace(),engagementId:id});
-    activeEngagement=id;activeExecution=null;activeProfile=value.engagement.security_profile;
+    activeEngagement=id;activeExecution=null;activeManifest=null;pendingRecipe=null;knownExecutions=value.executions;activeProfile=value.engagement.security_profile;
     pendingResume=null;byId('resume-review').hidden=true;
     byId('welcome').hidden=true;byId('work-panel').hidden=false;byId('execution-detail').hidden=true;
     text(byId('work-title'),value.engagement.name);text(byId('profile'),value.engagement.security_profile);
@@ -59,21 +59,19 @@ function renderExecutions(items){
     const action=document.createElement('td'),button=document.createElement('button');button.className='artifact-button';text(button,'Ver resultado');button.addEventListener('click',()=>openExecution(item.id));action.append(button);row.append(action);body.append(row)
   }table.append(body);root.append(table)
 }
-function renderRelated(rootId,items,describe,empty){const root=byId(rootId);root.replaceChildren();if(items.length===0){const note=document.createElement('p');text(note,empty);root.append(note);return}for(const item of items){const row=document.createElement('div');row.className='related-object';text(row,describe(item));root.append(row)}}
 function recordedContext(manifest){const c=manifest.context,e=manifest.execution,argv=e.invocation.argv.map((arg,index)=>`[${index}] ${arg}`).join('\n')||'(sin argumentos)';const context=c?`Scope: ${c.scope.name}\nLímite autorizado: ${c.scope.authorization_boundary}\nEnvironment: ${c.environment.name}\nTarget: ${c.target.label} (${c.target.locator})\nSession: ${c.session.name}`:'Contexto completo no disponible para esta Execution heredada.';return `${context}\n\nExecutable: ${e.invocation.executable}\nArgumentos efectivos:\n${argv}\nShell: ${e.invocation.shell}\nEstado de captura: ${e.capture_status}\nExit code: ${e.exit_code??'no disponible'}\nDuración observada: ${e.duration_ms_observed} ms`}
 function applyWorkflowProfile(){let knowledge='TATACOA reutiliza Execution, contexto, invocación, resultado y artifacts. Añada únicamente la interpretación que requiere criterio humano.';if(activeProfile==='LAB_LEARNING')knowledge+=' Distinga con cuidado qué demuestra la captura y qué todavía necesita validación.';if(activeProfile==='PROFESSIONAL')knowledge='Contexto y hechos capturados reutilizados. Registre solo interpretación, límites y validación humana.';if(activeProfile==='HIGH_SENSITIVITY')knowledge='Contexto capturado reutilizado. Minimice datos adicionales y registre solo lo necesario conforme a la política vigente.';text(byId('knowledge-help'),knowledge)}
 async function openExecution(id,feedback=''){
   clearError();
   try{
     const manifest=await invoke('execution_workspace',{workspace:workspace(),engagementId:activeEngagement,executionId:id});
-    activeExecution=id;byId('execution-detail').hidden=false;
+    activeExecution=id;activeManifest=manifest;pendingRecipe=null;byId('execution-detail').hidden=false;
     const execution=manifest.execution;
     text(byId('execution-meta'),`${execution.invocation.executable} · captura ${execution.capture_status} · ${manifest.artifacts.length} artifacts · ${observedDate(execution.started_unix_ms_observed)}. Los artifacts capturados no son Evidence validada.`);
     text(byId('execution-context'),recordedContext(manifest));
     text(byId('replay-origin'),`Se reutilizarán ${execution.invocation.executable}, sus ${execution.invocation.argv.length} argumento(s) y el contexto original. Preparar una receta no la ejecuta.`);
     text(byId('execution-feedback'),feedback);applyWorkflowProfile();
-    renderArtifacts(manifest.artifacts);renderKnowledge(manifest.knowledge_cards);
-    renderRelated('replay-list',manifest.replay_recipes,item=>`${item.executable} · ${item.argv_template.length} argumento(s) · guardado sin ejecutar`,'Todavía no hay Replay / Retest preparado.');
+    renderArtifacts(manifest.artifacts);renderKnowledge(manifest.knowledge_cards);renderReplay(manifest.replay_recipes);
     const assistance=await invoke('execution_assistance',{workspace:workspace(),engagementId:activeEngagement,executionId:id});renderAssistance(assistance);
     byId('execution-detail').scrollIntoView({block:'start',behavior:'smooth'});
   }catch(error){showError(error)}
@@ -100,6 +98,43 @@ function renderKnowledge(items){
     details.append(summary,technical);card.append(heading,details);root.append(card)
   }
 }
+function renderReplay(items){
+  const root=byId('replay-list');root.replaceChildren();
+  if(!items.length){const empty=document.createElement('p');text(empty,'Aún no hay receta preparada. Puede crear una sin ejecutarla.');root.append(empty);return}
+  for(const recipe of items){
+    const card=document.createElement('div'),heading=document.createElement('p'),prepare=document.createElement('button'),details=document.createElement('details'),summary=document.createElement('summary'),technical=document.createElement('pre');card.className='related-object';
+    text(heading,`${recipe.executable} · ${recipe.argv_template.length} argumento(s) · preparado, no ejecutado`);
+    prepare.className='artifact-button';text(prepare,'Usar como base para retest');prepare.addEventListener('click',()=>prepareRetest(recipe));
+    text(summary,'Prerequisitos, límites y trazabilidad');
+    text(technical,`Replay ID: ${recipe.id}\nExecution origen: ${recipe.source_execution_id}\nSesión origen: ${recipe.context.session_id}\nPrerequisitos: ${recipe.prerequisites.join('; ')||'ninguno adicional'}\nLímites de autorización: ${recipe.authorization_limits.join('; ')}\nPlaceholders declarados: ${recipe.placeholders.map(item=>`${item.name} (${item.secret?'secret':'no secret'})`).join('; ')||'ninguno'}`);
+    details.append(summary,technical);card.append(heading,prepare,details);
+    const alternatives=knownExecutions.filter(item=>item.id!==recipe.source_execution_id);
+    if(alternatives.length){const compare=document.createElement('div'),select=document.createElement('select'),button=document.createElement('button');select.setAttribute('aria-label','Execution a comparar');
+      for(const item of alternatives){const option=document.createElement('option');option.value=item.id;text(option,`${item.executable} · ${observedDate(item.started_unix_ms_observed)}`);select.append(option)}
+      button.className='artifact-button';text(button,'Comparar datos registrados');button.addEventListener('click',()=>compareExecutions(recipe.source_execution_id,select.value));compare.append(select,button);card.append(compare)}
+    root.append(card)
+  }
+}
+function prepareRetest(recipe){
+  clearError();
+  if(recipe.placeholders.length)return showError('Esta receta declara placeholders. TATACOA no los resuelve ni incorpora secretos automáticamente a argv; revise la receta y prepare la operación de forma deliberada.');
+  if(recipe.argv_template.some(arg=>arg===''||arg.includes('\n')||arg.includes('\r')))return showError('Esta receta contiene argumentos que el editor por líneas no puede representar exactamente. No se preparó la ejecución; use una interfaz compatible sin alterar los argumentos.');
+  const session=byId('session');
+  if(!Array.from(session.options).some(option=>option.value===recipe.context.session_id))return showError('La sesión de origen no está disponible en este trabajo; no se preparó la ejecución.');
+  session.value=recipe.context.session_id;byId('executable').value=recipe.executable;byId('argv').value=recipe.argv_template.join('\n');
+  pendingRecipe=recipe;cancelRun();refreshContext();
+  text(byId('work-feedback'),`Retest preparado desde ${recipe.executable}. Revise prerequisites y límites de autorización de la receta, luego use «Revisar antes de ejecutar». No se ha ejecutado nada.`);
+  byId('run-section').scrollIntoView({block:'start',behavior:'smooth'});
+}
+async function compareExecutions(sourceId,otherId){
+  clearError();
+  try{const [source,other]=await Promise.all([sourceId,otherId].map(executionId=>invoke('execution_workspace',{workspace:workspace(),engagementId:activeEngagement,executionId})));
+    const rows=[`Origen: ${source.execution.invocation.executable} · captura ${source.execution.capture_status} · exit ${source.execution.exit_code??'N/A'}`,`Comparada: ${other.execution.invocation.executable} · captura ${other.execution.capture_status} · exit ${other.execution.exit_code??'N/A'}`];
+    for(const artifact of source.artifacts){const candidate=other.artifacts.find(item=>item.role===artifact.role);rows.push(`${artifact.role}: ${candidate?(candidate.digest.value===artifact.digest.value?'digest registrado igual':'digest registrado diferente'):'sin artifact correspondiente'}; origen ${artifact.size_bytes} bytes${candidate?`, comparada ${candidate.size_bytes} bytes`:''}`)}
+    rows.push('Comparación de metadatos registrados; no es un veredicto de vulnerabilidad ni valida Evidence. Abra cada artifact para verificar su contenido.');
+    text(byId('retest-comparison'),rows.join('\n'));
+  }catch(error){showError(error)}
+}
 function renderAssistance(value){
   text(byId('assistance-level'),`Disponibilidad: ${value.level} · adapter: ${value.adapter}. No representa confianza ni estado de Evidence.`);
   text(byId('assistance-documentation'),value.documentation==='UNAVAILABLE'?'No hay ayuda documental local verificada para esta herramienta (UNAVAILABLE). No se ejecutó ningún probe ni se consultó la red.':'Hay ayuda documental local con fuente consultable en los detalles.');
@@ -112,12 +147,26 @@ function renderAssistance(value){
 }
 async function openArtifact(id){clearError();try{const value=await invoke('artifact_preview',{workspace:workspace(),engagementId:activeEngagement,executionId:activeExecution,artifactId:id});const decoded=new TextDecoder('utf-8',{fatal:false}).decode(new Uint8Array(value.bytes));text(byId('artifact-content'),decoded+(value.truncated_for_preview?'\n\n[Vista previa limitada a 1 MiB]':''))}catch(error){showError(error)}}
 async function getAuthorizationReview(){return invoke('authorization_review',{workspace:workspace(),engagementId:activeEngagement,sessionId:byId('session').value})}function reviewText(review){const c=review.context;return `Engagement: ${review.engagement.name}\nSecurity Profile: ${review.engagement.security_profile}\nScope: ${c.scope.name}\nLímite autorizado: ${c.scope.authorization_boundary}\nEnvironment: ${c.environment.name}\nTarget: ${c.target.label} (${c.target.locator})\nSession: ${c.session.name}`}
-async function runTool(event){event.preventDefault();clearError();pendingRun=null;byId('execution-review').hidden=true;const request={engagement_id:activeEngagement,session_id:byId('session').value,executable:byId('executable').value,argv:lines(byId('argv').value),max_stream_bytes:null};try{const review=await getAuthorizationReview();const invocation=`${reviewText(review)}\n\nExecutable: ${request.executable}\nArgumentos efectivos:\n${request.argv.map((arg,index)=>`[${index}] ${arg}`).join('\n')||'(sin argumentos)'}`;pendingRun={workspace:workspace(),engagementId:activeEngagement,request};text(byId('execution-review-text'),invocation);byId('execution-review').hidden=false}catch(error){showError(error)}}
-async function confirmRun(){clearError();if(!pendingRun)return showError('No hay una ejecución revisada pendiente de confirmación.');const approved=pendingRun;pendingRun=null;byId('execution-review').hidden=true;try{const captured=await invoke('run_tool',{workspace:approved.workspace,request:approved.request});await loadSummary(approved.engagementId,'Ejecución capturada. Revise el resultado y sus artifacts.');await openExecution(captured.execution.id,'Resultado capturado; los artifacts no son Evidence validada.')}catch(error){showError(error)}}
+async function runTool(event){
+  event.preventDefault();clearError();pendingRun=null;byId('execution-review').hidden=true;
+  const recipe=pendingRecipe;
+  const originalTemplate=recipe?.argv_template.join('\n');
+  const argv=recipe&&byId('argv').value===originalTemplate?recipe.argv_template.slice():lines(byId('argv').value);
+  const request={engagement_id:activeEngagement,session_id:byId('session').value,executable:byId('executable').value,argv,max_stream_bytes:null};
+  try{
+    if(recipe&&request.session_id!==recipe.context.session_id)throw new Error('La sesión ya no coincide con la receta; vuelva a preparar el retest.');
+    const review=await getAuthorizationReview();
+    const changed=recipe&&(request.executable!==recipe.executable||request.argv.some((arg,index)=>arg!==recipe.argv_template[index])||request.argv.length!==recipe.argv_template.length);
+    const recipeReview=recipe?`\n\nOrigen de retest: receta ${recipe.id}\nPrerequisitos declarados: ${recipe.prerequisites.join('; ')||'ninguno adicional'}\nLímites declarados: ${recipe.authorization_limits.join('; ')}${changed?'\nATENCIÓN: la invocación fue modificada respecto a la receta.':''}`:'';
+    const invocation=`${reviewText(review)}\n\nExecutable: ${request.executable}\nArgumentos efectivos:\n${request.argv.map((arg,index)=>`[${index}] ${arg}`).join('\n')||'(sin argumentos)'}${recipeReview}`;
+    pendingRun={workspace:workspace(),engagementId:activeEngagement,request};text(byId('execution-review-text'),invocation);byId('execution-review').hidden=false;
+  }catch(error){showError(error)}
+}
+async function confirmRun(){clearError();if(!pendingRun)return showError('No hay una ejecución revisada pendiente de confirmación.');const approved=pendingRun;pendingRun=null;byId('execution-review').hidden=true;try{if(approved.workspace!==workspace()||approved.engagementId!==activeEngagement)throw new Error('El trabajo cambió; revise nuevamente antes de ejecutar.');const captured=await invoke('run_tool',{workspace:approved.workspace,request:approved.request});await loadSummary(approved.engagementId,'Ejecución capturada. Revise el resultado y sus artifacts.');await openExecution(captured.execution.id,'Resultado capturado; los artifacts no son Evidence validada.')}catch(error){showError(error)}}
 function cancelRun(){pendingRun=null;byId('execution-review').hidden=true}
 async function createKnowledge(event){event.preventDefault();clearError();const data=Object.fromEntries(new FormData(event.target));const executionId=activeExecution,request={engagement_id:activeEngagement,execution_id:executionId,source_reviewed:byId('source-reviewed').checked,...data,references:[{classification:byId('reference-classification').value,title:byId('reference-title').value,locator:byId('reference-locator').value}],related_techniques:lines(byId('related-techniques').value)};try{const card=await invoke('create_knowledge_from_execution',{workspace:workspace(),request});event.target.reset();await openExecution(executionId,`Knowledge Card guardada y localizada en esta Execution: ${card.id}`)}catch(error){showError(error)}}
 async function createNote(event){event.preventDefault();clearError();const executionId=activeExecution;try{const card=await invoke('create_note_from_execution',{workspace:workspace(),request:{engagement_id:activeEngagement,execution_id:executionId,note:byId('operator-note').value}});event.target.reset();await openExecution(executionId,`Nota guardada como Knowledge borrador ${card.id}; no es Evidence validada.`)}catch(error){showError(error)}}
-function parsePlaceholders(value){return lines(value).map(line=>{const parts=line.split('|');if(parts.length!==4)throw new Error('Cada placeholder debe usar NAME|SECRET|REQUIRED|DESCRIPCIÓN.');return{name:parts[0],secret:parts[1]==='true',required:parts[2]==='true',description:parts[3]}})}
+function parsePlaceholders(value){return lines(value).map(line=>{const parts=line.split('|');if(parts.length!==4)throw new Error('Cada placeholder debe usar NAME|SECRET|REQUIRED|DESCRIPCIÓN.');const secret=parts[1].trim().toLowerCase(),required=parts[2].trim().toLowerCase();if(!['true','false'].includes(secret)||!['true','false'].includes(required))throw new Error('SECRET y REQUIRED deben ser true o false.');return{name:parts[0].trim(),secret:secret==='true',required:required==='true',description:parts[3].trim()}})}
 byId('select-workspace').addEventListener('click',async()=>{try{const path=await invoke('select_workspace');if(path){byId('workspace').value=path;await openWorkspace()}}catch(error){showError(error)}});byId('select-export').addEventListener('click',async()=>{try{const path=await invoke('select_export_destination');if(path)byId('export-destination').value=path}catch(error){showError(error)}});byId('select-timestamp-sidecar').addEventListener('click',async()=>{try{const path=await invoke('select_timestamp_sidecar');if(path)byId('timestamp-sidecar').value=path}catch(error){showError(error)}});
 async function createReplay(event){event.preventDefault();clearError();try{const executionId=activeExecution,changed=byId('replay-change-invocation').checked,request={engagement_id:activeEngagement,execution_id:executionId,executable_override:changed?byId('replay-executable-override').value:null,argv_template_override:changed?lines(byId('replay-argv-override').value):null,placeholders:parsePlaceholders(byId('replay-placeholders').value),prerequisites:lines(byId('replay-prerequisites').value),authorization_limits:lines(byId('replay-limits').value)};if(changed&&!request.executable_override.trim())throw new Error('Una modificación deliberada requiere indicar el executable.');const recipe=await invoke('create_replay_from_execution',{workspace:workspace(),request});event.target.reset();byId('replay-overrides').hidden=true;await openExecution(executionId,`Replay / Retest guardado, localizado y no ejecutado: ${recipe.id}`)}catch(error){showError(error)}}
 async function exportExecution(event){event.preventDefault();clearError();const encrypted=byId('export-mode').value==='ENCRYPTED',password=byId('export-password'),confirmation=byId('export-confirmation');try{if(encrypted&&password.value!==confirmation.value)throw new Error('Las contraseñas no coinciden.');const destination=byId('export-destination').value,mode=byId('export-mode').value,request={engagement_id:activeEngagement,execution_id:activeExecution,destination,mode,acknowledge_plaintext:byId('plain-ack').checked,password:encrypted?password.value:null};await invoke('export_execution',{workspace:workspace(),request});byId('timestamp-bundle').value=destination;byId('timestamp-sidecar').value=`${destination}.tsr`;byId('timestamp-mode').value=mode;text(byId('execution-meta'),'Exportación completada según la política del Security Profile. Timestamp permanece opcional y explícito.');event.target.reset();byId('password-fields').hidden=true}catch(error){showError(error)}finally{password.value='';confirmation.value=''}}
@@ -129,4 +178,5 @@ byId('confirm-resume').addEventListener('click',async()=>{if(!pendingResume)retu
 byId('open').addEventListener('click',openWorkspace);byId('create-form').addEventListener('submit',createWork);byId('run-form').addEventListener('submit',runTool);byId('confirm-run').addEventListener('click',confirmRun);byId('cancel-run').addEventListener('click',cancelRun);byId('refresh').addEventListener('click',()=>loadSummary(activeEngagement));byId('knowledge-form').addEventListener('submit',createKnowledge);byId('replay-form').addEventListener('submit',createReplay);byId('export-form').addEventListener('submit',exportExecution);byId('timestamp-form').addEventListener('submit',requestTimestamp);byId('verify-timestamp').addEventListener('click',verifyTimestamp);byId('export-mode').addEventListener('change',()=>{byId('password-fields').hidden=byId('export-mode').value!=='ENCRYPTED'});
 byId('replay-change-invocation').addEventListener('change',()=>{byId('replay-overrides').hidden=!byId('replay-change-invocation').checked});
 byId('note-form').addEventListener('submit',createNote);
-byId('session').addEventListener('change',()=>{cancelRun();pendingResume=null;byId('resume-review').hidden=true;refreshContext()});
+byId('session').addEventListener('change',()=>{cancelRun();pendingRecipe=null;pendingResume=null;byId('resume-review').hidden=true;refreshContext()});
+byId('executable').addEventListener('input',cancelRun);byId('argv').addEventListener('input',cancelRun);

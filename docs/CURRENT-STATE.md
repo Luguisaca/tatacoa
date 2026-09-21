@@ -6,7 +6,7 @@
 
 ## Rama incremental actual
 
-`feat/sp3-13-desktop-workflow-continuity`, heredada linealmente de SP3-01…SP3-12. HUMAN-QA-05 permanece FAIL hasta revalidación de usuario.
+`feat/sp3-14-replay-retest-flow`, heredada linealmente de SP3-01…SP3-13. HUMAN-QA-05 permanece FAIL hasta revalidación de usuario.
 
 Este documento es la fuente operativa para saber dónde está el proyecto y qué sigue. No sustituye PROJECT, PRD, ROADMAP, ARCHITECTURE ni DECISIONS.
 
@@ -101,6 +101,8 @@ El QA técnico de esta corrección es PASS. **HUMAN-QA-05 continúa como FAIL de
 SP3-12 añade asistencia genérica offline de lectura: hechos de Execution con origen de manifest, niveles funcionales `GENERIC/DOCUMENTED/ADAPTED` y contratos opcionales de documentación local/adapters. No hay proveedor o adapter de producción registrado ni probes automáticos; una herramienta desconocida sigue ejecutándose/capturándose genéricamente y la ayuda documental indica `UNAVAILABLE`. Desktop muestra primero los hechos y permite guardar una nota breve como Knowledge borrador sin recorrer todos sus campos estructurados. Esto está implementado para QA técnico, no aprobado como experiencia de usuario.
 
 SP3-13 reorganiza Desktop para hacer visibles continuidad, actividad, contexto autorizado y resultado de la ejecución recién capturada. La información técnica de artifacts y hechos permanece accesible por detalles progresivos. La reanudación tiene revisión contextual persistente. QA técnico de este incremento es PASS; QA humano sigue pendiente.
+
+SP3-14 prepara Replay/Retest con reutilización de invocación y límite registrado del Scope sin exigir campos avanzados en el camino normal. Las recetas pueden precargar una nueva ejecución, pero nunca la ejecutan; la revisión contextual y la confirmación siguen obligatorias. Hay comparación read-only de metadatos registrados, sin conclusión automática ni vínculo persistido de retest. QA técnico PASS; QA humano pendiente.
 
 ## Siguiente paso
 
