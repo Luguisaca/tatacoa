@@ -278,3 +278,30 @@ En el mismo recorrido, `rustc` devolvió `program not found` desde `std::process
 La implementación Core continúa ejecutando `Command::new(executable).args(argv)` sin shell y no modifica el entorno. No se introduce `cmd.exe`, shell implícito, búsqueda propia ni mutación de PATH para ocultar el hallazgo.
 
 Siguiente discriminación humana: repetir el gate ya corregido usando la ruta absoluta verificada de `rustc.exe`. Si la ruta absoluta ejecuta correctamente, clasificar el fallo bare-name como diferencia del entorno heredado por el proceso Desktop y diseñar por separado la UX/resolución permitida; si también falla, investigar el spawn de Windows antes de modificar Core.
+
+
+### HUMAN-QA-05 — integración Desktop expone primitivas internas en vez del flujo de trabajo
+
+Estado: **FAIL DE PRODUCTO/UX — CORRECCIÓN DOCUMENTAL APROBADA; IMPLEMENTACIÓN PENDIENTE**.
+
+El QA humano acumulativo demostró que Execution/Artifact funcionan, incluida revisión contextual explícita, ejecución sin shell mediante ruta absoluta, captura COMPLETE y consulta de stdout/stderr. Sin embargo, al continuar hacia Knowledge/Replay/Export/Timestamp, Desktop presenta capacidades del dominio principalmente como formularios independientes.
+
+Esto no satisface por sí solo el objetivo aprobado de SP3: una GUI orientada al flujo real de una pentester y no a exponer métodos internos del Core.
+
+Hallazgos concretos:
+
+- Knowledge Card exige transcribir manualmente información que TATACOA ya conoce de la Execution/contexto;
+- tras intentar guardar Knowledge, el feedback no fue visible/localizable para la persona y la UI no ofrece una forma clara de consultar el resultado asociado;
+- Replay se presenta como construcción manual separada aunque executable, argv, contexto y Execution de origen ya están registrados;
+- la composición actual aumenta trabajo administrativo en lugar de acompañar ejecución, evidencia, aprendizaje, continuidad y retest.
+
+Decisión humana durante QA:
+
+- **no eliminar** Knowledge/Replay ni degradar Core;
+- detener el QA integral de la UI actual en este punto;
+- conservar los PASS técnicos y humanos ya obtenidos;
+- corregir la capa de producto Desktop según el contrato de experiencia añadido a `SPRINT-03-PLAN.md`;
+- distinguir datos automáticos, asistencia opcional y decisiones explícitas de seguridad/autorización;
+- reanudar QA integral cuando el flujo corregido permita trabajar sin transcribir información ya conocida por TATACOA.
+
+La corrección no autoriza IA local, reporting avanzado, auto-exploit, inferencia de autorización ni promoción automática a Evidence. Tampoco convierte Knowledge factual generado automáticamente en contenido validado.
