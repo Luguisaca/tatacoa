@@ -29,17 +29,20 @@
     </article>
     <article id="work-panel" hidden>
       <div class="title-row"><div><p class="eyebrow" id="profile"></p><h2 id="work-title"></h2></div><button id="refresh">Actualizar resumen</button></div>
+      <nav class="workflow-nav" aria-label="Recorrido del trabajo"><a href="#continuity-section">Continuidad</a><a href="#run-section">Ejecutar</a><a href="#executions-section">Resultados</a><a href="#delivery-section">Entrega</a></nav>
+      <p id="work-feedback" class="feedback" role="status" aria-live="polite"></p>
       <div id="summary" class="cards"></div>
       <p id="profile-notice" role="status"></p>
-      <p id="continuity-status"></p><label>Pendientes para continuidad (uno por línea)<textarea id="continuity-pending"></textarea></label><div class="title-row"><button id="pause">Pausar y guardar</button><button id="resume">Revalidar autorización y reanudar</button></div>
-      <h3>Ejecutar herramienta autorizada</h3>
+      <section id="continuity-section" class="workflow-step"><h3>Continuar el trabajo</h3><p id="continuity-status"></p><p id="continuity-next"></p><div id="activity-list"></div><details><summary>Guardar pendientes y pausar</summary><label>Pendientes para continuidad (uno por línea)<textarea id="continuity-pending"></textarea></label><button id="pause">Pausar y guardar</button></details><button id="resume">Revisar autorización para reanudar</button><section id="resume-review" hidden><h4>Revisión antes de reanudar</h4><pre id="resume-review-text"></pre><p>Reanude solo si el alcance y la autorización siguen vigentes. Esto no autoriza automáticamente una nueva ejecución.</p><div class="title-row"><button type="button" id="cancel-resume">Cancelar</button><button type="button" id="confirm-resume">Confirmar reanudación</button></div></section></section>
+      <section id="run-section" class="workflow-step"><h3>Contexto autorizado y ejecución</h3><p id="work-context">Seleccione una sesión para consultar su contexto.</p>
       <form id="run-form"><label>Sesión<select id="session" required></select></label><label>Ejecutable<input id="executable" required placeholder="rustc"></label><label>Argumentos (uno por línea)<textarea id="argv" placeholder="--version"></textarea></label><button type="submit">Revisar antes de ejecutar</button></form><section id="execution-review" hidden aria-live="polite"><h4>Revisión antes de ejecutar</h4><pre id="execution-review-text"></pre><p>Confirme únicamente si el alcance y la autorización siguen vigentes y el comando mostrado es el que pretende ejecutar.</p><div class="title-row"><button type="button" id="cancel-run">Cancelar</button><button type="button" id="confirm-run">Confirmar y ejecutar</button></div></section>
-      <h3>Ejecuciones</h3><div id="executions"></div>
-      <section id="execution-detail" hidden>
-        <h3>Execution → comprensión → Replay / Retest</h3>
+      </section>
+      <section id="executions-section" class="workflow-step"><h3>Resultados registrados</h3><div id="executions"></div></section>
+      <section id="execution-detail" class="workflow-step" hidden>
+        <h3>Resultado → evidencia → comprensión → retest</h3>
         <p id="execution-meta"></p>
-        <section class="recorded-context" aria-labelledby="recorded-title"><h4 id="recorded-title">Lo registrado por TATACOA</h4><pre id="execution-context"></pre></section>
-        <section class="recorded-context" aria-labelledby="assistance-title"><h4 id="assistance-title">Entender resultado</h4><p id="assistance-level"></p><div id="assistance-facts" class="related-objects"></div><p id="assistance-documentation"></p><p>Los hechos observados no son conclusiones ni Evidence validada. La interpretación humana permanece separada.</p></section>
+        <details><summary>Contexto e invocación registrados</summary><section class="recorded-context" aria-labelledby="recorded-title"><h4 id="recorded-title">Lo registrado por TATACOA</h4><pre id="execution-context"></pre></section></details>
+        <section class="recorded-context" aria-labelledby="assistance-title"><h4 id="assistance-title">Entender resultado</h4><p id="assistance-documentation"></p><div id="assistance-facts" class="related-objects"></div><details><summary>Disponibilidad técnica de asistencia</summary><p id="assistance-level"></p></details><p>Los hechos observados no son conclusiones ni Evidence validada. La interpretación humana permanece separada.</p></section>
         <h4>Artifacts / evidencia capturada</h4><div id="artifacts"></div>
         <pre id="artifact-content" tabindex="0">Seleccione un artifact para verificarlo y abrir una vista previa.</pre>
         <p id="execution-feedback" class="feedback" role="status" aria-live="polite"></p>
@@ -58,8 +61,8 @@
             <label>Título de fuente<input id="reference-title" required></label><label>Localizador/URL<input id="reference-locator" required></label>
             <label>Técnicas relacionadas (una por línea)<textarea id="related-techniques"></textarea></label><button type="submit">Guardar interpretación como Knowledge Card</button>
           </form>
-          <h4>Knowledge asociado a esta Execution</h4><div id="knowledge-list" class="related-objects"></div>
         </details>
+        <h4>Notas y Knowledge relacionados</h4><div id="knowledge-list" class="related-objects"></div>
         <details open><summary>Preparar Replay / Retest (no ejecuta)</summary>
           <p class="workflow-help" id="replay-origin">La receta reutilizará la invocación y el contexto registrados.</p>
           <form id="replay-form"><label>Placeholders (NAME|SECRET|REQUIRED|DESCRIPCIÓN, uno por línea)<textarea id="replay-placeholders"></textarea></label><label>Prerequisitos (uno por línea)<textarea id="replay-prerequisites"></textarea></label><label>Límites de autorización (uno por línea)<textarea id="replay-limits" required></textarea></label><label><input type="checkbox" id="replay-change-invocation"> Modificar deliberadamente la invocación registrada</label><div id="replay-overrides" hidden><label>Ejecutable modificado<input id="replay-executable-override"></label><label>Argumentos template modificados (uno por línea)<textarea id="replay-argv-override"></textarea></label></div><button type="submit">Guardar preparación sin ejecutar</button></form>

@@ -6,7 +6,7 @@
 
 ## Rama incremental actual
 
-`feat/sp3-12-offline-tool-assistance`, heredada linealmente de SP3-01…SP3-11. HUMAN-QA-05 permanece FAIL hasta revalidación de usuario.
+`feat/sp3-13-desktop-workflow-continuity`, heredada linealmente de SP3-01…SP3-12. HUMAN-QA-05 permanece FAIL hasta revalidación de usuario.
 
 Este documento es la fuente operativa para saber dónde está el proyecto y qué sigue. No sustituye PROJECT, PRD, ROADMAP, ARCHITECTURE ni DECISIONS.
 
@@ -99,6 +99,8 @@ La corrección incremental del flujo principal está implementada en `feat/sp3-1
 El QA técnico de esta corrección es PASS. **HUMAN-QA-05 continúa como FAIL de producto/UX pendiente de revalidación humana**; los PASS técnicos y humanos anteriores se conservan. Desktop muestra feedback persistente dentro de la Execution y permite localizar el Knowledge/Replay recién creado, pero la suficiencia del recorrido solo puede cerrarse con una nueva prueba de usuario.
 
 SP3-12 añade asistencia genérica offline de lectura: hechos de Execution con origen de manifest, niveles funcionales `GENERIC/DOCUMENTED/ADAPTED` y contratos opcionales de documentación local/adapters. No hay proveedor o adapter de producción registrado ni probes automáticos; una herramienta desconocida sigue ejecutándose/capturándose genéricamente y la ayuda documental indica `UNAVAILABLE`. Desktop muestra primero los hechos y permite guardar una nota breve como Knowledge borrador sin recorrer todos sus campos estructurados. Esto está implementado para QA técnico, no aprobado como experiencia de usuario.
+
+SP3-13 reorganiza Desktop para hacer visibles continuidad, actividad, contexto autorizado y resultado de la ejecución recién capturada. La información técnica de artifacts y hechos permanece accesible por detalles progresivos. La reanudación tiene revisión contextual persistente. QA técnico de este incremento es PASS; QA humano sigue pendiente.
 
 ## Siguiente paso
 

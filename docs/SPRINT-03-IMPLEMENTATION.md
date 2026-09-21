@@ -349,3 +349,16 @@ Rama `feat/sp3-12-offline-tool-assistance`, desde SP3-11. Estado: **implementado
 QA técnico SP3-12 en Windows 11 x64: `cargo fmt --check`, `cargo check --locked --workspace --all-targets`, `cargo clippy --locked --workspace --all-targets -- -D warnings`, `cargo test --locked --workspace`, `cargo build --locked --workspace --target-dir target/sp3-11-qa` y `node --check` del frontend: **PASS**. La salida aislada evita reemplazar una instancia Desktop abierta. Las pruebas cubren proveedor local válido, fuente faltante → `UNAVAILABLE`, ausencia de adapter/probe, nota vacía rechazada, Knowledge `DRAFT` con `OPERATOR_NOTE`, manifest sin cambios y Evidence `CAPTURED`. Linux no se ejecutó en este host: solo está instalado el target Rust `x86_64-pc-windows-msvc`; el contrato usa `std` multiplataforma y requiere QA Linux posterior.
 
 QA Windows propuesto: ejecutar/capturar una herramienta de prueba mediante ruta absoluta; abrir la Execution y comprobar hechos con fuentes `manifest.*`, estado documental `UNAVAILABLE` y ausencia de probes/red; guardar una nota breve y localizarla como Knowledge `DRAFT`; verificar que artifacts permanecen `CAPTURED`; preparar Replay sin ejecutarlo y comprobar origen/override explícito. Repetir con un executable desconocido permitido por el scope: la asistencia debe continuar `GENERIC`, nunca impedir la captura.
+
+## Bloque 13 — recorrido Desktop y continuidad utilizable
+
+Rama `feat/sp3-13-desktop-workflow-continuity`, desde SP3-12. **Implementado; QA humano pendiente.**
+
+- navegación por trabajo, continuidad, ejecución, resultados y entrega; el resumen presenta actividad reciente, pendientes, última Execution y recuperación requerida sin obligar a reconstruir IDs;
+- sesión de continuidad recuperada cuando existe y contexto autorizado visible al elegirla; la revisión antes de ejecutar sigue usando App API/Core;
+- la ejecución recién capturada abre directamente su resultado, sin buscarla en una tabla;
+- artifacts, notas, hechos y asistencia muestran primero información de tarea; IDs, hashes, rutas, fuente técnica y provenance quedan en detalles accesibles;
+- reanudación pasa por una revisión contextual persistente con cancelación/confirmación, sin sustituir la revalidación de Core;
+- feedback de creación, captura, pausa y reanudación queda en el contexto de trabajo. No se cambian políticas ni estados de Evidence.
+
+QA técnico de frontera: sintaxis JavaScript, `cargo fmt --check`, `cargo check --locked --workspace --all-targets`, Clippy estricto y pruebas de App API/Desktop: PASS. HUMAN-QA-05 sigue FAIL hasta recorrido humano completo. Los bloques siguientes integran Replay y entrega sin alterar criptografía.

@@ -81,12 +81,9 @@ fn summarize(workspace: String, engagement_id: String) -> CommandResult<WorkSumm
 }
 
 #[tauri::command]
-fn run_tool(workspace: String, request: RunRequest) -> CommandResult<WorkSummary> {
-    let service = AppService::open(&workspace);
-    let engagement_id = request.engagement_id.clone();
-    service.run(request).map_err(|error| error.to_string())?;
-    service
-        .summarize(&engagement_id)
+fn run_tool(workspace: String, request: RunRequest) -> CommandResult<Manifest> {
+    AppService::open(workspace)
+        .run(request)
         .map_err(|error| error.to_string())
 }
 
@@ -351,5 +348,27 @@ mod tests {
         assert!(javascript.contains("execution_assistance"));
         assert!(javascript.contains("create_note_from_execution"));
         assert!(html.contains("Edición estructurada opcional"));
+    }
+
+    #[test]
+    fn desktop_workflow_keeps_context_review_and_continuity_visible() {
+        let html = include_str!("../ui/index.html");
+        let javascript = include_str!("../ui/app.js");
+        for id in [
+            "continuity-section",
+            "continuity-next",
+            "activity-list",
+            "work-context",
+            "resume-review",
+            "confirm-resume",
+            "work-feedback",
+        ] {
+            assert!(html.contains(&format!("id=\"{id}\"")));
+        }
+        assert!(javascript.contains("const captured=await invoke('run_tool'"));
+        assert!(javascript.contains("await openExecution(captured.execution.id"));
+        assert!(javascript.contains("authorization_review"));
+        assert!(javascript.contains("pendingResume"));
+        assert!(!javascript.contains("confirm(`REVALIDACIÓN CONTEXTUAL"));
     }
 }
