@@ -53,7 +53,7 @@ impl TimestampObject<'_> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct TsaConfig {
     endpoint: String,
     timeout: Duration,
@@ -62,9 +62,14 @@ pub struct TsaConfig {
 impl TsaConfig {
     pub fn new(endpoint: String, timeout: Duration) -> Result<Self> {
         let endpoint = endpoint.trim();
-        if !endpoint.starts_with("https://") {
+        if !endpoint.starts_with("https://")
+            || endpoint.len() <= "https://".len()
+            || endpoint.bytes().any(|byte| byte.is_ascii_whitespace())
+            || endpoint.contains(['@', '?', '#'])
+        {
             return Err(Error::Timestamp(
-                "TSA endpoint must be configured explicitly with HTTPS".to_owned(),
+                "TSA endpoint must be explicit HTTPS without credentials, query or fragment"
+                    .to_owned(),
             ));
         }
         if timeout.is_zero() || timeout > Duration::from_secs(120) {
@@ -223,14 +228,15 @@ fn send_request(config: &TsaConfig, request: &[u8]) -> Result<Vec<u8>> {
         .header("content-type", "application/timestamp-query")
         .header("accept", "application/timestamp-reply")
         .send(request)
-        .map_err(|error| Error::Timestamp(format!("TSA request failed: {error}")))?;
+        .map_err(|_| Error::Timestamp("TSA request failed".to_owned()))?;
     let content_type = response
         .headers()
         .get("content-type")
         .and_then(|value| value.to_str().ok())
         .and_then(|value| value.split(';').next())
         .map(str::trim);
-    if content_type != Some("application/timestamp-reply") {
+    if !content_type.is_some_and(|value| value.eq_ignore_ascii_case("application/timestamp-reply"))
+    {
         return Err(Error::Timestamp(
             "TSA response has an unsupported Content-Type".to_owned(),
         ));
@@ -521,6 +527,20 @@ mod tests {
     fn tsa_configuration_requires_explicit_https_and_bounded_timeout() {
         assert!(TsaConfig::new("".to_owned(), Duration::from_secs(10)).is_err());
         assert!(TsaConfig::new("http://tsa.invalid".to_owned(), Duration::from_secs(10)).is_err());
+        assert!(
+            TsaConfig::new(
+                "https://user:secret@tsa.invalid".to_owned(),
+                Duration::from_secs(10)
+            )
+            .is_err()
+        );
+        assert!(
+            TsaConfig::new(
+                "https://tsa.invalid/?token=secret".to_owned(),
+                Duration::from_secs(10)
+            )
+            .is_err()
+        );
         assert!(TsaConfig::new("https://tsa.invalid".to_owned(), Duration::ZERO).is_err());
         assert!(
             TsaConfig::new("https://tsa.invalid".to_owned(), Duration::from_secs(121)).is_err()

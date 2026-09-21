@@ -60,6 +60,10 @@
         <details><summary>Exportar ejecución</summary>
           <form id="export-form"><label>Destino local<input id="export-destination" required></label><button type="button" id="select-export">Seleccionar destino…</button><label>Modo<select id="export-mode"><option value="PLAIN">Plain</option><option value="ENCRYPTED">Encrypted v1</option></select></label><label><input type="checkbox" id="plain-ack"> Reconozco que Plain no cifra el contenido</label><div id="password-fields" hidden><label>Password<input id="export-password" type="password" autocomplete="new-password"></label><label>Confirmación<input id="export-confirmation" type="password" autocomplete="new-password"></label></div><button type="submit">Exportar según política</button></form>
         </details>
+        <details><summary>RFC 3161 / timestamp explícito</summary>
+          <p>La TSA usa red únicamente al solicitar. Verificar el sidecar es offline. BOUND no significa firma o TSA confiable.</p>
+          <form id="timestamp-form"><label>Bundle exportado<input id="timestamp-bundle" required></label><label>Sidecar .tsr<input id="timestamp-sidecar" required></label><button type="button" id="select-timestamp-sidecar">Seleccionar sidecar…</button><label>Modo<select id="timestamp-mode"><option value="PLAIN">Plain</option><option value="ENCRYPTED">Encrypted v1</option></select></label><label>TSA HTTPS explícita<input id="timestamp-tsa" type="url" placeholder="https://tsa.example/timestamp"></label><label>Timeout (segundos)<input id="timestamp-timeout" type="number" min="1" max="120" value="30" required></label><div class="title-row"><button type="submit">Solicitar timestamp</button><button type="button" id="verify-timestamp">Verificar .tsr offline</button></div><pre id="timestamp-report"></pre></form>
+        </details>
       </section>
     </article>
   </section>

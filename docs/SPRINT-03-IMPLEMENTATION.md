@@ -161,3 +161,27 @@ Límite deliberado: no afirma `SIGNATURE_VALID`, `TRUSTED` ni `HISTORICALLY_VALI
 Dependencias incorporadas: `x509-tsp 0.1.0`, `der 0.7.10`, `cms 0.2.3`, `x509-cert 0.2.5`, `ureq 3.4.2`, `rustls >=0.23.45` y provider `ring`. No se implementó ASN.1, CMS, X.509 ni criptografía propia.
 
 QA humano pendiente: usar una TSA de laboratorio configurada conscientemente, confirmar creación del `.tsr`, ausencia de sidecar ante fallo/binding incorrecto y que ninguna interfaz presente `BOUND` como firma/trust válido.
+
+## Bloque 08 — flujo de usuario RFC 3161
+
+Rama local: `feat/sp3-08-timestamp-user-flow`, creada desde el bloque 07.
+
+Implementado:
+
+- operaciones tipadas App API para solicitar y verificar timestamps;
+- comandos CLI `timestamp-request` y `timestamp-verify` con modo Plain/Encrypted explícito;
+- `tatacoa-verify` acepta opcionalmente sidecar y modo, verifica primero el bundle y luego el timestamp sin red;
+- Desktop permite seleccionar `.tsr`, configurar TSA HTTPS/timeout, solicitar y verificar offline;
+- la exportación precarga bundle/modo/sidecar, pero no contacta una TSA automáticamente;
+- presentación de assurance y checks completos; aviso visible de que `BOUND` no equivale a firma o trust.
+
+QA humano propuesto:
+
+1. exportar Plain y Encrypted desde Desktop;
+2. confirmar que no ocurre tráfico TSA al exportar;
+3. configurar voluntariamente una TSA de laboratorio y solicitar el `.tsr`;
+4. verificarlo offline mediante Desktop, CLI y verifier;
+5. alterar bundle o sidecar y confirmar fallo cerrado;
+6. confirmar que los checks de firma/trust/histórico no aparecen como `PASS`.
+
+Bloqueado deliberadamente para el siguiente incremento criptográfico: allowlist de algoritmos de firma y contrato de revocación/validación histórica.

@@ -4,11 +4,11 @@
 use std::str::FromStr;
 use tatacoa_app_api::{
     AppService, AuthorizationReview, ExportRequest, KnowledgeRequest, NewWorkRequest,
-    ReplayRequest, RunRequest, WorkContext, WorkSummary,
+    ReplayRequest, RunRequest, TimestampRequest, TimestampVerifyRequest, WorkContext, WorkSummary,
 };
 use tatacoa_core::{
     ArtifactId, ArtifactPreview, ContinuityState, Engagement, EngagementId, ExecutionId,
-    KnowledgeCard, Manifest, ReplayRecipe, SessionId,
+    KnowledgeCard, Manifest, ReplayRecipe, SessionId, TimestampReport,
 };
 use tauri_plugin_dialog::DialogExt;
 
@@ -33,6 +33,21 @@ fn select_export_destination(app: tauri::AppHandle) -> CommandResult<Option<Stri
     app.dialog()
         .file()
         .set_title("Destino de exportación TATACOA")
+        .blocking_save_file()
+        .map(|path| {
+            path.into_path()
+                .map(|value| value.to_string_lossy().into_owned())
+                .map_err(|error| error.to_string())
+        })
+        .transpose()
+}
+
+#[tauri::command]
+fn select_timestamp_sidecar(app: tauri::AppHandle) -> CommandResult<Option<String>> {
+    app.dialog()
+        .file()
+        .set_title("Destino sidecar RFC 3161 (.tsr)")
+        .add_filter("RFC 3161 response", &["tsr"])
         .blocking_save_file()
         .map(|path| {
             path.into_path()
@@ -140,6 +155,26 @@ fn export_execution(workspace: String, request: ExportRequest) -> CommandResult<
 }
 
 #[tauri::command]
+fn request_timestamp(
+    workspace: String,
+    request: TimestampRequest,
+) -> CommandResult<TimestampReport> {
+    AppService::open(workspace)
+        .request_timestamp(request)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn verify_timestamp(
+    workspace: String,
+    request: TimestampVerifyRequest,
+) -> CommandResult<TimestampReport> {
+    AppService::open(workspace)
+        .verify_timestamp(request)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 fn pause_work(
     workspace: String,
     engagement_id: String,
@@ -177,6 +212,7 @@ fn main() {
             list_work,
             select_workspace,
             select_export_destination,
+            select_timestamp_sidecar,
             create_work,
             summarize,
             run_tool,
@@ -186,6 +222,8 @@ fn main() {
             create_knowledge,
             create_replay,
             export_execution,
+            request_timestamp,
+            verify_timestamp,
             pause_work,
             resume_work
         ])

@@ -300,6 +300,29 @@ En Linux use `./target/debug/tatacoa` y `./target/debug/tatacoa-verify`; sustitu
 
 Un PASS en WSL2 no sustituye Kali o Parrot. Un fallo debe conservarse como hallazgo hasta determinar si corresponde al producto, al entorno o al procedimiento.
 
+## Caso 7 — RFC 3161 explícito (SP3-08)
+
+Use únicamente una TSA de laboratorio/autorizada. TATACOA no configura una TSA predeterminada y exportar no debe producir tráfico de red.
+
+```powershell
+$Sidecar = "$PlainBundle.tsr"
+& $Tatacoa timestamp-request --bundle $PlainBundle --sidecar $Sidecar --mode plain --tsa 'https://TSA-AUTORIZADA/timestamp' --timeout-seconds 30
+& $Tatacoa timestamp-verify --bundle $PlainBundle --sidecar $Sidecar --mode plain
+& $Verifier $PlainBundle --timestamp-sidecar $Sidecar --timestamp-mode plain
+```
+
+Resultados esperados en la foundation actual:
+
+- se crea un único `.tsr` DER solo después de que la respuesta coincida con objeto y nonce;
+- assurance máximo `BOUND`;
+- firma, certificado, EKU, trust y validación histórica permanecen `NOT_EVALUATED` o `INDETERMINATE`;
+- la verificación offline no contacta la TSA;
+- alterar el bundle, usar modo incorrecto, truncar/corromper el sidecar o exceder 4 MiB falla sin aceptar el timestamp;
+- repetir la solicitud contra un sidecar existente no lo sobrescribe;
+- una TSA ausente o fallida no modifica ni invalida el bundle exportado.
+
+Para Encrypted use `--mode encrypted`; el imprint corresponde a los bytes exactos del archivo final y no requiere descifrarlo. No interprete `BOUND` como firma válida, TSA confiable o validación histórica.
+
 ## Cierre y manejo de resultados
 
 - Preserve los bundles originales de control mientras dure la investigación.

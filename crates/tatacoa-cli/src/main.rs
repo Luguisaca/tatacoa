@@ -4,13 +4,15 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::str::FromStr;
+use std::time::Duration;
 use tatacoa_core::{
     EngagementId, EnvironmentId, ExecutionId, ExportMode, KnowledgeCardInput, KnowledgeReference,
     KnowledgeReviewStatus, PlainExportAuthorization, ReplayPlaceholder, ReplayRecipeInput, ScopeId,
-    SecretPassword, SecurityProfile, SessionId, SourceClassification, TargetId, create_engagement,
-    create_environment, create_knowledge_card, create_replay_recipe, create_scope, create_session,
-    create_target, default_export_mode, execute, export_bundle, export_encrypted_bundle,
-    load_execution_manifest,
+    SecretPassword, SecurityProfile, SessionId, SourceClassification, TargetId, TimestampObject,
+    TimestampReport, TsaConfig, create_engagement, create_environment, create_knowledge_card,
+    create_replay_recipe, create_scope, create_session, create_target, default_export_mode,
+    execute, export_bundle, export_encrypted_bundle, load_execution_manifest, request_timestamp,
+    verify_timestamp_sidecar,
 };
 use tatacoa_verifier::{verify_bundle, verify_encrypted_bundle};
 use zeroize::Zeroize;
@@ -184,6 +186,28 @@ enum Commands {
         #[arg(long = "authorization-limit", required = true)]
         authorization_limits: Vec<String>,
     },
+    /// Request an RFC 3161 sidecar from an explicitly configured HTTPS TSA.
+    TimestampRequest {
+        #[arg(long)]
+        bundle: PathBuf,
+        #[arg(long)]
+        sidecar: PathBuf,
+        #[arg(long, value_enum)]
+        mode: TimestampMode,
+        #[arg(long)]
+        tsa: String,
+        #[arg(long, default_value_t = 30)]
+        timeout_seconds: u64,
+    },
+    /// Inspect and bind an RFC 3161 sidecar offline; this command never uses the network.
+    TimestampVerify {
+        #[arg(long)]
+        bundle: PathBuf,
+        #[arg(long)]
+        sidecar: PathBuf,
+        #[arg(long, value_enum)]
+        mode: TimestampMode,
+    },
     /// Verify a bundle offline without executing its contents.
     Verify { bundle: PathBuf },
 }
@@ -194,6 +218,12 @@ enum Profile {
     Professional,
     HighSensitivity,
     Custom,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum TimestampMode {
+    Plain,
+    Encrypted,
 }
 
 impl From<Profile> for SecurityProfile {
@@ -425,6 +455,26 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             )?;
             println!("{}", recipe.id);
         }
+        Commands::TimestampRequest {
+            bundle,
+            sidecar,
+            mode,
+            tsa,
+            timeout_seconds,
+        } => {
+            let config = TsaConfig::new(tsa, Duration::from_secs(timeout_seconds))?;
+            let report = request_timestamp(timestamp_object(mode, &bundle), &sidecar, &config)?;
+            print_timestamp_report(&report);
+            println!("sidecar={}", sidecar.display());
+        }
+        Commands::TimestampVerify {
+            bundle,
+            sidecar,
+            mode,
+        } => {
+            let report = verify_timestamp_sidecar(timestamp_object(mode, &bundle), &sidecar)?;
+            print_timestamp_report(&report);
+        }
         Commands::Verify { bundle } => {
             let report = if bundle.is_file() {
                 let password = prompt_verification_password()?;
@@ -443,6 +493,23 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     Ok(())
+}
+
+fn timestamp_object(mode: TimestampMode, bundle: &std::path::Path) -> TimestampObject<'_> {
+    match mode {
+        TimestampMode::Plain => TimestampObject::PlainBundle(bundle),
+        TimestampMode::Encrypted => TimestampObject::EncryptedBundle(bundle),
+    }
+}
+
+fn print_timestamp_report(report: &TimestampReport) {
+    println!("TIMESTAMP ASSURANCE: {:?}", report.assurance);
+    if let Some(policy) = &report.policy_oid {
+        println!("policy={policy}");
+    }
+    for check in &report.checks {
+        println!("{:?} {}: {}", check.status, check.name, check.detail);
+    }
 }
 
 fn export_by_policy(

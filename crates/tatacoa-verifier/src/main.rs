@@ -1,9 +1,9 @@
 #![forbid(unsafe_code)]
 
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use std::path::PathBuf;
 use std::process::ExitCode;
-use tatacoa_core::SecretPassword;
+use tatacoa_core::{SecretPassword, TimestampObject, TimestampReport, verify_timestamp_sidecar};
 use tatacoa_verifier::{verify_bundle, verify_encrypted_bundle};
 
 #[derive(Debug, Parser)]
@@ -18,6 +18,20 @@ struct Cli {
     /// Emit a machine-readable JSON report.
     #[arg(long)]
     json: bool,
+
+    /// RFC 3161 DER sidecar to inspect offline after bundle integrity passes.
+    #[arg(long, requires = "timestamp_mode")]
+    timestamp_sidecar: Option<PathBuf>,
+
+    /// Object mode bound by the timestamp sidecar.
+    #[arg(long, value_enum, requires = "timestamp_sidecar")]
+    timestamp_mode: Option<TimestampMode>,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum TimestampMode {
+    Plain,
+    Encrypted,
 }
 
 fn main() -> ExitCode {
@@ -40,8 +54,23 @@ fn main() -> ExitCode {
     };
     match result {
         Ok(report) => {
+            let timestamp = if report.valid {
+                match inspect_timestamp(&cli) {
+                    Ok(value) => value,
+                    Err(error) => {
+                        eprintln!("TIMESTAMP VERIFICATION ERROR: {error}");
+                        return ExitCode::from(2);
+                    }
+                }
+            } else {
+                None
+            };
             if cli.json {
-                match serde_json::to_string_pretty(&report) {
+                let combined = serde_json::json!({
+                    "bundle": report,
+                    "timestamp": timestamp,
+                });
+                match serde_json::to_string_pretty(&combined) {
                     Ok(json) => println!("{json}"),
                     Err(error) => {
                         eprintln!("verification report error: {error}");
@@ -57,6 +86,9 @@ fn main() -> ExitCode {
                     "VERIFICATION: {}",
                     if report.valid { "VALID" } else { "INVALID" }
                 );
+                if let Some(timestamp) = &timestamp {
+                    print_timestamp(timestamp);
+                }
             }
             if report.valid {
                 ExitCode::SUCCESS
@@ -68,5 +100,23 @@ fn main() -> ExitCode {
             eprintln!("VERIFICATION ERROR: {error}");
             ExitCode::from(2)
         }
+    }
+}
+
+fn inspect_timestamp(cli: &Cli) -> Result<Option<TimestampReport>, tatacoa_core::Error> {
+    let (Some(sidecar), Some(mode)) = (&cli.timestamp_sidecar, cli.timestamp_mode) else {
+        return Ok(None);
+    };
+    let object = match mode {
+        TimestampMode::Plain => TimestampObject::PlainBundle(&cli.bundle),
+        TimestampMode::Encrypted => TimestampObject::EncryptedBundle(&cli.bundle),
+    };
+    verify_timestamp_sidecar(object, sidecar).map(Some)
+}
+
+fn print_timestamp(report: &TimestampReport) {
+    println!("TIMESTAMP ASSURANCE: {:?}", report.assurance);
+    for check in &report.checks {
+        println!("{:?} {}: {}", check.status, check.name, check.detail);
     }
 }

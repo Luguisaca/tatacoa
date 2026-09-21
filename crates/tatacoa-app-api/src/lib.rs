@@ -2,16 +2,18 @@
 
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 use tatacoa_core::{
     ArtifactId, ArtifactPreview, CaptureStatus, ContinuityInspection, ContinuityState, Engagement,
     EngagementId, ExecutionContext, ExecutionId, ExportMode, KnowledgeCard, KnowledgeCardInput,
     KnowledgeReference, KnowledgeReviewStatus, Manifest, PlainExportAuthorization,
     ReplayPlaceholder, ReplayRecipe, ReplayRecipeInput, Result, SecretPassword, SecurityProfile,
-    Session, SessionId, create_engagement, create_environment, create_knowledge_card,
-    create_replay_recipe, create_scope, create_session, create_target, execute, export_bundle,
-    export_encrypted_bundle, inspect_continuity, list_engagements, list_execution_manifests,
-    list_sessions, load_execution_context, load_execution_manifest, pause_work,
-    read_artifact_preview, resume_work,
+    Session, SessionId, TimestampObject, TimestampReport, TsaConfig, create_engagement,
+    create_environment, create_knowledge_card, create_replay_recipe, create_scope, create_session,
+    create_target, execute, export_bundle, export_encrypted_bundle, inspect_continuity,
+    list_engagements, list_execution_manifests, list_sessions, load_execution_context,
+    load_execution_manifest, pause_work, read_artifact_preview, request_timestamp, resume_work,
+    verify_timestamp_sidecar,
 };
 use zeroize::Zeroize;
 
@@ -113,6 +115,24 @@ pub struct ExportRequest {
     pub mode: ExportMode,
     pub acknowledge_plaintext: bool,
     pub password: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TimestampRequest {
+    pub bundle: PathBuf,
+    pub sidecar: PathBuf,
+    pub mode: ExportMode,
+    pub tsa_endpoint: String,
+    pub timeout_seconds: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TimestampVerifyRequest {
+    pub bundle: PathBuf,
+    pub sidecar: PathBuf,
+    pub mode: ExportMode,
 }
 
 pub struct AppService {
@@ -327,6 +347,32 @@ impl AppService {
             }
         }
     }
+
+    pub fn request_timestamp(&self, request: TimestampRequest) -> Result<TimestampReport> {
+        let config = TsaConfig::new(
+            request.tsa_endpoint,
+            Duration::from_secs(request.timeout_seconds),
+        )?;
+        request_timestamp(
+            timestamp_object(request.mode, &request.bundle),
+            &request.sidecar,
+            &config,
+        )
+    }
+
+    pub fn verify_timestamp(&self, request: TimestampVerifyRequest) -> Result<TimestampReport> {
+        verify_timestamp_sidecar(
+            timestamp_object(request.mode, &request.bundle),
+            &request.sidecar,
+        )
+    }
+}
+
+fn timestamp_object(mode: ExportMode, bundle: &Path) -> TimestampObject<'_> {
+    match mode {
+        ExportMode::Plain => TimestampObject::PlainBundle(bundle),
+        ExportMode::Encrypted => TimestampObject::EncryptedBundle(bundle),
+    }
 }
 
 #[cfg(test)]
@@ -435,6 +481,31 @@ mod tests {
         assert_eq!(first_root, second_root);
         assert_eq!(first_root.entry_count, 3);
         assert_eq!(first_root.message_imprint()?.len(), 32);
+        let malformed_sidecar = root.join("malformed.tsr");
+        fs::write(&malformed_sidecar, b"not DER")
+            .map_err(|source| tatacoa_core::Error::io("write malformed sidecar", source))?;
+        assert!(
+            service
+                .verify_timestamp(TimestampVerifyRequest {
+                    bundle: bundle.clone(),
+                    sidecar: malformed_sidecar,
+                    mode: ExportMode::Plain,
+                })
+                .is_err()
+        );
+        let rejected_sidecar = root.join("rejected.tsr");
+        assert!(
+            service
+                .request_timestamp(TimestampRequest {
+                    bundle: bundle.clone(),
+                    sidecar: rejected_sidecar.clone(),
+                    mode: ExportMode::Plain,
+                    tsa_endpoint: "http://tsa.invalid".to_owned(),
+                    timeout_seconds: 30,
+                })
+                .is_err()
+        );
+        assert!(!rejected_sidecar.exists());
         let reopened = AppService::open(root);
         let listed = reopened.list_work()?;
         assert_eq!(listed.len(), 1);
