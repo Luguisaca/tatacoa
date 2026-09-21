@@ -236,3 +236,18 @@ Corrección aplicada en la misma rama SP3-10:
 - no modificar Core, App API, RFC 3161 ni reglas de seguridad/dominio.
 
 Revalidación humana requerida: reiniciar Desktop y confirmar que `Seleccionar carpeta…` abre el diálogo nativo, que `Abrir workspace` alcanza el backend y que el flujo mínimo puede continuar. Este hallazgo no se considera PASS hasta completar esa comprobación.
+
+
+### HUMAN-QA-02 — Security Profile incompatible entre Desktop y App API
+
+Estado: **FIX APLICADO — REVALIDACIÓN HUMANA PENDIENTE**.
+
+Durante la creación del primer trabajo del recorrido humano documentado, Desktop alcanzó correctamente `create_work`, pero envió `LabLearning` mientras el contrato serializado de `SecurityProfile` acepta `LAB_LEARNING`, `PROFESSIONAL`, `HIGH_SENSITIVITY` o `CUSTOM`. La operación fue rechazada antes de crear el trabajo.
+
+Corrección aplicada en SP3-10:
+
+- alinear los valores del selector Desktop con el contrato serializado existente: `LAB_LEARNING`, `PROFESSIONAL` y `HIGH_SENSITIVITY`;
+- no modificar la enum, políticas ni autoridad del Core/App API;
+- añadir una regresión Desktop que comprueba los valores públicos del selector y rechaza las variantes obsoletas observadas durante QA.
+
+Revalidación humana requerida: repetir el formulario documentado de creación LAB_LEARNING sobre un workspace de QA nuevo/no inicializado y confirmar que el contexto completo se crea y aparece en el resumen. El hallazgo no se considera PASS hasta completar esa comprobación.
