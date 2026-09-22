@@ -2,9 +2,9 @@
 
 ## Estado
 
-**APPROVED / PLANNED — NO IMPLEMENTADO.**
+**IMPLEMENTACIÓN INCREMENTAL EN CURSO — QA HUMANO INTEGRAL PENDIENTE.**
 
-Este documento define el alcance aprobado. No declara que las capacidades aquí descritas existan todavía.
+Este documento conserva el alcance aprobado de Sprint 03. El estado de cada bloque realmente construido y sus gates se registra en `SPRINT-03-IMPLEMENTATION.md` y `CURRENT-STATE.md`; una capacidad descrita aquí no se considera aprobada como producto hasta superar el QA correspondiente.
 
 ## Objetivo
 
@@ -95,6 +95,7 @@ También debe comprobar:
 - cierre durante una operación y recuperación segura;
 - accesibilidad básica;
 - build/empaquetado Windows/Linux.
+- artefacto distribuible trazable al commit probado y QA de cliente limpio sin toolchain de desarrollo como requisito de usuario.
 
 El spike no es una demo de tres pantallas ni autoriza a reducir el flujo de producto.
 
