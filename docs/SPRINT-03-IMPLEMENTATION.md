@@ -385,3 +385,30 @@ Rama `feat/sp3-15-guided-export-timestamp`, desde SP3-14. **Implementado; QA hum
 - Pruebas negativas: aislamiento entre engagements para orientación de exportación; Desktop no habilita modo prohibido, no inicia TSA en exportación y no borra el resultado de Execution. El contrato criptográfico/formatos no se modificó.
 
 QA de frontera: `node --check`, `cargo fmt --check`, check, Clippy estricto y pruebas App API/Desktop: PASS. HUMAN-QA-05 y Sprint 03 **no** se declaran PASS; se requiere el guion humano integral de producto antes de cualquier integración.
+
+## HUMAN QA — baseline de clientes limpios y gate de distribución (2026-09-22)
+
+Estado: **BASELINE DE ENTORNO PASS / INSTALACIÓN DE CLIENTE NUEVO NOT TESTED — BLOCKED POR ARTEFACTO DISTRIBUIBLE AUSENTE**.
+
+Se prepararon clientes separados del entorno de desarrollo para validar posteriormente la distribución real de la Usable Alpha:
+
+- Windows 10 Pro x64, build 19045, con Microsoft Edge WebView2 Runtime presente; Git presente; Rust/Cargo/Node/npm ausentes. Python está disponible como utilidad local de transferencia/QA y no constituye dependencia aprobada de TATACOA.
+- Parrot Security 7.3 x86_64, KDE/Wayland, WebKitGTK 4.1 presente; Git, Node/npm y Python presentes; Rust/Cargo ausentes.
+- Kali GNU/Linux Rolling 2026.3 x86_64, XFCE/X11, WebKitGTK 4.1 presente; Git presente; Rust/Cargo/Node/npm ausentes.
+
+Los tres entornos superaron el baseline de preparación aplicable. Esto no equivale a compatibilidad funcional de TATACOA porque todavía no se instaló ni ejecutó en ellos un candidato distribuible.
+
+La implementación funcional continuó posteriormente desde SP3-12 mediante SP3-13, SP3-14 y SP3-15. Sus PASS técnicos permanecen válidos, pero no sustituyen HUMAN-QA-05 ni la validación humana integral de Sprint 03.
+
+Por decisión de Validación Humana:
+
+- no instalar toolchains para sustituir el artefacto faltante;
+- no clonar/compilar el repositorio en el cliente limpio para declarar artificialmente PASS de distribución;
+- preservar los clientes preparados para probar el artefacto real;
+- tratar la ausencia del artefacto como gate de distribución BLOCKED, sin invalidar los PASS técnicos anteriores.
+
+Siguiente condición: producir un candidato distribuible trazable al commit probado para los targets aprobados, registrar su SHA-256 y dependencias/runtime reales y someterlo a instalación o despliegue, primer arranque, recorrido funcional, cierre/reapertura y desinstalación cuando aplique.
+
+La política de firma de release continúa pendiente y no se considera resuelta por este bloque.
+
+HUMAN-QA-05 y Sprint 03 permanecen pendientes de Validación Humana.

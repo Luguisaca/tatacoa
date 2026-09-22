@@ -111,3 +111,35 @@ SP3-15 integra la entrega desde la Execution abierta: Desktop consulta la polít
 Revalidar HUMAN-QA-05 y el recorrido integral SP3-13…SP3-15 como usuario en Windows: Workspace → contexto autorizado → ejecución → artifacts/ayuda → nota opcional → Replay/Retest → continuidad → exportación → timestamp/verificación. No declarar Usable Alpha PASS sin esa prueba humana. La restricción anterior de no avanzar Export/Encrypted/RFC 3161 antes de HUMAN-QA-05 fue sustituida por la autorización explícita del bloque de integración Desktop; los contratos de seguridad permanecen intactos.
 
 `HISTORICALLY_VALIDATED` permanece bloqueado por gate humano y la importación continuable conserva decisiones de materialización/formato pendientes. Ningún merge a `main` ocurre sin aprobación humana explícita.
+
+## Gate de distribución y clientes limpios — 2026-09-22
+
+Se completó el baseline de preparación para QA de distribución sobre Windows 10 Pro x64, Parrot Security 7.3 x86_64 y Kali 2026.3 x86_64.
+
+Resultado: **BASELINE DE ENTORNO PASS / INSTALACIÓN DE CLIENTE NUEVO NOT TESTED — BLOCKED POR ARTEFACTO DISTRIBUIBLE AUSENTE**.
+
+Los clientes se preservan deliberadamente sin convertirlos en entornos de desarrollo. No se instalarán Rust/Cargo/Node/npm ni se clonará/compilará el repositorio como sustituto de un artefacto de usuario final.
+
+WebView2 está presente en el cliente Windows y WebKitGTK 4.1 en los clientes Linux evaluados. Estas comprobaciones establecen preparación del entorno, no compatibilidad funcional de TATACOA.
+
+Desde el baseline SP3-12 la implementación avanzó incrementalmente por SP3-13, SP3-14 y SP3-15, con QA técnico PASS en sus respectivas fronteras. Este avance no convierte HUMAN-QA-05 ni Sprint 03 en PASS humano.
+
+El siguiente gate de distribución consiste en producir un candidato de Usable Alpha trazable al commit probado, con artefactos adecuados para los targets aprobados y SHA-256 registrado. La política de firma de release continúa siendo una decisión separada y no debe asumirse resuelta.
+
+El candidato debe poder probarse como producto sin entorno de desarrollo: instalación o despliegue según el formato, primer arranque, recorrido funcional, cierre/reapertura y desinstalación cuando aplique.
+
+Después se ejecutará la revalidación humana integral del recorrido vigente:
+
+Workspace → contexto autorizado → Execution → Artifact/Evidence → asistencia/comprensión → Knowledge → Replay/Retest → continuidad → exportación → timestamp/verificación → cierre → reapertura/continuación.
+
+`HISTORICALLY_VALIDATED` continúa bloqueado por su gate humano y la importación continuable mantiene sus decisiones pendientes. Ningún PASS técnico sustituye la Validación Humana y ningún merge a `main`, release o publicación ocurre sin aprobación humana explícita.
+
+### Horizonte posterior a Sprint 03
+
+Se conservan como **HORIZON / RESEARCH**, no como alcance autorizado de implementación:
+
+1. estudiar la extensión de los fundamentos de trazabilidad, provenance, preservación e integridad hacia digital forensics, incident response, investigación y otros trabajos profesionales reproducibles. Las garantías criptográficas actuales no equivalen por sí solas a cadena de custodia, suficiencia forense o admisibilidad legal. Antes de claims o capacidades especializadas se requiere investigación formal de adquisición, provenance, identidad del operador, fuentes de tiempo, almacenamiento, transferencias, cadena de custodia, estándares y aplicabilidad;
+
+2. mantener la Alpha bajo PolyForm Noncommercial 1.0.0 y estudiar posteriormente la evolución comercial según capacidades, soporte, validación y garantías sostenibles. Esta línea no autoriza cambios de licencia, paywalls ni degradación artificial de la Alpha.
+
+Estas líneas no modifican el cierre previsto de Sprint 03.

@@ -37,6 +37,12 @@ Esta matriz orienta trazabilidad. No afirma conformidad integral, certificación
 - MinTIC lista oficialmente la Resolución 02277 de 2025 y su Anexo 1 MSPI; el mapping exacto debe verificarse contra el texto normativo antes de convertirlo en requisito.
 - RFC 3161 continúa publicado y RFC Editor indica que fue actualizado por RFC 5816.
 
+## QA de distribución y líneas de investigación
+
+El baseline de clientes limpios del 2026-09-22 es evidencia interna de preparación de entorno, no una fuente normativa ni una declaración de compatibilidad funcional. El gate de distribución exige un artefacto trazable antes de ejecutar QA de instalación.
+
+Digital forensics/incident response y una eventual evolución comercial permanecen en HORIZON/RESEARCH. Antes de convertir la línea forense en requisitos o claims se deben revisar fuentes oficiales aplicables a adquisición, preservación, provenance, identidad, tiempo, almacenamiento, transferencias y cadena de custodia, además de jurisdicción y alcance. Las referencias ISO/IEC ya listadas orientan investigación, pero por sí solas no autorizan afirmar cadena de custodia, admisibilidad, certificación o suficiencia legal.
+
 ## Regla para nuevas decisiones
 
 Antes de convertir una referencia en requisito normativo obligatorio para un engagement concreto se debe verificar aplicabilidad, versión, texto fuente y jurisdicción.
