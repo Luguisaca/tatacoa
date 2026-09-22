@@ -41,8 +41,13 @@ Categories=Utility;
 Icon=tatacoa
 EOF
 cp "$appdir/tatacoa.desktop" "$appdir/usr/share/applications/tatacoa.desktop"
-if command -v appimagetool >/dev/null; then
-    appimagetool "$appdir" "$out/$base-desktop.AppImage"
+appimagetool_bin="${APPIMAGETOOL:-appimagetool}"
+if command -v "$appimagetool_bin" >/dev/null; then
+    [[ -n "${APPIMAGE_RUNTIME_FILE:-}" && -f "$APPIMAGE_RUNTIME_FILE" ]] || {
+        echo 'Se requiere APPIMAGE_RUNTIME_FILE local para evitar descarga implícita.' >&2
+        exit 1
+    }
+    APPIMAGE_EXTRACT_AND_RUN=1 ARCH=x86_64 "$appimagetool_bin" --runtime-file "$APPIMAGE_RUNTIME_FILE" "$appdir" "$out/$base-desktop.AppImage"
 else
     echo 'AppImage NOT BUILT: appimagetool no está instalado en el host de build.' >&2
 fi
