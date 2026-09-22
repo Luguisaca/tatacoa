@@ -262,6 +262,14 @@ Resultado esperado: el comando termina sin deadlock y reporta captura truncada c
 | `tatacoa-verify` | bundle Plain procesado con artifacts inválidos | `1` |
 | `tatacoa-verify` | error de lectura, formato o autenticación | `2` |
 
+## Gate previo — cliente limpio y artefacto distribuible
+
+Para QA de instalación/primer arranque no convierta el cliente en máquina de desarrollo. Registre primero sistema operativo, arquitectura y runtimes gráficos aplicables. Si no existe un artefacto distribuible trazable al commit bajo prueba, clasifique instalación como NOT TESTED / BLOCKED y deténgase: no instale Rust/Cargo/Node/npm ni clone/compile el repositorio para sustituir el candidato faltante.
+
+El baseline del 2026-09-22 dejó preparados Windows 10 Pro x64, Kali 2026.3 x86_64 y Parrot 7.3 x86_64. Ese PASS describe únicamente preparación del entorno; no demuestra todavía instalación ni compatibilidad funcional de TATACOA.
+
+Cuando exista candidato, registre al menos origen/commit, nombre y formato del artefacto, SHA-256, firma cuando aplique, resultado de instalación, primer arranque, flujo funcional, cierre/reapertura y desinstalación.
+
 ## Registro mínimo de QA
 
 Copie esta tabla al reporte de la ejecución:
