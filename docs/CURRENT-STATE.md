@@ -134,6 +134,8 @@ La Validación Humana aprobó el siguiente contrato de cierre técnico: importac
 
 SP3-18 produjo en WSL2 de build candidatos locales Linux x64 `.deb`, AppImage y CLI `.tar.gz` desde `7b47de9`, con SHA-256 verificados y sin instalar toolchains en Kali/Parrot. Los hashes y límites están en `SPRINT-03-IMPLEMENTATION.md`. QA de cliente limpio Linux continúa NOT TESTED; la importación continuable y Desktop Windows instalable siguen pendientes en este corte.
 
+SP3-19 produjo instalador NSIS Windows x64 desde `3cd976f` con hash verificado y firma ausente declarada. El Desktop portable y CLI separados de SP3-16 siguen disponibles como candidatos anteriores; el set completo debe regenerarse desde el HEAD final después de completar cambios funcionales. Instalación en Windows 10 limpio permanece HUMAN QA pendiente.
+
 Después se ejecutará la revalidación humana integral del recorrido vigente:
 
 Workspace → contexto autorizado → Execution → Artifact/Evidence → asistencia/comprensión → Knowledge → Replay/Retest → continuidad → exportación → timestamp/verificación → cierre → reapertura/continuación.
