@@ -2,11 +2,11 @@
 
 ## Fecha de corte
 
-2026-09-21
+2026-09-22
 
 ## Rama incremental actual
 
-`feat/sp3-15-guided-export-timestamp`, heredada linealmente de SP3-01…SP3-14. HUMAN-QA-05 permanece FAIL hasta revalidación de usuario.
+`codex/sp3-22-alpha-qa-candidates`, heredada linealmente de SP3-16…SP3-21. HUMAN-QA-05 permanece FAIL hasta revalidación de usuario.
 
 Este documento es la fuente operativa para saber dónde está el proyecto y qué sigue. No sustituye PROJECT, PRD, ROADMAP, ARCHITECTURE ni DECISIONS.
 
@@ -15,7 +15,7 @@ Este documento es la fuente operativa para saber dónde está el proyecto y qué
 - Sprint 01: implementado y validado dentro de su alcance documentado.
 - Sprint 02 / Alpha Expansion: implementado y validado dentro de su alcance documentado.
 - Encrypted v1 + hardening de password: integrado y con QA técnico/humano previo; **validación integral de usuario pendiente** hasta disponer de la Usable Alpha.
-- Sprint 03 / Usable Alpha: en implementación incremental; App API, Desktop E2E, capacidades de producto, continuidad, hardening y RFC 3161 hasta `TRUSTED` están implementados con QA técnico. QA humano integral y el gate histórico siguen pendientes.
+- Sprint 03 / Usable Alpha: alcance técnico implementado para el contrato aprobado, incluidos App API, Desktop, continuidad, importación Plain v2/Encrypted v1, distribución local y RFC 3161 hasta `TRUSTED`. La preparación de candidatos finales y el QA humano integral siguen pendientes en este corte documental; el gate histórico continúa bloqueado.
 
 Los PASS técnicos existentes se conservan. Cambiar el estado documental de Encrypted v1 no invalida pruebas previas: reconoce que todavía falta probarlo dentro de una experiencia real de producto.
 
@@ -139,6 +139,8 @@ SP3-19 produjo instalador NSIS Windows x64 desde `3cd976f` con hash verificado y
 SP3-20 implementa importación continuable de Plain v2 en Core, App API, CLI y Desktop con verificación previa, copia recibida intacta y continuidad en pausa. Encrypted v1 recibido requiere aún materialización segura; la validación integral de importación y del producto es HUMAN QA pendiente. Los artefactos de distribución previos a este cambio funcional no son el candidato final y deberán regenerarse.
 
 SP3-21 implementa también importación continuable Encrypted v1: verifica el original y la copia retenida, materializa artifacts autenticados solo en staging y publica un Engagement pausado. El workspace local resultante contiene plaintext y Desktop lo advierte; QA humano de esa experiencia y de perfiles sensibles continúa pendiente. Plain v2 y Encrypted v1 son las versiones importables con contexto tipado completo en esta Alpha; bundles v1 antiguos permanecen verificables, no continuables.
+
+SP3-22 reúne el cierre técnico para generar el set distribuible desde un único HEAD local limpio y comprobar hashes y contenido. La generación y sus SHA-256 se conservan como reporte de QA junto a los artefactos; instalar y recorrer el producto en clientes limpios sigue siendo HUMAN QA pendiente. Sprint 03 queda técnicamente preparado para esa validación, sin declaración de PASS humano.
 
 Después se ejecutará la revalidación humana integral del recorrido vigente:
 
