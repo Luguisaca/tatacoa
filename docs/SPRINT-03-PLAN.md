@@ -111,9 +111,13 @@ Un paquete se trata como entrada no confiable. Abrir/importar requiere validaci�
 
 La autorización para acceder al contenido sensible sigue el modelo de seguridad de TATACOA. Importar nunca reescribe provenance ni atribuye al operador actual acciones históricas de otra persona.
 
+La Validación Humana aprobó para SP3 que el paquete recibido se conserve intacto, con provenance original, y que su apertura continuable ocurra solo después de verificación y revalidación de autorización. Importar no promueve automáticamente ningún Artifact a Evidence.
+
 ## RFC 3161 — gate de diseño
 
 RFC 3161 forma parte de SP3 como diseño + primera implementación funcional.
+
+Para esta Usable Alpha, `HISTORICALLY_VALIDATED` permanece bloqueado por decisión humana. El alcance implementado llega hasta `TRUSTED` bajo la política explícita aprobada; ausencia de evaluación de revocación histórica se informa como `INDETERMINATE`.
 
 Antes del código se debe resolver con fuentes oficiales y aprobación humana:
 

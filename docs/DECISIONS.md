@@ -50,6 +50,9 @@ Estas decisiones provienen del Discovery y de decisiones humanas posteriores apr
 | D-045 | `TRUSTED` exige path PKIX, anchor TSA explícito, validez al `genTime`, EKU de timestamping y policy aceptada, separado del trust TLS. `TRUSTED != HISTORICALLY_VALIDATED`; ausencia de evidencia de revocación histórica es `INDETERMINATE`, sin red offline. El contrato final histórico permanece cerrado | APPROVED/PARTIAL |
 | D-046 | Asistencia offline de herramientas separa hechos observados de Execution, documentación local con fuente y adapters específicos opcionales; herramientas desconocidas conservan Generic Execution Adapter. `GENERIC/DOCUMENTED/ADAPTED` describe disponibilidad funcional, no confianza ni Evidence. Probes no se ejecutan para herramientas desconocidas y nunca pertenecen al engagement ni promueven Evidence | APPROVED (SP3-12) |
 | D-047 | QA de distribución en cliente limpio no se sustituye instalando toolchains ni compilando el repositorio; requiere artefacto distribuible trazable al commit probado. Un baseline de entorno no equivale a compatibilidad funcional | APPROVED |
+| D-050 | Importación continuable en SP3 preserva intacto el paquete recibido y su provenance original; solo un paquete compatible verificado puede abrirse para continuación con autorización revalidada. Importar nunca promueve automáticamente Artifact a Evidence ni atribuye acciones históricas al operador actual | APPROVED (SP3-17) |
+| D-051 | `HISTORICALLY_VALIDATED` permanece bloqueado para la Usable Alpha de SP3. `TRUSTED` conserva su alcance documentado y la revocación histórica no evaluada permanece `INDETERMINATE`; no se afirmará validación histórica por inferencia | APPROVED (SP3-17) |
+| D-052 | Distribución Windows de SP3 comprende Desktop portable e instalable y CLI separado. Distribución Linux x64 comprende Desktop `.deb` y AppImage y CLI separado. Los artefactos se construyen en entornos de desarrollo/build, nunca convirtiendo clientes QA limpios en máquinas de desarrollo; QA de cliente limpio y firma de release son gates separados | APPROVED (SP3-17) |
 | D-048 | Explorar digital forensics/incident response/investigación como horizonte compatible con provenance/preservación/integridad, sin afirmar cadena de custodia o suficiencia forense/legal antes de diseño, fuentes y validación formal | HORIZON/RESEARCH |
 | D-049 | La Alpha conserva PolyForm Noncommercial 1.0.0; una evolución comercial posterior se estudiará por capacidades, soporte y garantías sostenibles, sin autorizar cambios de licencia/paywalls ni degradar artificialmente la Alpha | HORIZON/RESEARCH |
 | D-032 | El roadmap es acumulativo: un sprint extiende la dirección del producto y no puede redefinir silenciosamente arquitectura/decisiones previas | APPROVED |
@@ -59,7 +62,7 @@ Estas decisiones provienen del Discovery y de decisiones humanas posteriores apr
 ## Decisiones pendientes de diseño/spike
 
 - endurecimiento futuro de protección persistente del workspace más allá de la política de reapertura D-041;
-- importación: permanecen abiertos materialización/formato, compatibilidad y versiones, estados, provenance recibido y condiciones exactas para convertir un paquete ya verificado en proyecto continuable; D-040 ya congela verify-before-trust, ausencia de autoejecución y revalidación de autorización;
+- detalles de implementación de importación (formato local, versiones soportadas y materialización) deben respetar D-035, D-040 y D-050; no autorizan mutar el paquete recibido ni promover Evidence;
 - estrategia async solo si la necesidad lo exige;
 - política de release signing;
 - SBOM tooling;

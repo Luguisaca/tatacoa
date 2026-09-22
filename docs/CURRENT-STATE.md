@@ -130,6 +130,8 @@ El candidato debe poder probarse como producto sin entorno de desarrollo: instal
 
 SP3-16 añade empaquetado local reproducible de candidatos portables Windows x64 separados para Desktop y CLI, con commit de origen y SHA-256. Su existencia habilita el siguiente QA de despliegue en cliente limpio, pero no demuestra aún primer arranque o funcionalidad allí. No hay artefactos Linux nativos desde este host Windows ni política de firma de release aprobada.
 
+La Validación Humana aprobó el siguiente contrato de cierre técnico: importación continuable con paquete original/provenance preservados y sin promoción automática de Evidence; `HISTORICALLY_VALIDATED` bloqueado para esta Alpha; Desktop Windows portable e instalable, Desktop Linux x64 `.deb` y AppImage, y CLI separado en ambas plataformas. Estas decisiones están aprobadas, pero su registro no constituye por sí solo implementación ni QA de los artefactos nuevos.
+
 Después se ejecutará la revalidación humana integral del recorrido vigente:
 
 Workspace → contexto autorizado → Execution → Artifact/Evidence → asistencia/comprensión → Knowledge → Replay/Retest → continuidad → exportación → timestamp/verificación → cierre → reapertura/continuación.

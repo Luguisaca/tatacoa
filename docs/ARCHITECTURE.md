@@ -78,6 +78,8 @@ El build desde código fuente y la distribución a usuario final son gates disti
 
 El baseline de clientes limpios de 2026-09-22 confirma disponibilidad de los runtimes gráficos observados en Windows 10, Kali y Parrot, pero no declara todavía compatibilidad funcional de TATACOA: esa afirmación requiere ejecutar el artefacto distribuible.
 
+La distribución aprobada para SP3 separa Desktop y CLI: Windows x64 requiere Desktop portable e instalable; Linux x64 requiere Desktop `.deb` y AppImage; cada plataforma ofrece CLI aparte. Build, empaquetado y QA de cliente limpio son pasos distintos. La firma de release no se infiere de la existencia de paquetes.
+
 ## Local-first y offline
 
 Las funciones locales de TATACOA no dependen de SaaS, cuenta cloud, telemetría ni conexión permanente.
