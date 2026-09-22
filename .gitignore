@@ -16,6 +16,10 @@ target
 # Contains mutation testing data
 **/mutants.out*/
 
+# Tauri generates the host-platform schema during local checks/builds.
+# Windows schemas already tracked by the project remain untouched; Linux output is local build state.
+crates/tatacoa-desktop/gen/schemas/linux-schema.json
+
 # RustRover
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
