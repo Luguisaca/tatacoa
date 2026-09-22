@@ -422,3 +422,11 @@ El ZIP Desktop es una modalidad portable de despliegue para un cliente con Micro
 QA técnico del código fuente antes del empaquetado: `cargo fmt --check`, `cargo check --locked --offline --workspace --all-targets`, `cargo clippy --locked --offline --workspace --all-targets -- -D warnings` y `cargo test --locked --offline --workspace`: PASS. El build release y los SHA-256 del candidato quedan registrados en el reporte de distribución local. Estos controles no cierran HUMAN-QA-05, Encrypted v1 como experiencia ni el QA integral SP3.
 
 La importación continuable de bundles sigue bloqueada por la decisión de materialización/formato, compatibilidad, estados y provenance recibido enumerada en `DECISIONS.md`. D-040 ya impone verify-before-trust y revalidación de autorización, pero no resuelve ese contrato. No se implementa por inferencia. La validación histórica RFC 3161 también permanece en gate.
+
+## Bloque 17 — decisiones humanas de cierre técnico
+
+Rama `codex/sp3-17-approved-contracts`, desde SP3-16. La Validación Humana cerró el contrato de importación conservando paquete y provenance original, sin promoción automática de Evidence; excluyó `HISTORICALLY_VALIDATED` de esta Alpha; y definió modalidades Windows Desktop portable + instalable, Linux Desktop `.deb` + AppImage y CLI separado. `DECISIONS.md`, arquitectura, plan y estado reflejan aprobación, no implementación. QA documental: `git diff --check` PASS. Esta decisión sustituye el bloqueo de diseño señalado arriba, sin alterar el registro histórico del bloque 16.
+
+## Bloque 18 — empaquetado Linux local reproducible
+
+Rama `codex/sp3-18-linux-distribution`, desde SP3-17. `scripts/package-linux-alpha.sh` compila en Linux x64 desde lockfile sin red y prepara Desktop `.deb`, Desktop AppImage cuando existe `appimagetool`, y CLI separado `.tar.gz`. El host WSL2 de desarrollo dispone de Rust, `dpkg-deb` y WebKitGTK 4.1; `appimagetool` no está presente. Los clientes Kali/Parrot permanecen limpios y solo recibirán artefactos, nunca toolchain. Los resultados de build y SHA-256 se registran separadamente; la ausencia de AppImage impide afirmar completo el set Linux.
