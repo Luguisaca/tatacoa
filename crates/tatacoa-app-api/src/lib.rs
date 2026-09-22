@@ -12,10 +12,11 @@ use tatacoa_core::{
     TsaConfig, TsaTrustPolicy, assist_execution, authorize_encrypted_export,
     authorize_plain_export, create_engagement, create_environment, create_knowledge_card,
     create_replay_recipe, create_scope, create_session, create_target, default_export_mode,
-    execute, export_bundle, export_encrypted_bundle, inspect_continuity, list_engagements,
-    list_execution_manifests, list_sessions, load_associated_knowledge, load_associated_replay,
-    load_execution_context, load_execution_manifest, pause_work, read_artifact_preview,
-    request_timestamp, resume_work, verify_timestamp_sidecar, verify_timestamp_sidecar_with_trust,
+    execute, export_bundle, export_encrypted_bundle, import_plain_bundle, inspect_continuity,
+    list_engagements, list_execution_manifests, list_sessions, load_associated_knowledge,
+    load_associated_replay, load_execution_context, load_execution_manifest, pause_work,
+    read_artifact_preview, request_timestamp, resume_work, verify_timestamp_sidecar,
+    verify_timestamp_sidecar_with_trust,
 };
 use zeroize::Zeroize;
 
@@ -212,6 +213,24 @@ impl AppService {
 
     pub fn list_work(&self) -> Result<Vec<Engagement>> {
         list_engagements(&self.workspace)
+    }
+
+    pub fn import_plain_work(
+        &self,
+        bundle: &Path,
+        authorization_revalidated: bool,
+    ) -> Result<WorkContext> {
+        let engagement = import_plain_bundle(&self.workspace, bundle, authorization_revalidated)?;
+        let session = list_sessions(&self.workspace, &engagement.id)?
+            .into_iter()
+            .next()
+            .ok_or_else(|| {
+                tatacoa_core::Error::InvalidManifest("imported session is missing".to_owned())
+            })?;
+        Ok(WorkContext {
+            engagement,
+            session,
+        })
     }
 
     pub fn create_work(&self, request: NewWorkRequest) -> Result<WorkContext> {
@@ -905,6 +924,52 @@ mod tests {
         })?;
         assert!(bundle.join("manifest.json").is_file());
         let first_root = tatacoa_core::compute_plain_root(&bundle)?;
+        let received_workspace = root.join("received-workspace");
+        let received = AppService::open(&received_workspace);
+        assert!(received.import_plain_work(&bundle, false).is_err());
+        assert!(!received_workspace.join("engagements").exists());
+        let imported = received.import_plain_work(&bundle, true)?;
+        assert_eq!(imported.engagement, work.engagement);
+        assert_eq!(imported.session.id, work.session.id);
+        let imported_summary = received.summarize(&work.engagement.id)?;
+        assert_eq!(imported_summary.executions.len(), 1);
+        assert_eq!(
+            imported_summary.continuity.state.status,
+            tatacoa_core::ContinuityStatus::Paused
+        );
+        assert!(received.import_plain_work(&bundle, true).is_err());
+        assert!(
+            received
+                .execution(&work.engagement.id, &manifest.execution.id)?
+                .artifacts
+                .iter()
+                .all(|item| item.evidence_state == tatacoa_core::EvidenceState::Captured)
+        );
+        let retained = received_workspace
+            .join("engagements")
+            .join(work.engagement.id.as_str())
+            .join("received/plain");
+        assert_eq!(tatacoa_core::compute_plain_root(&retained)?, first_root);
+        let claimed_bundle = root.join("claimed-evidence-bundle");
+        for dir in ["objects", "knowledge", "replay", "verification"] {
+            fs::create_dir_all(claimed_bundle.join(dir))
+                .map_err(|source| tatacoa_core::Error::io("create claimed test bundle", source))?;
+        }
+        for item in &manifest.artifacts {
+            fs::copy(bundle.join(&item.path), claimed_bundle.join(&item.path))
+                .map_err(|source| tatacoa_core::Error::io("copy claimed test object", source))?;
+        }
+        let original = fs::read_to_string(bundle.join("manifest.json"))
+            .map_err(|source| tatacoa_core::Error::io("read test manifest", source))?;
+        assert!(original.contains("\"CAPTURED\""));
+        let claimed = original.replacen("\"CAPTURED\"", "\"VALIDATED\"", 1);
+        fs::write(claimed_bundle.join("manifest.json"), claimed)
+            .map_err(|source| tatacoa_core::Error::io("write claimed test manifest", source))?;
+        assert!(
+            AppService::open(root.join("claimed-import-workspace"))
+                .import_plain_work(&claimed_bundle, true)
+                .is_err()
+        );
         let second_root = tatacoa_core::compute_plain_root(&bundle)?;
         assert_eq!(first_root, second_root);
         assert_eq!(first_root.entry_count, 3);
@@ -977,6 +1042,13 @@ mod tests {
         )
         .map_err(|source| tatacoa_core::Error::io("tamper exported artifact", source))?;
         assert!(tatacoa_core::compute_plain_root(&bundle).is_err());
+        let rejected_workspace = root.join("rejected-import-workspace");
+        assert!(
+            AppService::open(&rejected_workspace)
+                .import_plain_work(&bundle, true)
+                .is_err()
+        );
+        assert!(!rejected_workspace.join("engagements").exists());
         Ok(())
     }
 }

@@ -30,6 +30,20 @@ fn select_workspace(app: tauri::AppHandle) -> CommandResult<Option<String>> {
 }
 
 #[tauri::command]
+fn select_plain_bundle(app: tauri::AppHandle) -> CommandResult<Option<String>> {
+    app.dialog()
+        .file()
+        .set_title("Seleccionar bundle Plain recibido")
+        .blocking_pick_folder()
+        .map(|path| {
+            path.into_path()
+                .map(|value| value.to_string_lossy().into_owned())
+                .map_err(|error| error.to_string())
+        })
+        .transpose()
+}
+
+#[tauri::command]
 fn select_export_destination(app: tauri::AppHandle) -> CommandResult<Option<String>> {
     app.dialog()
         .file()
@@ -69,6 +83,17 @@ fn list_work(workspace: String) -> CommandResult<Vec<Engagement>> {
 fn create_work(workspace: String, request: NewWorkRequest) -> CommandResult<WorkContext> {
     AppService::open(workspace)
         .create_work(request)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn import_plain_work(
+    workspace: String,
+    bundle: String,
+    authorization_revalidated: bool,
+) -> CommandResult<WorkContext> {
+    AppService::open(workspace)
+        .import_plain_work(std::path::Path::new(&bundle), authorization_revalidated)
         .map_err(|error| error.to_string())
 }
 
@@ -281,9 +306,11 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             list_work,
             select_workspace,
+            select_plain_bundle,
             select_export_destination,
             select_timestamp_sidecar,
             create_work,
+            import_plain_work,
             summarize,
             run_tool,
             authorization_review,
@@ -327,6 +354,9 @@ mod tests {
         assert!(html.contains("id=\"execution-review\" hidden"));
         assert!(html.contains("id=\"confirm-run\""));
         assert!(html.contains("Confirmar y ejecutar"));
+        assert!(html.contains("id=\"import-form\""));
+        assert!(html.contains("id=\"import-authorization\" required"));
+        assert!(include_str!("../ui/app.js").contains("invoke('import_plain_work'"));
     }
 
     #[test]

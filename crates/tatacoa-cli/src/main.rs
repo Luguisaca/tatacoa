@@ -11,8 +11,9 @@ use tatacoa_core::{
     SecretPassword, SecurityProfile, SessionId, SourceClassification, TargetId, TimestampObject,
     TimestampReport, TsaConfig, TsaTrustPolicy, create_engagement, create_environment,
     create_knowledge_card, create_replay_recipe, create_scope, create_session, create_target,
-    default_export_mode, execute, export_bundle, export_encrypted_bundle, load_execution_manifest,
-    request_timestamp, verify_timestamp_sidecar, verify_timestamp_sidecar_with_trust,
+    default_export_mode, execute, export_bundle, export_encrypted_bundle, import_plain_bundle,
+    load_execution_manifest, request_timestamp, verify_timestamp_sidecar,
+    verify_timestamp_sidecar_with_trust,
 };
 use tatacoa_verifier::{verify_bundle, verify_encrypted_bundle};
 use zeroize::Zeroize;
@@ -30,6 +31,15 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
+    /// Verify and import a received Plain v2 bundle as paused, continuable work.
+    ImportPlain {
+        #[arg(long)]
+        workspace: PathBuf,
+        #[arg(long)]
+        bundle: PathBuf,
+        #[arg(long, required = true)]
+        authorization_revalidated: bool,
+    },
     /// Create an isolated engagement context.
     EngagementCreate {
         #[arg(long)]
@@ -264,6 +274,14 @@ fn main() -> ExitCode {
 
 fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
     match cli.command {
+        Commands::ImportPlain {
+            workspace,
+            bundle,
+            authorization_revalidated,
+        } => {
+            let engagement = import_plain_bundle(&workspace, &bundle, authorization_revalidated)?;
+            println!("engagement={}", engagement.id);
+        }
         Commands::EngagementCreate {
             workspace,
             name,

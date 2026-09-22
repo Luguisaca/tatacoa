@@ -136,6 +136,8 @@ SP3-18 produjo en WSL2 de build candidatos locales Linux x64 `.deb`, AppImage y 
 
 SP3-19 produjo instalador NSIS Windows x64 desde `3cd976f` con hash verificado y firma ausente declarada. El Desktop portable y CLI separados de SP3-16 siguen disponibles como candidatos anteriores; el set completo debe regenerarse desde el HEAD final después de completar cambios funcionales. Instalación en Windows 10 limpio permanece HUMAN QA pendiente.
 
+SP3-20 implementa importación continuable de Plain v2 en Core, App API, CLI y Desktop con verificación previa, copia recibida intacta y continuidad en pausa. Encrypted v1 recibido requiere aún materialización segura; la validación integral de importación y del producto es HUMAN QA pendiente. Los artefactos de distribución previos a este cambio funcional no son el candidato final y deberán regenerarse.
+
 Después se ejecutará la revalidación humana integral del recorrido vigente:
 
 Workspace → contexto autorizado → Execution → Artifact/Evidence → asistencia/comprensión → Knowledge → Replay/Retest → continuidad → exportación → timestamp/verificación → cierre → reapertura/continuación.

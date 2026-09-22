@@ -13,6 +13,7 @@
   <section>
     <div id="error" role="alert" hidden></div>
     <article id="welcome"><h2>Usable Alpha</h2><p>Abra un workspace existente o cree el contexto autorizado de un nuevo trabajo.</p></article>
+    <article id="import-panel"><h2>Recibir trabajo desde bundle Plain</h2><p>El bundle se verifica antes de abrirlo. TATACOA conserva una copia original y la procedencia registrada; ninguna Evidence se valida automáticamente. Esta Alpha admite importación continuable de Plain v2.</p><form id="import-form"><label>Carpeta del bundle Plain<input id="import-bundle" required></label><button type="button" id="select-plain-bundle">Seleccionar carpeta…</button><label><input type="checkbox" id="import-authorization" required> Confirmo que tengo autorización vigente para recibir y continuar este trabajo y revisaré el Scope antes de operar.</label><button type="submit">Verificar e importar trabajo</button></form><p id="import-feedback" class="feedback" role="status" aria-live="polite"></p></article>
     <article id="create-panel">
       <h2>Nuevo trabajo autorizado</h2>
       <form id="create-form">

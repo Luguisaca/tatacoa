@@ -13,6 +13,7 @@ mod encrypted_format;
 mod encrypted_read;
 mod error;
 mod ids;
+mod import;
 mod knowledge;
 mod model;
 mod paths;
@@ -44,6 +45,7 @@ pub use ids::{
     ArtifactId, EngagementId, EnvironmentId, ExecutionId, KnowledgeId, ReplayId, ScopeId,
     SessionId, TargetId,
 };
+pub use import::import_plain_bundle;
 pub use knowledge::{
     KNOWLEDGE_SCHEMA_VERSION, KnowledgeCard, KnowledgeCardInput, KnowledgeReference,
     KnowledgeReviewStatus, SourceClassification,
