@@ -105,3 +105,26 @@ SP3-12 añade asistencia genérica offline de lectura: hechos de Execution con o
 Revalidar HUMAN-QA-05/SP3-12 sobre el flujo Execution → Artifact/Evidence → comprensión/contexto → Replay/Retest de `feat/sp3-12-offline-tool-assistance`. Export/Encrypted v1/RFC 3161 no avanzan hasta completar esa revalidación humana.
 
 `HISTORICALLY_VALIDATED` permanece bloqueado por gate humano y la importación continuable conserva decisiones de materialización/formato pendientes. Ningún merge a `main` ocurre sin aprobación humana explícita.
+
+## Cierre QA de clientes limpios — 2026-09-22
+
+Se completó el baseline de preparación de Windows 10 Pro x64, Parrot Security 7.3 x86_64 y Kali 2026.3 x86_64. Los entornos quedan preservados como clientes no preparados para desarrollo: no se instalaron Rust/Cargo para hacer pasar el QA. WebView2 está presente en Windows y WebKitGTK 4.1 en los dos Linux.
+
+Resultado: **baseline de entorno PASS**. La instalación/ejecución de TATACOA como cliente nuevo queda **NOT TESTED / BLOCKED** porque en el estado revisado de SP3-12 no existe una Release publicada con artefacto distribuible de usuario final. Este bloqueo es de distribución/QA y no invalida los PASS técnicos anteriores.
+
+HUMAN-QA-05/SP3-12 sigue pendiente. Antes de retomarlo sobre los clientes limpios debe existir un candidato distribuible trazable al commit probado; no se debe sustituir ese requisito clonando/compilando el repositorio en las máquinas de cliente.
+
+### Horizonte aprobado para análisis posterior a SP3
+
+La Validación Humana pidió conservar dos líneas de producto sin incorporarlas silenciosamente a Sprint 03:
+
+1. estudiar la extensión de los fundamentos de trazabilidad, provenance, preservación e integridad hacia digital forensics/incident response/investigación y otros trabajos profesionales reproducibles. Las garantías criptográficas existentes no deben presentarse como cadena de custodia ni suficiencia forense/legal. Antes de cualquier claim o implementación especializada se requiere investigación formal de adquisición, provenance, identidad del operador, fuentes de tiempo, almacenamiento, transferencias, cadena de custodia, estándares y aplicabilidad;
+2. mantener la Alpha bajo PolyForm Noncommercial 1.0.0 y estudiar posteriormente ediciones/capacidades comerciales. La separación futura debe basarse también en qué garantías, soporte y validación puede sostener responsablemente cada edición; la Alpha debe seguir siendo útil y no convertirse en una demo artificialmente limitada.
+
+Estas líneas son **HORIZON / RESEARCH**, no autorización para Codex de implementar funciones forenses, cambiar licencia, crear paywalls o redefinir Sprint 03.
+
+## Siguiente paso actualizado
+
+El siguiente trabajo de implementación debe partir del estado real de SP3-12 y resolver el gate que permita generar/probar un artefacto distribuible de la Usable Alpha en cliente limpio, preservando Desktop independiente del CLI y sin convertir toolchains de desarrollo en requisitos de usuario. Después se retoma HUMAN-QA-05/SP3-12 sobre el flujo Execution → Artifact/Evidence → comprensión/contexto → Replay/Retest.
+
+Export/Encrypted v1/RFC 3161 permanecen detrás de la revalidación humana ya documentada. HISTORICALLY_VALIDATED continúa bloqueado por su gate y la importación continuable conserva sus decisiones pendientes. Ningún merge, release o publicación ocurre sin aprobación humana explícita.
