@@ -128,6 +128,8 @@ El siguiente gate de distribución consiste en producir un candidato de Usable A
 
 El candidato debe poder probarse como producto sin entorno de desarrollo: instalación o despliegue según el formato, primer arranque, recorrido funcional, cierre/reapertura y desinstalación cuando aplique.
 
+SP3-16 añade empaquetado local reproducible de candidatos portables Windows x64 separados para Desktop y CLI, con commit de origen y SHA-256. Su existencia habilita el siguiente QA de despliegue en cliente limpio, pero no demuestra aún primer arranque o funcionalidad allí. No hay artefactos Linux nativos desde este host Windows ni política de firma de release aprobada.
+
 Después se ejecutará la revalidación humana integral del recorrido vigente:
 
 Workspace → contexto autorizado → Execution → Artifact/Evidence → asistencia/comprensión → Knowledge → Replay/Retest → continuidad → exportación → timestamp/verificación → cierre → reapertura/continuación.

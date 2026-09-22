@@ -51,7 +51,7 @@ La implementación base y el hardening de password por Security Profile están i
 
 ## Sprint 03 — Usable Alpha
 
-**Estado: IMPLEMENTED / QA PENDING — implementación incremental hasta SP3-12; aprobación humana integral pendiente.**
+**Estado: IMPLEMENTED / QA PENDING — implementación incremental hasta SP3-16; aprobación humana integral pendiente.**
 
 Objetivo: pasar de componentes implementados a una Alpha utilizable para trabajo y QA humano real de una pentester.
 

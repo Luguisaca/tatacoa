@@ -412,3 +412,13 @@ Siguiente condición: producir un candidato distribuible trazable al commit prob
 La política de firma de release continúa pendiente y no se considera resuelta por este bloque.
 
 HUMAN-QA-05 y Sprint 03 permanecen pendientes de Validación Humana.
+
+## Bloque 16 — candidato portable Windows para HUMAN QA
+
+Rama `codex/sp3-16-windows-distribution`, desde `integrate/sp3-15-human-qa-handoff` (`a4a5c9f`). Se incorpora `scripts/package-windows-alpha.ps1` para empaquetar, sin publicar, binarios release Windows x64 de Desktop y CLI en ZIP separados. Cada paquete incluye licencia, aviso, instrucciones de uso y commit de origen; `SHA256SUMS.txt` registra hashes. El script exige árbol limpio, no reemplaza un destino existente y no llama a servicios remotos.
+
+El ZIP Desktop es una modalidad portable de despliegue para un cliente con Microsoft Edge WebView2 Runtime. No requiere CLI, Rust ni Node preinstalados. No se afirma que sea instalador firmado; la política de firma de release permanece pendiente. La prueba de instalación/despliegue, primer arranque, flujo funcional, cierre/reapertura y retiro en Windows 10 limpio sigue reservada para HUMAN QA. Linux Kali/Parrot requieren artefactos nativos construidos y comprobados en Linux; el único target Rust instalado en este host es `x86_64-pc-windows-msvc`.
+
+QA técnico del código fuente antes del empaquetado: `cargo fmt --check`, `cargo check --locked --offline --workspace --all-targets`, `cargo clippy --locked --offline --workspace --all-targets -- -D warnings` y `cargo test --locked --offline --workspace`: PASS. El build release y los SHA-256 del candidato quedan registrados en el reporte de distribución local. Estos controles no cierran HUMAN-QA-05, Encrypted v1 como experiencia ni el QA integral SP3.
+
+La importación continuable de bundles sigue bloqueada por la decisión de materialización/formato, compatibilidad, estados y provenance recibido enumerada en `DECISIONS.md`. D-040 ya impone verify-before-trust y revalidación de autorización, pero no resuelve ese contrato. No se implementa por inferencia. La validación histórica RFC 3161 también permanece en gate.
