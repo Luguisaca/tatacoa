@@ -3,7 +3,7 @@ use crate::bundle::{
 };
 use crate::{
     CONTINUITY_SCHEMA_VERSION, ContinuityState, ContinuityStatus, Engagement, Error, ExportMode,
-    MANIFEST_SCHEMA_VERSION, Result, SecurityProfile, compute_sha256,
+    MANIFEST_SCHEMA_VERSION, Manifest, Result, SecretPassword, SecurityProfile, compute_sha256,
 };
 use std::collections::HashSet;
 use std::fs;
@@ -23,7 +23,7 @@ pub fn import_plain_bundle(
         ));
     }
     let manifest = verify_plain_bundle_for_import(source)?;
-    let context = manifest.context.as_ref().ok_or_else(|| {
+    manifest.context.as_ref().ok_or_else(|| {
         Error::InvalidManifest("continuable import requires v2 context".to_owned())
     })?;
     if manifest
@@ -92,12 +92,6 @@ pub fn import_plain_bundle(
         }
         // Validate the retained copy, not only the mutable external source.
         verify_plain_bundle_for_import(&staging.join("received/plain"))?;
-        copy_file(
-            &staging.join("received/plain/manifest.json"),
-            &staging
-                .join("manifests")
-                .join(format!("{}.json", manifest.execution.id)),
-        )?;
         for artifact in &manifest.artifacts {
             let name = format!("{}.bin", artifact.id);
             copy_file(
@@ -111,56 +105,7 @@ pub fn import_plain_bundle(
                 ));
             }
         }
-        write_json_new_atomic(&staging.join("engagement.json"), &manifest.engagement)?;
-        write_json_new_atomic(
-            &staging
-                .join("context/scopes")
-                .join(format!("{}.json", context.scope.id)),
-            &context.scope,
-        )?;
-        write_json_new_atomic(
-            &staging
-                .join("context/environments")
-                .join(format!("{}.json", context.environment.id)),
-            &context.environment,
-        )?;
-        write_json_new_atomic(
-            &staging
-                .join("context/targets")
-                .join(format!("{}.json", context.target.id)),
-            &context.target,
-        )?;
-        write_json_new_atomic(
-            &staging
-                .join("context/sessions")
-                .join(format!("{}.json", context.session.id)),
-            &context.session,
-        )?;
-        for card in &manifest.knowledge_cards {
-            write_json_new_atomic(
-                &staging.join("knowledge").join(format!("{}.json", card.id)),
-                card,
-            )?;
-        }
-        for recipe in &manifest.replay_recipes {
-            write_json_new_atomic(
-                &staging.join("replay").join(format!("{}.json", recipe.id)),
-                recipe,
-            )?;
-        }
-        let continuity = ContinuityState {
-            schema_version: CONTINUITY_SCHEMA_VERSION.to_owned(),
-            engagement_id: manifest.engagement.id.clone(),
-            status: ContinuityStatus::Paused,
-            current_session_id: Some(context.session.id.clone()),
-            pending: vec!["Revalidar autorización y contexto actual antes de continuar".to_owned()],
-            revision: 1,
-            updated_unix_ms_observed: unix_ms_observed()?,
-        };
-        write_json_new_atomic(
-            &staging.join("continuity/00000000000000000001-import.json"),
-            &continuity,
-        )?;
+        write_import_records(&staging, &manifest)?;
         if destination.exists() {
             return Err(Error::Conflict(
                 "engagement appeared during import".to_owned(),
@@ -176,7 +121,166 @@ pub fn import_plain_bundle(
     result.map(|()| manifest.engagement)
 }
 
-fn verify_plain_bundle_for_import(root: &Path) -> Result<crate::Manifest> {
+pub fn import_encrypted_bundle(
+    workspace: &Path,
+    source: &Path,
+    password: &SecretPassword,
+    authorization_revalidated: bool,
+) -> Result<Engagement> {
+    if !authorization_revalidated {
+        return Err(Error::InvalidManifest(
+            "current authorization must be revalidated before importing".to_owned(),
+        ));
+    }
+    let manifest = crate::verify_encrypted_bundle(source, password)?;
+    if manifest.schema_version != MANIFEST_SCHEMA_VERSION
+        || manifest.export_mode != ExportMode::Encrypted
+        || manifest.context.is_none()
+    {
+        return Err(Error::InvalidManifest(
+            "continuable Encrypted import requires alpha v2 context".to_owned(),
+        ));
+    }
+    if manifest.engagement.security_profile == SecurityProfile::Custom
+        || manifest
+            .artifacts
+            .iter()
+            .any(|item| item.evidence_state != crate::EvidenceState::Captured)
+    {
+        return Err(Error::InvalidManifest(
+            "Encrypted import profile or Evidence state is not supported".to_owned(),
+        ));
+    }
+    fs::create_dir_all(workspace).map_err(|e| Error::io("create workspace", e))?;
+    reject_symlink(workspace, "workspace")?;
+    let engagements = workspace.join("engagements");
+    fs::create_dir_all(&engagements).map_err(|e| Error::io("create engagements", e))?;
+    reject_symlink(&engagements, "engagements")?;
+    let destination = engagements.join(manifest.engagement.id.as_str());
+    if destination.exists() {
+        return Err(Error::Conflict(format!(
+            "engagement already exists: {}",
+            manifest.engagement.id
+        )));
+    }
+    let staging = workspace.join(format!(
+        ".tatacoa-import-{}.partial",
+        uuid::Uuid::new_v4().simple()
+    ));
+    fs::create_dir(&staging).map_err(|e| Error::io("create import staging", e))?;
+    let result = (|| -> Result<()> {
+        for dir in [
+            "objects",
+            "manifests",
+            "context/scopes",
+            "context/environments",
+            "context/targets",
+            "context/sessions",
+            "knowledge",
+            "replay",
+            "continuity",
+            "received",
+        ] {
+            fs::create_dir_all(staging.join(dir))
+                .map_err(|e| Error::io("create import directory", e))?;
+        }
+        let retained = staging.join("received/encrypted.tatacoa");
+        copy_file(source, &retained)?;
+        let retained_manifest = crate::verify_encrypted_bundle(&retained, password)?;
+        if retained_manifest != manifest {
+            return Err(Error::InvalidManifest(
+                "received bundle changed during import".to_owned(),
+            ));
+        }
+        let materialized = crate::encrypted_read::materialize_encrypted_bundle(
+            &retained,
+            password,
+            &staging.join("objects"),
+        )?;
+        if materialized != manifest {
+            return Err(Error::InvalidManifest(
+                "materialized bundle changed during import".to_owned(),
+            ));
+        }
+        write_import_records(&staging, &manifest)?;
+        if destination.exists() {
+            return Err(Error::Conflict(
+                "engagement appeared during import".to_owned(),
+            ));
+        }
+        fs::rename(&staging, &destination)
+            .map_err(|e| Error::io("commit imported engagement", e))?;
+        Ok(())
+    })();
+    if result.is_err() {
+        let _ = fs::remove_dir_all(&staging);
+    }
+    result.map(|()| manifest.engagement)
+}
+
+fn write_import_records(staging: &Path, manifest: &Manifest) -> Result<()> {
+    let context = manifest.context.as_ref().ok_or_else(|| {
+        Error::InvalidManifest("continuable import requires v2 context".to_owned())
+    })?;
+    write_json_new_atomic(&staging.join("engagement.json"), &manifest.engagement)?;
+    write_json_new_atomic(
+        &staging
+            .join("manifests")
+            .join(format!("{}.json", manifest.execution.id)),
+        manifest,
+    )?;
+    write_json_new_atomic(
+        &staging
+            .join("context/scopes")
+            .join(format!("{}.json", context.scope.id)),
+        &context.scope,
+    )?;
+    write_json_new_atomic(
+        &staging
+            .join("context/environments")
+            .join(format!("{}.json", context.environment.id)),
+        &context.environment,
+    )?;
+    write_json_new_atomic(
+        &staging
+            .join("context/targets")
+            .join(format!("{}.json", context.target.id)),
+        &context.target,
+    )?;
+    write_json_new_atomic(
+        &staging
+            .join("context/sessions")
+            .join(format!("{}.json", context.session.id)),
+        &context.session,
+    )?;
+    for card in &manifest.knowledge_cards {
+        write_json_new_atomic(
+            &staging.join("knowledge").join(format!("{}.json", card.id)),
+            card,
+        )?;
+    }
+    for recipe in &manifest.replay_recipes {
+        write_json_new_atomic(
+            &staging.join("replay").join(format!("{}.json", recipe.id)),
+            recipe,
+        )?;
+    }
+    let continuity = ContinuityState {
+        schema_version: CONTINUITY_SCHEMA_VERSION.to_owned(),
+        engagement_id: manifest.engagement.id.clone(),
+        status: ContinuityStatus::Paused,
+        current_session_id: Some(context.session.id.clone()),
+        pending: vec!["Revalidar autorización y contexto actual antes de continuar".to_owned()],
+        revision: 1,
+        updated_unix_ms_observed: unix_ms_observed()?,
+    };
+    write_json_new_atomic(
+        &staging.join("continuity/00000000000000000001-import.json"),
+        &continuity,
+    )
+}
+
+fn verify_plain_bundle_for_import(root: &Path) -> Result<Manifest> {
     reject_symlink(root, "received bundle")?;
     if !root.is_dir() {
         return Err(Error::InvalidPath(

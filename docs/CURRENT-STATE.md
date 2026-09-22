@@ -110,7 +110,7 @@ SP3-15 integra la entrega desde la Execution abierta: Desktop consulta la polít
 
 Revalidar HUMAN-QA-05 y el recorrido integral SP3-13…SP3-15 como usuario en Windows: Workspace → contexto autorizado → ejecución → artifacts/ayuda → nota opcional → Replay/Retest → continuidad → exportación → timestamp/verificación. No declarar Usable Alpha PASS sin esa prueba humana. La restricción anterior de no avanzar Export/Encrypted/RFC 3161 antes de HUMAN-QA-05 fue sustituida por la autorización explícita del bloque de integración Desktop; los contratos de seguridad permanecen intactos.
 
-`HISTORICALLY_VALIDATED` permanece bloqueado por gate humano y la importación continuable conserva decisiones de materialización/formato pendientes. Ningún merge a `main` ocurre sin aprobación humana explícita.
+`HISTORICALLY_VALIDATED` permanece bloqueado por gate humano. El contrato de importación continuable se cerró después en SP3-17 y su implementación Plain/Encrypted se describe abajo. Ningún merge a `main` ocurre sin aprobación humana explícita.
 
 ## Gate de distribución y clientes limpios — 2026-09-22
 
@@ -138,11 +138,13 @@ SP3-19 produjo instalador NSIS Windows x64 desde `3cd976f` con hash verificado y
 
 SP3-20 implementa importación continuable de Plain v2 en Core, App API, CLI y Desktop con verificación previa, copia recibida intacta y continuidad en pausa. Encrypted v1 recibido requiere aún materialización segura; la validación integral de importación y del producto es HUMAN QA pendiente. Los artefactos de distribución previos a este cambio funcional no son el candidato final y deberán regenerarse.
 
+SP3-21 implementa también importación continuable Encrypted v1: verifica el original y la copia retenida, materializa artifacts autenticados solo en staging y publica un Engagement pausado. El workspace local resultante contiene plaintext y Desktop lo advierte; QA humano de esa experiencia y de perfiles sensibles continúa pendiente. Plain v2 y Encrypted v1 son las versiones importables con contexto tipado completo en esta Alpha; bundles v1 antiguos permanecen verificables, no continuables.
+
 Después se ejecutará la revalidación humana integral del recorrido vigente:
 
 Workspace → contexto autorizado → Execution → Artifact/Evidence → asistencia/comprensión → Knowledge → Replay/Retest → continuidad → exportación → timestamp/verificación → cierre → reapertura/continuación.
 
-`HISTORICALLY_VALIDATED` continúa bloqueado por su gate humano y la importación continuable mantiene sus decisiones pendientes. Ningún PASS técnico sustituye la Validación Humana y ningún merge a `main`, release o publicación ocurre sin aprobación humana explícita.
+`HISTORICALLY_VALIDATED` continúa bloqueado por su gate humano. La importación continuable requiere QA humano integral; su contrato ya está aprobado. Ningún PASS técnico sustituye la Validación Humana y ningún merge a `main`, release o publicación ocurre sin aprobación humana explícita.
 
 ### Horizonte posterior a Sprint 03
 

@@ -12,6 +12,12 @@ El trabajo importado queda `PAUSED` con una sesión histórica elegida. Reanudar
 
 Esta Alpha solo materializa artifacts cuyo estado recibido es `CAPTURED`; un bundle que reclama `CANDIDATE`, `REVIEWED` o `VALIDATED` no se convierte automáticamente en Evidence local. `HIGH_SENSITIVITY` y `CUSTOM` rechazan importación Plain. Esas restricciones son fail-closed y no reescriben el paquete recibido.
 
-## Límites aún pendientes
+## Encrypted v1 implementado en SP3-21
 
-Encrypted v1 requiere una ruta de materialización que autentique y verifique antes de persistir plaintext en el workspace; la mera verificación sin exposición de contenido no equivale a proyecto continuable. Esta ruta está pendiente del incremento siguiente. `tatacoa.alpha.v1` carece de contexto tipado completo y se mantiene verificable, pero no importable como trabajo continuable. Un sidecar RFC 3161 externo al bundle no se importa automáticamente; su verificación offline permanece separada. Un hash y un manifest no prueban autoría ni autorización histórica.
+Core autentica y verifica el archivo Encrypted v1 completo antes de crear staging, copia el archivo original sin alterarlo, verifica la copia retenida y vuelve a autenticar cada objeto mientras materializa plaintext en staging no visible. Un error de password, autenticación, digest, formato o copia elimina el staging y no crea un Engagement operable. El manifest materializado conserva IDs, contexto y provenance; el archivo recibido queda bajo `received/encrypted.tatacoa` con los mismos bytes y digest. Password solo entra mediante prompt TTY en CLI o campo efímero de Desktop y no se almacena en el workspace ni en el manifest.
+
+El workspace local **no está cifrado**: importar Encrypted v1 persiste artifacts plaintext para permitir continuidad. Desktop lo advierte antes de importar, incluidos perfiles sensibles. Una persona debe decidir si el host y el workspace cumplen su política antes de confirmar. Esta operación no degrada ni modifica el archivo cifrado original.
+
+## Límites
+
+`tatacoa.alpha.v1` carece de contexto tipado completo y se mantiene verificable, pero no importable como trabajo continuable. Un sidecar RFC 3161 externo al bundle no se importa automáticamente; su verificación offline permanece separada. Un hash y un manifest no prueban autoría ni autorización histórica. La validación humana de la experiencia de importación, en especial con Encrypted v1 y perfiles sensibles, sigue pendiente.

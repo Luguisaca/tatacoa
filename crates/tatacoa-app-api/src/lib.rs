@@ -12,11 +12,11 @@ use tatacoa_core::{
     TsaConfig, TsaTrustPolicy, assist_execution, authorize_encrypted_export,
     authorize_plain_export, create_engagement, create_environment, create_knowledge_card,
     create_replay_recipe, create_scope, create_session, create_target, default_export_mode,
-    execute, export_bundle, export_encrypted_bundle, import_plain_bundle, inspect_continuity,
-    list_engagements, list_execution_manifests, list_sessions, load_associated_knowledge,
-    load_associated_replay, load_execution_context, load_execution_manifest, pause_work,
-    read_artifact_preview, request_timestamp, resume_work, verify_timestamp_sidecar,
-    verify_timestamp_sidecar_with_trust,
+    execute, export_bundle, export_encrypted_bundle, import_encrypted_bundle, import_plain_bundle,
+    inspect_continuity, list_engagements, list_execution_manifests, list_sessions,
+    load_associated_knowledge, load_associated_replay, load_execution_context,
+    load_execution_manifest, pause_work, read_artifact_preview, request_timestamp, resume_work,
+    verify_timestamp_sidecar, verify_timestamp_sidecar_with_trust,
 };
 use zeroize::Zeroize;
 
@@ -221,6 +221,27 @@ impl AppService {
         authorization_revalidated: bool,
     ) -> Result<WorkContext> {
         let engagement = import_plain_bundle(&self.workspace, bundle, authorization_revalidated)?;
+        let session = list_sessions(&self.workspace, &engagement.id)?
+            .into_iter()
+            .next()
+            .ok_or_else(|| {
+                tatacoa_core::Error::InvalidManifest("imported session is missing".to_owned())
+            })?;
+        Ok(WorkContext {
+            engagement,
+            session,
+        })
+    }
+
+    pub fn import_encrypted_work(
+        &self,
+        bundle: &Path,
+        password: String,
+        authorization_revalidated: bool,
+    ) -> Result<WorkContext> {
+        let secret = SecretPassword::for_verification(password)?;
+        let engagement =
+            import_encrypted_bundle(&self.workspace, bundle, &secret, authorization_revalidated)?;
         let session = list_sessions(&self.workspace, &engagement.id)?
             .into_iter()
             .next()
@@ -970,6 +991,70 @@ mod tests {
                 .import_plain_work(&claimed_bundle, true)
                 .is_err()
         );
+        let encrypted_bundle = root.join("received-encrypted.tatacoa");
+        service.export(ExportRequest {
+            engagement_id: work.engagement.id.clone(),
+            execution_id: manifest.execution.id.clone(),
+            destination: encrypted_bundle.clone(),
+            mode: ExportMode::Encrypted,
+            acknowledge_plaintext: false,
+            password: Some("SyntheticQaPassphrase123!".to_owned()),
+        })?;
+        let encrypted_workspace = root.join("encrypted-import-workspace");
+        let encrypted_service = AppService::open(&encrypted_workspace);
+        assert!(
+            encrypted_service
+                .import_encrypted_work(&encrypted_bundle, "wrong password".to_owned(), true)
+                .is_err()
+        );
+        assert!(!encrypted_workspace.join("engagements").exists());
+        let encrypted_import = encrypted_service.import_encrypted_work(
+            &encrypted_bundle,
+            "SyntheticQaPassphrase123!".to_owned(),
+            true,
+        )?;
+        assert_eq!(encrypted_import.engagement, work.engagement);
+        let retained_encrypted = encrypted_workspace
+            .join("engagements")
+            .join(work.engagement.id.as_str())
+            .join("received/encrypted.tatacoa");
+        assert_eq!(
+            tatacoa_core::compute_sha256(&encrypted_bundle)?,
+            tatacoa_core::compute_sha256(&retained_encrypted)?
+        );
+        assert_eq!(
+            encrypted_service
+                .summarize(&work.engagement.id)?
+                .continuity
+                .state
+                .status,
+            tatacoa_core::ContinuityStatus::Paused
+        );
+        assert_eq!(
+            encrypted_service
+                .artifact_preview(&work.engagement.id, &manifest.execution.id, &artifact.id)?
+                .artifact
+                .id,
+            artifact.id
+        );
+        let mut altered = fs::read(&encrypted_bundle)
+            .map_err(|source| tatacoa_core::Error::io("read encrypted test bundle", source))?;
+        let last = altered.len() - 1;
+        altered[last] ^= 1;
+        let altered_bundle = root.join("altered-encrypted.tatacoa");
+        fs::write(&altered_bundle, altered)
+            .map_err(|source| tatacoa_core::Error::io("write altered encrypted bundle", source))?;
+        let altered_workspace = root.join("altered-encrypted-import-workspace");
+        assert!(
+            AppService::open(&altered_workspace)
+                .import_encrypted_work(
+                    &altered_bundle,
+                    "SyntheticQaPassphrase123!".to_owned(),
+                    true
+                )
+                .is_err()
+        );
+        assert!(!altered_workspace.join("engagements").exists());
         let second_root = tatacoa_core::compute_plain_root(&bundle)?;
         assert_eq!(first_root, second_root);
         assert_eq!(first_root.entry_count, 3);

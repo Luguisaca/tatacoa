@@ -45,7 +45,7 @@ pub use ids::{
     ArtifactId, EngagementId, EnvironmentId, ExecutionId, KnowledgeId, ReplayId, ScopeId,
     SessionId, TargetId,
 };
-pub use import::import_plain_bundle;
+pub use import::{import_encrypted_bundle, import_plain_bundle};
 pub use knowledge::{
     KNOWLEDGE_SCHEMA_VERSION, KnowledgeCard, KnowledgeCardInput, KnowledgeReference,
     KnowledgeReviewStatus, SourceClassification,

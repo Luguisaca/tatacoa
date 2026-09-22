@@ -44,6 +44,20 @@ fn select_plain_bundle(app: tauri::AppHandle) -> CommandResult<Option<String>> {
 }
 
 #[tauri::command]
+fn select_encrypted_bundle(app: tauri::AppHandle) -> CommandResult<Option<String>> {
+    app.dialog()
+        .file()
+        .set_title("Seleccionar bundle Encrypted v1 recibido")
+        .blocking_pick_file()
+        .map(|path| {
+            path.into_path()
+                .map(|value| value.to_string_lossy().into_owned())
+                .map_err(|error| error.to_string())
+        })
+        .transpose()
+}
+
+#[tauri::command]
 fn select_export_destination(app: tauri::AppHandle) -> CommandResult<Option<String>> {
     app.dialog()
         .file()
@@ -94,6 +108,22 @@ fn import_plain_work(
 ) -> CommandResult<WorkContext> {
     AppService::open(workspace)
         .import_plain_work(std::path::Path::new(&bundle), authorization_revalidated)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn import_encrypted_work(
+    workspace: String,
+    bundle: String,
+    password: String,
+    authorization_revalidated: bool,
+) -> CommandResult<WorkContext> {
+    AppService::open(workspace)
+        .import_encrypted_work(
+            std::path::Path::new(&bundle),
+            password,
+            authorization_revalidated,
+        )
         .map_err(|error| error.to_string())
 }
 
@@ -307,10 +337,12 @@ fn main() {
             list_work,
             select_workspace,
             select_plain_bundle,
+            select_encrypted_bundle,
             select_export_destination,
             select_timestamp_sidecar,
             create_work,
             import_plain_work,
+            import_encrypted_work,
             summarize,
             run_tool,
             authorization_review,
@@ -357,6 +389,8 @@ mod tests {
         assert!(html.contains("id=\"import-form\""));
         assert!(html.contains("id=\"import-authorization\" required"));
         assert!(include_str!("../ui/app.js").contains("invoke('import_plain_work'"));
+        assert!(include_str!("../ui/app.js").contains("invoke('import_encrypted_work'"));
+        assert!(html.contains("id=\"import-password-row\""));
     }
 
     #[test]

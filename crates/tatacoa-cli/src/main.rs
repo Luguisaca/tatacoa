@@ -11,8 +11,8 @@ use tatacoa_core::{
     SecretPassword, SecurityProfile, SessionId, SourceClassification, TargetId, TimestampObject,
     TimestampReport, TsaConfig, TsaTrustPolicy, create_engagement, create_environment,
     create_knowledge_card, create_replay_recipe, create_scope, create_session, create_target,
-    default_export_mode, execute, export_bundle, export_encrypted_bundle, import_plain_bundle,
-    load_execution_manifest, request_timestamp, verify_timestamp_sidecar,
+    default_export_mode, execute, export_bundle, export_encrypted_bundle, import_encrypted_bundle,
+    import_plain_bundle, load_execution_manifest, request_timestamp, verify_timestamp_sidecar,
     verify_timestamp_sidecar_with_trust,
 };
 use tatacoa_verifier::{verify_bundle, verify_encrypted_bundle};
@@ -33,6 +33,15 @@ struct Cli {
 enum Commands {
     /// Verify and import a received Plain v2 bundle as paused, continuable work.
     ImportPlain {
+        #[arg(long)]
+        workspace: PathBuf,
+        #[arg(long)]
+        bundle: PathBuf,
+        #[arg(long, required = true)]
+        authorization_revalidated: bool,
+    },
+    /// Authenticate and import an Encrypted v1 bundle as paused work.
+    ImportEncrypted {
         #[arg(long)]
         workspace: PathBuf,
         #[arg(long)]
@@ -280,6 +289,16 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             authorization_revalidated,
         } => {
             let engagement = import_plain_bundle(&workspace, &bundle, authorization_revalidated)?;
+            println!("engagement={}", engagement.id);
+        }
+        Commands::ImportEncrypted {
+            workspace,
+            bundle,
+            authorization_revalidated,
+        } => {
+            let password = prompt_verification_password()?;
+            let engagement =
+                import_encrypted_bundle(&workspace, &bundle, &password, authorization_revalidated)?;
             println!("engagement={}", engagement.id);
         }
         Commands::EngagementCreate {

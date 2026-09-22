@@ -9,7 +9,7 @@ use crate::encrypted_format::{
 use crate::{Error, ExportMode, Manifest, Result, SecretPassword};
 use sha2::{Digest as ShaDigest, Sha256};
 use std::fmt::Write as FmtWrite;
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::Path;
 use zeroize::Zeroizing;
@@ -17,6 +17,24 @@ use zeroize::Zeroizing;
 /// Authenticates every encrypted object and verifies artifact sizes and digests.
 /// Plaintext artifacts are streamed into a digest sink and are never persisted.
 pub fn verify_encrypted_bundle(path: &Path, password: &SecretPassword) -> Result<Manifest> {
+    read_encrypted_bundle(path, password, None)
+}
+
+/// Writes authenticated artifact plaintext only into caller-managed staging.
+/// The caller must keep staging invisible and remove it on any failure.
+pub(crate) fn materialize_encrypted_bundle(
+    path: &Path,
+    password: &SecretPassword,
+    objects: &Path,
+) -> Result<Manifest> {
+    read_encrypted_bundle(path, password, Some(objects))
+}
+
+fn read_encrypted_bundle(
+    path: &Path,
+    password: &SecretPassword,
+    objects: Option<&Path>,
+) -> Result<Manifest> {
     reject_symlink(path, "encrypted bundle")?;
     let mut file = File::open(path).map_err(|source| Error::io("open encrypted bundle", source))?;
     let metadata = file
@@ -89,7 +107,19 @@ pub fn verify_encrypted_bundle(path: &Path, password: &SecretPassword) -> Result
         {
             return Err(Error::Cryptography("invalid encrypted envelope"));
         }
-        let mut digest_writer = DigestWriter::default();
+        let output = objects
+            .map(|root| {
+                OpenOptions::new()
+                    .write(true)
+                    .create_new(true)
+                    .open(root.join(format!("{}.bin", artifact.id)))
+                    .map_err(|source| Error::io("create imported artifact", source))
+            })
+            .transpose()?;
+        let mut digest_writer = DigestWriter {
+            output,
+            ..DigestWriter::default()
+        };
         decrypt_object(
             &bundle_key,
             &header_bytes,
@@ -97,7 +127,7 @@ pub fn verify_encrypted_bundle(path: &Path, password: &SecretPassword) -> Result
             &mut file,
             &mut digest_writer,
         )?;
-        let (size, digest) = digest_writer.finish();
+        let (size, digest) = digest_writer.finish()?;
         if size != artifact.size_bytes || !digest.eq_ignore_ascii_case(&artifact.digest.value) {
             return Err(Error::Cryptography("bundle authentication failed"));
         }
@@ -170,21 +200,29 @@ fn plaintext_length_from_ciphertext(ciphertext_length: u64, maximum: u64) -> Res
 struct DigestWriter {
     digest: Sha256,
     size: u64,
+    output: Option<File>,
 }
 
 impl DigestWriter {
-    fn finish(self) -> (u64, String) {
+    fn finish(mut self) -> Result<(u64, String)> {
+        if let Some(file) = self.output.take() {
+            file.sync_all()
+                .map_err(|source| Error::io("sync imported artifact", source))?;
+        }
         let bytes = self.digest.finalize();
         let mut encoded = String::with_capacity(bytes.len() * 2);
         for byte in bytes {
             let _ = write!(encoded, "{byte:02x}");
         }
-        (self.size, encoded)
+        Ok((self.size, encoded))
     }
 }
 
 impl Write for DigestWriter {
     fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+        if let Some(output) = &mut self.output {
+            output.write_all(bytes)?;
+        }
         self.digest.update(bytes);
         self.size = self
             .size
