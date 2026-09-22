@@ -63,7 +63,7 @@ El alcance implementado de SP1/SP2 incluye, según sus documentos de estado:
 
 `tatacoa.encrypted.v1` está implementado e integrado y cuenta con pruebas automatizadas y QA técnico/humano previo. Su **validación integral como experiencia de producto permanece pendiente** hasta poder probarlo dentro del flujo real de usuario de Sprint 03 / Usable Alpha. Implementado y probado técnicamente no equivale todavía a aprobado como producto.
 
-## Capacidades aprobadas para SP3 — no implementadas
+## Capacidades de SP3 — implementación incremental / QA humano pendiente
 
 La siguiente etapa busca una **Usable Alpha**:
 
@@ -79,6 +79,12 @@ La siguiente etapa busca una **Usable Alpha**:
 - apertura/importación autorizada de paquetes compatibles como proyectos continuables, preservando políticas, integridad y provenance original.
 
 RFC 3161 entra en Sprint 03 como **diseño + primera implementación funcional** de trusted timestamping. Antes de implementar esa parte debe aprobarse qué objeto(s) se timestamp-ean y en qué momento. La solución debe permitir verificación posterior y registrar de forma explícita ausencia/fallo de TSA sin falsear ni destruir evidencia; la conectividad de una TSA no convierte Internet en requisito general de TATACOA.
+
+## Distribución y QA de cliente limpio
+
+La Usable Alpha no se considera distribuible únicamente porque Desktop compile desde el repositorio. El recorrido de usuario final debe validarse con artefactos trazables al commit probado, sin exigir Rust/Cargo/Node/npm ni una copia del repositorio en el cliente. Windows y Linux deben registrar por separado instalación/primer arranque, dependencias de runtime, flujo funcional, cierre/reapertura y desinstalación cuando aplique.
+
+El baseline de entorno del 2026-09-22 fue PASS en Windows 10 Pro x64, Kali 2026.3 y Parrot 7.3. La instalación permanece NOT TESTED/BLOCKED hasta disponer de un candidato distribuible.
 
 ## Estados de captura
 
