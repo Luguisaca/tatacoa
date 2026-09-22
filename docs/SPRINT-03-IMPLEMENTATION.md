@@ -349,3 +349,26 @@ Rama `feat/sp3-12-offline-tool-assistance`, desde SP3-11. Estado: **implementado
 QA técnico SP3-12 en Windows 11 x64: `cargo fmt --check`, `cargo check --locked --workspace --all-targets`, `cargo clippy --locked --workspace --all-targets -- -D warnings`, `cargo test --locked --workspace`, `cargo build --locked --workspace --target-dir target/sp3-11-qa` y `node --check` del frontend: **PASS**. La salida aislada evita reemplazar una instancia Desktop abierta. Las pruebas cubren proveedor local válido, fuente faltante → `UNAVAILABLE`, ausencia de adapter/probe, nota vacía rechazada, Knowledge `DRAFT` con `OPERATOR_NOTE`, manifest sin cambios y Evidence `CAPTURED`. Linux no se ejecutó en este host: solo está instalado el target Rust `x86_64-pc-windows-msvc`; el contrato usa `std` multiplataforma y requiere QA Linux posterior.
 
 QA Windows propuesto: ejecutar/capturar una herramienta de prueba mediante ruta absoluta; abrir la Execution y comprobar hechos con fuentes `manifest.*`, estado documental `UNAVAILABLE` y ausencia de probes/red; guardar una nota breve y localizarla como Knowledge `DRAFT`; verificar que artifacts permanecen `CAPTURED`; preparar Replay sin ejecutarlo y comprobar origen/override explícito. Repetir con un executable desconocido permitido por el scope: la asistencia debe continuar `GENERIC`, nunca impedir la captura.
+
+## HUMAN QA — baseline de clientes limpios y gate de distribución (2026-09-22)
+
+Estado: **BASELINE DE ENTORNO PASS / INSTALACIÓN DE CLIENTE NUEVO NOT TESTED — BLOCKED POR ARTEFACTO DISTRIBUIBLE AUSENTE**.
+
+Se prepararon clientes separados del entorno de desarrollo para validar posteriormente la distribución real de la Usable Alpha sin falsear el recorrido instalando toolchains:
+
+- Windows 10 Pro x64, build 19045, con Microsoft Edge WebView2 Runtime presente; Git presente; Rust/Cargo/Node/npm ausentes. Python está disponible como utilidad local de transferencia/QA, pero no constituye dependencia aprobada de TATACOA.
+- Parrot Security 7.3 x86_64, KDE/Wayland, WebKitGTK 4.1 presente; Git, Node/npm y Python presentes; Rust/Cargo ausentes.
+- Kali GNU/Linux Rolling 2026.3 x86_64, XFCE/X11, WebKitGTK 4.1 presente; Git presente; Rust/Cargo/Node/npm ausentes.
+
+Los tres entornos superaron el baseline de preparación y conectividad de laboratorio aplicable. Estas comprobaciones **no equivalen a compatibilidad funcional de TATACOA**, porque todavía no se instaló ni ejecutó un artefacto distribuible en ellos.
+
+Al revisar la rama feat/sp3-12-offline-tool-assistance en 32e1cf346c77ec8592430521fa397e66209b7cee y las Releases del repositorio, no se encontró una Release publicada con instalador/binario de usuario final para ejecutar el recorrido de cliente limpio. Por decisión de Validación Humana:
+
+- no instalar Rust, Cargo, Node/npm ni otros toolchains para sustituir el artefacto faltante;
+- no clonar/compilar el repositorio en el cliente limpio para declarar artificialmente PASS de distribución;
+- preservar el Windows 10 físico y los clientes Linux preparados para probar el artefacto real cuando exista;
+- tratar la ausencia del artefacto como **gate de distribución BLOCKED**, sin invalidar los PASS técnicos previos de Core/App API/Desktop.
+
+HUMAN-QA-05/SP3-12 continúa pendiente de revalidación funcional. Este bloque no lo convierte en PASS ni en un FAIL adicional.
+
+Siguiente condición para QA de cliente nuevo: producir un candidato distribuible reproducible para los targets aprobados, identificar commit/origen, registrar hashes y firma cuando aplique, y probar instalación/primer arranque/flujo/cierre-reapertura/desinstalación sin depender de un entorno de desarrollo.
