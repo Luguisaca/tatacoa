@@ -50,15 +50,15 @@ Capacidades del Core para ejecución contextualizada, captura, finalización de 
 ### Knowledge / Replay
 Relaciona ejecuciones con conocimiento y recetas reproducibles. No es autoridad de validación.
 
-## Componentes aprobados para SP3 — no implementados
+## Componentes de SP3 — implementados incrementalmente / QA humano pendiente
 
 ### tatacoa-app-api
-Capa común de operaciones de usuario entre las interfaces y el dominio. Debe reducir duplicación y evitar que Desktop introduzca reglas propias.
+Implementada incrementalmente en SP3. Capa común de operaciones de usuario entre las interfaces y el dominio. Debe reducir duplicación y evitar que Desktop introduzca reglas propias.
 
 Su diseño debe preservar la independencia del CLI. No debe convertirse en daemon, servicio de red o backend cloud por defecto.
 
 ### tatacoa-desktop
-Aplicación local construida con **Tauri 2**. Presenta el flujo de trabajo de la pentester y consume operaciones aprobadas sin reimplementar seguridad o dominio.
+Implementada incrementalmente en SP3 con QA técnico; QA humano integral y distribución siguen pendientes. Aplicación local construida con **Tauri 2**. Presenta el flujo de trabajo de la pentester y consume operaciones aprobadas sin reimplementar seguridad o dominio.
 
 Desktop no requiere una instalación previa del CLI y no convierte Tauri en dependencia del CLI/Core.
 
@@ -71,6 +71,14 @@ Instalación de TATACOA orientada a terminal/automatización. No arrastra runtim
 Instalación de la aplicación gráfica completa. Empaqueta lo necesario para operar sin exigir que el usuario instale el CLI por separado.
 
 Ambas modalidades deben preservar interoperabilidad de los formatos/datos soportados y las mismas políticas/invariantes de seguridad.
+
+## Distribución
+
+El build desde código fuente y la distribución a usuario final son gates distintos. Desktop debe entregarse como candidato trazable y ejecutable en un cliente compatible sin exigir toolchain Rust/Node ni CLI preinstalado. La ausencia de un artefacto distribuible no se debe ocultar convirtiendo una máquina de cliente en entorno de desarrollo.
+
+El baseline de clientes limpios de 2026-09-22 confirma disponibilidad de los runtimes gráficos observados en Windows 10, Kali y Parrot, pero no declara todavía compatibilidad funcional de TATACOA: esa afirmación requiere ejecutar el artefacto distribuible.
+
+La distribución aprobada para SP3 separa Desktop y CLI: Windows x64 requiere Desktop portable e instalable; Linux x64 requiere Desktop `.deb` y AppImage; cada plataforma ofrece CLI aparte. Build, empaquetado y QA de cliente limpio son pasos distintos. La firma de release no se infiere de la existencia de paquetes.
 
 ## Local-first y offline
 

@@ -1,8 +1,8 @@
 use crate::{
-    Artifact, Engagement, EngagementId, Error, ExecutionId, ExportMode,
-    LEGACY_MANIFEST_SCHEMA_VERSION, MANIFEST_SCHEMA_VERSION, Manifest, PlainExportAuthorization,
-    Result, SecurityProfile, authorize_plain_export, validate_artifact_provenance,
-    validate_knowledge_card, validate_replay_recipe,
+    Artifact, ArtifactId, ArtifactPreview, Engagement, EngagementId, Error, ExecutionId,
+    ExportMode, LEGACY_MANIFEST_SCHEMA_VERSION, MANIFEST_SCHEMA_VERSION, Manifest,
+    PlainExportAuthorization, Result, SecurityProfile, authorize_plain_export,
+    validate_artifact_provenance, validate_knowledge_card, validate_replay_recipe,
 };
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -11,7 +11,10 @@ use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::{Component, Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use sha2::{Digest as _, Sha256};
+
 const MAX_METADATA_BYTES: u64 = 2 * 1024 * 1024;
+pub const MAX_ARTIFACT_PREVIEW_BYTES: u64 = 1024 * 1024;
 
 pub fn unix_ms_observed() -> Result<u128> {
     SystemTime::now()
@@ -63,6 +66,7 @@ pub fn create_engagement(
             .map_err(|source| Error::io("create engagement data directory", source))?;
     }
     write_json_new_atomic(&engagement_root.join("engagement.json"), &engagement)?;
+    crate::continuity::initialize(workspace, &engagement.id)?;
     Ok(engagement)
 }
 
@@ -75,6 +79,40 @@ pub fn load_engagement(workspace: &Path, id: &EngagementId) -> Result<Engagement
         ));
     }
     Ok(engagement)
+}
+
+pub fn list_engagements(workspace: &Path) -> Result<Vec<Engagement>> {
+    reject_symlink(workspace, "workspace")?;
+    let root = workspace.join("engagements");
+    reject_symlink(&root, "engagements directory")?;
+    let mut paths = fs::read_dir(root)
+        .map_err(|source| Error::io("read engagements directory", source))?
+        .map(|entry| {
+            entry
+                .map(|value| value.path())
+                .map_err(|source| Error::io("read engagement entry", source))
+        })
+        .collect::<Result<Vec<_>>>()?;
+    paths.sort();
+    paths
+        .into_iter()
+        .map(|path| {
+            reject_symlink(&path, "engagement entry")?;
+            if !path.is_dir() {
+                return Err(Error::InvalidPath(
+                    "engagement entry is not a directory".to_owned(),
+                ));
+            }
+            let value = path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .ok_or_else(|| {
+                    Error::InvalidPath("engagement directory name is not UTF-8".to_owned())
+                })?;
+            let id = value.parse()?;
+            load_engagement(workspace, &id)
+        })
+        .collect()
 }
 
 pub fn engagement_root(workspace: &Path, id: &EngagementId) -> Result<PathBuf> {
@@ -122,6 +160,91 @@ pub fn load_execution_manifest(
         ));
     }
     Ok(manifest)
+}
+
+pub fn read_artifact_preview(
+    workspace: &Path,
+    engagement_id: &EngagementId,
+    execution_id: &ExecutionId,
+    artifact_id: &ArtifactId,
+) -> Result<ArtifactPreview> {
+    let manifest = load_execution_manifest(workspace, engagement_id, execution_id)?;
+    let artifact = manifest
+        .artifacts
+        .iter()
+        .find(|artifact| &artifact.id == artifact_id)
+        .cloned()
+        .ok_or_else(|| {
+            Error::InvalidManifest("artifact is not declared by execution".to_owned())
+        })?;
+    let path = artifact_source_path(workspace, engagement_id, &artifact)?;
+    let mut file = File::open(path).map_err(|source| Error::io("open artifact preview", source))?;
+    let mut hasher = Sha256::new();
+    let mut total = 0_u64;
+    let mut preview = Vec::with_capacity(
+        usize::try_from(artifact.size_bytes.min(MAX_ARTIFACT_PREVIEW_BYTES)).unwrap_or(0),
+    );
+    let mut buffer = [0_u8; 64 * 1024];
+    loop {
+        let read = file
+            .read(&mut buffer)
+            .map_err(|source| Error::io("read artifact preview", source))?;
+        if read == 0 {
+            break;
+        }
+        total = total
+            .checked_add(read as u64)
+            .ok_or_else(|| Error::InvalidManifest("artifact size overflow".to_owned()))?;
+        hasher.update(&buffer[..read]);
+        let remaining = MAX_ARTIFACT_PREVIEW_BYTES.saturating_sub(preview.len() as u64) as usize;
+        preview.extend_from_slice(&buffer[..read.min(remaining)]);
+    }
+    let mut digest = String::with_capacity(64);
+    for byte in hasher.finalize() {
+        use std::fmt::Write as _;
+        write!(&mut digest, "{byte:02x}")
+            .map_err(|error| Error::Execution(format!("format SHA-256 digest: {error}")))?;
+    }
+    if total != artifact.size_bytes || digest != artifact.digest.value {
+        return Err(Error::InvalidManifest(
+            "artifact changed after capture; preview denied".to_owned(),
+        ));
+    }
+    Ok(ArtifactPreview {
+        artifact,
+        bytes: preview,
+        truncated_for_preview: total > MAX_ARTIFACT_PREVIEW_BYTES,
+    })
+}
+
+pub fn list_execution_manifests(
+    workspace: &Path,
+    engagement_id: &EngagementId,
+) -> Result<Vec<Manifest>> {
+    let root = engagement_existing_subdirectory(workspace, engagement_id, Path::new("manifests"))?;
+    let mut paths = fs::read_dir(root)
+        .map_err(|source| Error::io("read execution manifests", source))?
+        .map(|entry| {
+            entry
+                .map(|value| value.path())
+                .map_err(|source| Error::io("read execution manifest entry", source))
+        })
+        .collect::<Result<Vec<_>>>()?;
+    paths.sort();
+    paths
+        .into_iter()
+        .filter(|path| path.extension().is_some_and(|value| value == "json"))
+        .map(|path| {
+            let manifest: Manifest = read_json_limited(&path)?;
+            validate_manifest_links(&manifest)?;
+            if &manifest.engagement.id != engagement_id {
+                return Err(Error::InvalidManifest(
+                    "execution manifest belongs to another engagement".to_owned(),
+                ));
+            }
+            Ok(manifest)
+        })
+        .collect()
 }
 
 pub fn read_bundle_manifest(bundle_root: &Path) -> Result<Manifest> {

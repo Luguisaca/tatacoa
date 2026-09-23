@@ -4,13 +4,16 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::str::FromStr;
+use std::time::Duration;
 use tatacoa_core::{
     EngagementId, EnvironmentId, ExecutionId, ExportMode, KnowledgeCardInput, KnowledgeReference,
     KnowledgeReviewStatus, PlainExportAuthorization, ReplayPlaceholder, ReplayRecipeInput, ScopeId,
-    SecretPassword, SecurityProfile, SessionId, SourceClassification, TargetId, create_engagement,
-    create_environment, create_knowledge_card, create_replay_recipe, create_scope, create_session,
-    create_target, default_export_mode, execute, export_bundle, export_encrypted_bundle,
-    load_execution_manifest,
+    SecretPassword, SecurityProfile, SessionId, SourceClassification, TargetId, TimestampObject,
+    TimestampReport, TsaConfig, TsaTrustPolicy, create_engagement, create_environment,
+    create_knowledge_card, create_replay_recipe, create_scope, create_session, create_target,
+    default_export_mode, execute, export_bundle, export_encrypted_bundle, import_encrypted_bundle,
+    import_plain_bundle, load_execution_manifest, request_timestamp, verify_timestamp_sidecar,
+    verify_timestamp_sidecar_with_trust,
 };
 use tatacoa_verifier::{verify_bundle, verify_encrypted_bundle};
 use zeroize::Zeroize;
@@ -28,6 +31,24 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
+    /// Verify and import a received Plain v2 bundle as paused, continuable work.
+    ImportPlain {
+        #[arg(long)]
+        workspace: PathBuf,
+        #[arg(long)]
+        bundle: PathBuf,
+        #[arg(long, required = true)]
+        authorization_revalidated: bool,
+    },
+    /// Authenticate and import an Encrypted v1 bundle as paused work.
+    ImportEncrypted {
+        #[arg(long)]
+        workspace: PathBuf,
+        #[arg(long)]
+        bundle: PathBuf,
+        #[arg(long, required = true)]
+        authorization_revalidated: bool,
+    },
     /// Create an isolated engagement context.
     EngagementCreate {
         #[arg(long)]
@@ -184,6 +205,43 @@ enum Commands {
         #[arg(long = "authorization-limit", required = true)]
         authorization_limits: Vec<String>,
     },
+    /// Request an RFC 3161 sidecar from an explicitly configured HTTPS TSA.
+    TimestampRequest {
+        #[arg(long)]
+        bundle: PathBuf,
+        #[arg(long)]
+        sidecar: PathBuf,
+        #[arg(long, value_enum)]
+        mode: TimestampMode,
+        #[arg(long)]
+        tsa: String,
+        #[arg(long, default_value_t = 30)]
+        timeout_seconds: u64,
+        /// Explicit DER TSA trust anchor; may be repeated.
+        #[arg(long = "tsa-trust-anchor-der")]
+        trust_anchors: Vec<PathBuf>,
+        /// Explicit DER intermediate; may be repeated.
+        #[arg(long = "tsa-intermediate-der")]
+        trust_intermediates: Vec<PathBuf>,
+        /// Accepted TSA policy OID; may be repeated.
+        #[arg(long = "tsa-policy")]
+        accepted_policies: Vec<String>,
+    },
+    /// Inspect and bind an RFC 3161 sidecar offline; this command never uses the network.
+    TimestampVerify {
+        #[arg(long)]
+        bundle: PathBuf,
+        #[arg(long)]
+        sidecar: PathBuf,
+        #[arg(long, value_enum)]
+        mode: TimestampMode,
+        #[arg(long = "tsa-trust-anchor-der")]
+        trust_anchors: Vec<PathBuf>,
+        #[arg(long = "tsa-intermediate-der")]
+        trust_intermediates: Vec<PathBuf>,
+        #[arg(long = "tsa-policy")]
+        accepted_policies: Vec<String>,
+    },
     /// Verify a bundle offline without executing its contents.
     Verify { bundle: PathBuf },
 }
@@ -194,6 +252,12 @@ enum Profile {
     Professional,
     HighSensitivity,
     Custom,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum TimestampMode {
+    Plain,
+    Encrypted,
 }
 
 impl From<Profile> for SecurityProfile {
@@ -219,6 +283,24 @@ fn main() -> ExitCode {
 
 fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
     match cli.command {
+        Commands::ImportPlain {
+            workspace,
+            bundle,
+            authorization_revalidated,
+        } => {
+            let engagement = import_plain_bundle(&workspace, &bundle, authorization_revalidated)?;
+            println!("engagement={}", engagement.id);
+        }
+        Commands::ImportEncrypted {
+            workspace,
+            bundle,
+            authorization_revalidated,
+        } => {
+            let password = prompt_verification_password()?;
+            let engagement =
+                import_encrypted_bundle(&workspace, &bundle, &password, authorization_revalidated)?;
+            println!("engagement={}", engagement.id);
+        }
         Commands::EngagementCreate {
             workspace,
             name,
@@ -425,6 +507,42 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             )?;
             println!("{}", recipe.id);
         }
+        Commands::TimestampRequest {
+            bundle,
+            sidecar,
+            mode,
+            tsa,
+            timeout_seconds,
+            trust_anchors,
+            trust_intermediates,
+            accepted_policies,
+        } => {
+            let mut config = TsaConfig::new(tsa, Duration::from_secs(timeout_seconds))?;
+            if let Some(policy) =
+                load_trust_policy(&trust_anchors, &trust_intermediates, accepted_policies)?
+            {
+                config = config.with_trust_policy(policy);
+            }
+            let report = request_timestamp(timestamp_object(mode, &bundle), &sidecar, &config)?;
+            print_timestamp_report(&report);
+            println!("sidecar={}", sidecar.display());
+        }
+        Commands::TimestampVerify {
+            bundle,
+            sidecar,
+            mode,
+            trust_anchors,
+            trust_intermediates,
+            accepted_policies,
+        } => {
+            let object = timestamp_object(mode, &bundle);
+            let report =
+                match load_trust_policy(&trust_anchors, &trust_intermediates, accepted_policies)? {
+                    Some(policy) => verify_timestamp_sidecar_with_trust(object, &sidecar, &policy)?,
+                    None => verify_timestamp_sidecar(object, &sidecar)?,
+                };
+            print_timestamp_report(&report);
+        }
         Commands::Verify { bundle } => {
             let report = if bundle.is_file() {
                 let password = prompt_verification_password()?;
@@ -443,6 +561,46 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     Ok(())
+}
+
+fn load_trust_policy(
+    anchors: &[PathBuf],
+    intermediates: &[PathBuf],
+    accepted_policies: Vec<String>,
+) -> Result<Option<TsaTrustPolicy>, Box<dyn std::error::Error>> {
+    if anchors.is_empty() && intermediates.is_empty() && accepted_policies.is_empty() {
+        return Ok(None);
+    }
+    let anchors = anchors
+        .iter()
+        .map(std::fs::read)
+        .collect::<std::io::Result<Vec<_>>>()?;
+    let intermediates = intermediates
+        .iter()
+        .map(std::fs::read)
+        .collect::<std::io::Result<Vec<_>>>()?;
+    Ok(Some(TsaTrustPolicy::new(
+        anchors,
+        intermediates,
+        accepted_policies,
+    )?))
+}
+
+fn timestamp_object(mode: TimestampMode, bundle: &std::path::Path) -> TimestampObject<'_> {
+    match mode {
+        TimestampMode::Plain => TimestampObject::PlainBundle(bundle),
+        TimestampMode::Encrypted => TimestampObject::EncryptedBundle(bundle),
+    }
+}
+
+fn print_timestamp_report(report: &TimestampReport) {
+    println!("TIMESTAMP ASSURANCE: {:?}", report.assurance);
+    if let Some(policy) = &report.policy_oid {
+        println!("policy={policy}");
+    }
+    for check in &report.checks {
+        println!("{:?} {}: {}", check.status, check.name, check.detail);
+    }
 }
 
 fn export_by_policy(

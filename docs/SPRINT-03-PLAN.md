@@ -2,9 +2,9 @@
 
 ## Estado
 
-**APPROVED / PLANNED — NO IMPLEMENTADO.**
+**IMPLEMENTACIÓN INCREMENTAL EN CURSO — QA HUMANO INTEGRAL PENDIENTE.**
 
-Este documento define el alcance aprobado. No declara que las capacidades aquí descritas existan todavía.
+Este documento conserva el alcance aprobado de Sprint 03. El estado de cada bloque realmente construido y sus gates se registra en `SPRINT-03-IMPLEMENTATION.md` y `CURRENT-STATE.md`; una capacidad descrita aquí no se considera aprobada como producto hasta superar el QA correspondiente.
 
 ## Objetivo
 
@@ -30,6 +30,54 @@ El éxito no es “Tauri compila”. El éxito es que una persona pueda iniciar/
 14. Implementar RFC 3161 / trusted timestamping después de superar su gate de diseño humano.
 15. Sincronizar documentación y QA con el comportamiento realmente implementado.
 
+## Contrato de experiencia operativa Desktop
+
+La Usable Alpha no puede convertir el modelo interno de TATACOA en trabajo administrativo para la pentester. Desktop debe **acompañar el trabajo técnico**, capturar lo que ya conoce y pedir intervención humana solo cuando aporte información que no puede inferirse con seguridad o cuando una decisión de seguridad/autorización lo requiera.
+
+### Automático por defecto
+
+Cuando la información ya existe en el contexto o nace de una operación ejecutada por TATACOA, Desktop debe reutilizarla sin pedir que la persona la transcriba:
+
+- engagement, Scope, Environment, Target y Session activos;
+- fecha/hora observada, executable, argv y resultado de una Execution;
+- stdout/stderr y artifacts producidos, con identidad, digest, provenance y estado de captura;
+- relaciones entre Execution, artifacts, export, replay/retest y demás objetos derivados cuando el Core pueda establecerlas;
+- estado de continuidad derivable de datos persistidos.
+
+Automático no significa validado: TATACOA no inventa hechos ni promueve por sí solo resultados a Evidence validada.
+
+### Asistido y opcional
+
+Knowledge/Learning y Replay/Retest son capacidades centrales, pero su representación interna no debe imponerse como formulario obligatorio del flujo normal.
+
+- La experiencia debe partir de la Execution/evidencia ya registrada y ofrecer acciones comprensibles como **entender resultado**, **añadir nota/contexto**, **preparar reproducción/retest** o **comparar**.
+- Los campos estructurados de Knowledge pueden conservarse en Core, pero Desktop debe precargar/derivar lo que ya conoce y solicitar al humano únicamente interpretación, validación, intención o contexto que no pueda inferir legítimamente.
+- Replay debe reutilizar executable, argumentos, contexto y provenance de la Execution de origen; la persona decide placeholders, secretos, prerequisites, límites de autorización y cualquier cambio deliberado.
+- En `LAB_LEARNING`, la interfaz puede hacer más visible la explicación y aprendizaje. En `PROFESSIONAL`, debe minimizar fricción sin perder trazabilidad. `HIGH_SENSITIVITY` prioriza las políticas aplicables y minimización de exposición.
+
+La asistencia factual, incluida IA futura, nunca sustituye fuentes revisables ni Validación Humana y no entra automáticamente en SP3 si no está aprobada.
+
+### Explícito por seguridad o decisión humana
+
+Debe permanecer visible y deliberado aquello que TATACOA no puede asumir:
+
+- definición inicial y cambios de Scope/límite de autorización;
+- revalidación de autorización al reanudar/ejecutar cuando corresponda;
+- promoción/revisión humana de Evidence;
+- decisiones de exportación que la política permita elegir y acknowledgements requeridos;
+- passwords, trust anchors, TSA/policies y otros secretos/configuración de confianza explícita;
+- cambios deliberados para replay/retest que alteren la operación original.
+
+### Feedback y continuidad
+
+Toda acción iniciada por la persona debe producir feedback visible y persistente en su contexto. Guardar Knowledge, preparar Replay, exportar o timestamp-ear no puede depender de un mensaje fuera de pantalla ni dejar al usuario sin forma de localizar el resultado.
+
+Al abrir o retomar un trabajo, Desktop debe priorizar una vista de continuidad derivada del estado real: qué se hizo, ejecuciones/evidencia relevantes, qué quedó pendiente y desde dónde continuar. La persona no debe reconstruir manualmente esa historia a partir de formularios internos.
+
+### Criterio UX del sprint
+
+Una capacidad del Core **no se considera integrada como producto únicamente porque exista un formulario que invoque su método**. Para SP3 debe estar incorporada al flujo real de trabajo con reutilización de contexto, feedback, trazabilidad y fricción proporcional a la decisión humana requerida.
+
 ## Spike obligatorio
 
 Debe probar como mínimo:
@@ -47,6 +95,7 @@ También debe comprobar:
 - cierre durante una operación y recuperación segura;
 - accesibilidad básica;
 - build/empaquetado Windows/Linux.
+- artefacto distribuible trazable al commit probado y QA de cliente limpio sin toolchain de desarrollo como requisito de usuario.
 
 El spike no es una demo de tres pantallas ni autoriza a reducir el flujo de producto.
 
@@ -62,9 +111,13 @@ Un paquete se trata como entrada no confiable. Abrir/importar requiere validaci�
 
 La autorización para acceder al contenido sensible sigue el modelo de seguridad de TATACOA. Importar nunca reescribe provenance ni atribuye al operador actual acciones históricas de otra persona.
 
+La Validación Humana aprobó para SP3 que el paquete recibido se conserve intacto, con provenance original, y que su apertura continuable ocurra solo después de verificación y revalidación de autorización. Importar no promueve automáticamente ningún Artifact a Evidence.
+
 ## RFC 3161 — gate de diseño
 
 RFC 3161 forma parte de SP3 como diseño + primera implementación funcional.
+
+Para esta Usable Alpha, `HISTORICALLY_VALIDATED` permanece bloqueado por decisión humana. El alcance implementado llega hasta `TRUSTED` bajo la política explícita aprobada; ausencia de evaluación de revocación histórica se informa como `INDETERMINATE`.
 
 Antes del código se debe resolver con fuentes oficiales y aprobación humana:
 

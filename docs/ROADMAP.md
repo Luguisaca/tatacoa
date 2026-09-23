@@ -23,7 +23,7 @@ Vertical fundamental:
 
 Entregó la base Rust, Core, CLI, verifier independiente/offline, captura, artifacts, manifest, bundles Plain, aislamiento y controles negativos iniciales. El detalle y límites de QA permanecen en [ALPHA-IMPLEMENTATION.md](ALPHA-IMPLEMENTATION.md).
 
-La portabilidad Windows + Linux forma parte del baseline. Windows 11 x64 y WSL2 fueron validados en el alcance documentado; Kali Linux y Parrot OS continúan como targets específicos pendientes donde corresponda.
+La portabilidad Windows + Linux forma parte del baseline. Windows 11 x64 y WSL2 fueron validados en el alcance documentado; Kali Linux y Parrot OS continúan como targets específicos. En 2026-09-22 se validó su baseline de entorno para QA de cliente limpio, pero todavía no la ejecución de un artefacto distribuible de TATACOA.
 
 ## Sprint 02 — Alpha Expansion
 
@@ -51,7 +51,7 @@ La implementación base y el hardening de password por Security Profile están i
 
 ## Sprint 03 — Usable Alpha
 
-**Estado: APPROVED / PLANNED — NO IMPLEMENTADO.**
+**Estado: IMPLEMENTED / QA PENDING — alcance técnico implementado hasta SP3-22; candidatos distribuibles y aprobación humana integral pendientes de QA.**
 
 Objetivo: pasar de componentes implementados a una Alpha utilizable para trabajo y QA humano real de una pentester.
 
@@ -78,6 +78,10 @@ RFC 3161 deja el horizonte POST-V1 y entra en **alcance aprobado de Sprint 03 co
 
 La autenticación/protección necesaria para reabrir trabajos protegidos, la persistencia de estado de continuidad y los límites exactos de importación también deben concretarse sin debilitar las decisiones de seguridad existentes.
 
+### Gate de distribución de la Usable Alpha
+
+El QA de cliente limpio de 2026-09-22 confirmó entornos preparados en Windows 10 Pro x64, Kali 2026.3 y Parrot 7.3, pero quedó **NOT TESTED / BLOCKED** para instalación porque SP3-12 no dispone todavía de una Release publicada con artefacto de usuario final. No se instalarán toolchains ni se compilará el repositorio en esos clientes para sustituir el artefacto faltante. La distribución debe demostrar Desktop independiente del CLI y del entorno de desarrollo antes de cerrar la Usable Alpha.
+
 ## Horizonte de producto
 
 Estas capacidades expresan hacia dónde puede evolucionar TATACOA. **No son compromisos de sprint ni capacidades implementadas.** Su existencia aquí evita diseñar hoy fundamentos incompatibles con el destino conocido.
@@ -92,6 +96,8 @@ Estas capacidades expresan hacia dónde puede evolucionar TATACOA. **No son comp
 - automatización y asistencia local de IA bajo Validación Humana;
 - adapters adicionales sin convertirlos en autoridad de evidencia;
 - sandboxing/extensibilidad solo después de definir un modelo de seguridad apropiado.
+- estudiar digital forensics/incident response/investigación como extensión posible de los fundamentos de provenance, preservación, integridad y reproducibilidad; requiere diseño formal de adquisición, identidad del operador, tiempo, almacenamiento, transferencias y cadena de custodia antes de claims especializados;
+- estudiar una evolución comercial posterior a la Alpha no comercial, separando capacidades/ediciones por garantías, soporte y validación sostenibles sin degradar artificialmente la utilidad de la Alpha; cualquier cambio de licencia o términos requiere decisión humana explícita.
 
 No asignar automáticamente estas capacidades a SP4/SP5/etc. La planificación de cada sprint se realiza contra necesidades reales, estado del producto y decisiones humanas, preservando este horizonte.
 

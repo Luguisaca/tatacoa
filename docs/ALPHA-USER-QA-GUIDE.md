@@ -262,6 +262,14 @@ Resultado esperado: el comando termina sin deadlock y reporta captura truncada c
 | `tatacoa-verify` | bundle Plain procesado con artifacts inválidos | `1` |
 | `tatacoa-verify` | error de lectura, formato o autenticación | `2` |
 
+## Gate previo — cliente limpio y artefacto distribuible
+
+Para QA de instalación/primer arranque no convierta el cliente en máquina de desarrollo. Registre primero sistema operativo, arquitectura y runtimes gráficos aplicables. Si no existe un artefacto distribuible trazable al commit bajo prueba, clasifique instalación como NOT TESTED / BLOCKED y deténgase: no instale Rust/Cargo/Node/npm ni clone/compile el repositorio para sustituir el candidato faltante.
+
+El baseline del 2026-09-22 dejó preparados Windows 10 Pro x64, Kali 2026.3 x86_64 y Parrot 7.3 x86_64. Ese PASS describe únicamente preparación del entorno; no demuestra todavía instalación ni compatibilidad funcional de TATACOA.
+
+Cuando exista candidato, registre al menos origen/commit, nombre y formato del artefacto, SHA-256, firma cuando aplique, resultado de instalación, primer arranque, flujo funcional, cierre/reapertura y desinstalación.
+
 ## Registro mínimo de QA
 
 Copie esta tabla al reporte de la ejecución:
@@ -299,6 +307,31 @@ En Linux use `./target/debug/tatacoa` y `./target/debug/tatacoa-verify`; sustitu
 6. repita en WSL2, Kali y Parrot, identificando cada entorno por separado.
 
 Un PASS en WSL2 no sustituye Kali o Parrot. Un fallo debe conservarse como hallazgo hasta determinar si corresponde al producto, al entorno o al procedimiento.
+
+## Caso 7 — RFC 3161 explícito (SP3-09)
+
+Use únicamente una TSA de laboratorio/autorizada. TATACOA no configura una TSA predeterminada y exportar no debe producir tráfico de red.
+
+```powershell
+$Sidecar = "$PlainBundle.tsr"
+& $Tatacoa timestamp-request --bundle $PlainBundle --sidecar $Sidecar --mode plain --tsa 'https://TSA-AUTORIZADA/timestamp' --timeout-seconds 30
+& $Tatacoa timestamp-verify --bundle $PlainBundle --sidecar $Sidecar --mode plain
+& $Verifier $PlainBundle --timestamp-sidecar $Sidecar --timestamp-mode plain
+```
+
+Para evaluar `TRUSTED`, agregue tanto a solicitud/verificación como al verifier los parámetros explícitos `--tsa-trust-anchor-der C:\ruta\anchor.der --tsa-policy 1.2.3...`; repita `--tsa-intermediate-der` cuando la cadena lo necesite. No use certificados del trust store HTTPS por inferencia. Desktop ofrece los mismos campos como una ruta/OID por línea.
+
+Resultados esperados:
+
+- se crea un único `.tsr` DER solo después de que la respuesta coincida con objeto y nonce y cumpla el contrato `SIGNATURE_VALID`;
+- una TSA compatible muestra `SIGNATURE_VALID`, con los checks CMS, ESSCertIDv2, certificado firmante, atributos y firma en `PASS`;
+- sin política de trust explícita, EKU/path/trust permanecen `NOT_EVALUATED`; con anchor/policy correctos pueden llegar a `TRUSTED`, pero validación histórica permanece `INDETERMINATE`;
+- la verificación offline no contacta la TSA;
+- alterar el bundle, usar modo incorrecto, truncar/corromper el sidecar o exceder 4 MiB falla sin aceptar el timestamp;
+- repetir la solicitud contra un sidecar existente no lo sobrescribe;
+- una TSA ausente o fallida no modifica ni invalida el bundle exportado.
+
+Para Encrypted use `--mode encrypted`; el imprint corresponde a los bytes exactos del archivo final y no requiere descifrarlo. No interprete `SIGNATURE_VALID` como TSA confiable ni como validación histórica.
 
 ## Cierre y manejo de resultados
 

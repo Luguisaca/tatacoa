@@ -157,6 +157,22 @@ pub fn load_execution_context(
     Ok(context)
 }
 
+pub fn list_sessions(workspace: &Path, engagement_id: &EngagementId) -> Result<Vec<Session>> {
+    let sessions: Vec<Session> = load_records(workspace, engagement_id, "context/sessions")?;
+    sessions
+        .into_iter()
+        .map(|session| {
+            if &session.engagement_id != engagement_id {
+                return Err(Error::InvalidManifest(
+                    "session belongs to another engagement".to_owned(),
+                ));
+            }
+            load_execution_context(workspace, engagement_id, &session.id)?;
+            Ok(session)
+        })
+        .collect()
+}
+
 pub fn create_knowledge_card(
     workspace: &Path,
     engagement_id: &EngagementId,
@@ -244,7 +260,7 @@ pub fn create_replay_recipe(
     Ok(recipe)
 }
 
-pub(crate) fn load_associated_knowledge(
+pub fn load_associated_knowledge(
     workspace: &Path,
     engagement_id: &EngagementId,
     execution_id: &ExecutionId,
@@ -260,7 +276,7 @@ pub(crate) fn load_associated_knowledge(
         .collect()
 }
 
-pub(crate) fn load_associated_replay(
+pub fn load_associated_replay(
     workspace: &Path,
     engagement_id: &EngagementId,
     execution_id: &ExecutionId,

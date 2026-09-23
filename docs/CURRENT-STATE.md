@@ -2,11 +2,11 @@
 
 ## Fecha de corte
 
-2026-09-20
+2026-09-22
 
-## Rama de alineamiento
+## Rama incremental actual
 
-`docs/sprint-03-alignment`
+`codex/sp3-22-alpha-qa-candidates`, heredada linealmente de SP3-16…SP3-21. HUMAN-QA-05 permanece FAIL hasta revalidación de usuario.
 
 Este documento es la fuente operativa para saber dónde está el proyecto y qué sigue. No sustituye PROJECT, PRD, ROADMAP, ARCHITECTURE ni DECISIONS.
 
@@ -15,7 +15,7 @@ Este documento es la fuente operativa para saber dónde está el proyecto y qué
 - Sprint 01: implementado y validado dentro de su alcance documentado.
 - Sprint 02 / Alpha Expansion: implementado y validado dentro de su alcance documentado.
 - Encrypted v1 + hardening de password: integrado y con QA técnico/humano previo; **validación integral de usuario pendiente** hasta disponer de la Usable Alpha.
-- Sprint 03 / Usable Alpha: aprobado y planificado; **no implementado** en esta rama documental.
+- Sprint 03 / Usable Alpha: alcance técnico implementado para el contrato aprobado, incluidos App API, Desktop, continuidad, importación Plain v2/Encrypted v1, distribución local y RFC 3161 hasta `TRUSTED`. La preparación de candidatos finales y el QA humano integral siguen pendientes en este corte documental; el gate histórico continúa bloqueado.
 
 Los PASS técnicos existentes se conservan. Cambiar el estado documental de Encrypted v1 no invalida pruebas previas: reconoce que todavía falta probarlo dentro de una experiencia real de producto.
 
@@ -58,15 +58,9 @@ Un paquete TATACOA compatible recibido de otra persona debe poder validarse y, s
 
 ## RFC 3161
 
-Está dentro del alcance de SP3, pero existe un gate humano antes de codificar el sellado:
+Objeto, momento, stack RustCrypto, transporte síncrono, TLS `rustls` y provider `ring` fueron aprobados. SP3-07 implementa solicitud, sidecar y verificación offline; SP3-08 los expone al usuario sin TSA predeterminada ni red silenciosa; SP3-09 valida el contrato CMS/RFC 3161 y eleva hasta `SIGNATURE_VALID`.
 
-1. investigar fuentes oficiales;
-2. definir qué objeto(s) se timestamp-ean;
-3. definir en qué momento exacto del ciclo;
-4. obtener Validación Humana;
-5. implementar representación, verificación y tratamiento seguro de TSA/red/fallos.
-
-No seleccionar por inferencia una TSA, política u objeto de sellado. Un fallo o ausencia de TSA nunca puede destruir, falsear ni degradar silenciosamente evidencia existente.
+La allowlist de firma está cerrada. SP3-10 implementa `TRUSTED` mediante path PKIX, anchor TSA DER explícito, validez al `genTime`, EKU crítico/exclusivo y policy aceptada; CLI, verifier y Desktop reciben esa configuración de forma explícita. El contrato definitivo de revocación/validación histórica permanece en gate; no se afirma `HISTORICALLY_VALIDATED`.
 
 ## Regla de ejecución para agentes
 
@@ -94,6 +88,72 @@ Debe detenerse ante:
 
 RFC 3161 fue promovido desde este horizonte a SP3.
 
+## Hallazgo de QA humano de producto
+
+El QA humano acumulativo de Desktop confirmó el flujo contexto autorizado → revisión explícita → ejecución sin shell → captura → artifacts → consulta de stdout/stderr. También detectó una desviación de producto: Knowledge/Replay y otras capacidades aparecen principalmente como formularios que exponen primitivas internas y obligan a reintroducir información ya registrada.
+
+El hallazgo se clasifica como **FAIL de producto/UX para la Usable Alpha actual**, no como invalidación del Core ni de los PASS técnicos anteriores. `SPRINT-03-PLAN.md` contiene ahora el contrato operativo: Desktop debe acompañar el trabajo de la pentester, reutilizar automáticamente contexto/Execution/evidencia conocidos, reservar interacción humana para interpretación/validación/decisiones reales y mantener explícitos los gates de autorización/seguridad.
+
+La corrección incremental del flujo principal está implementada en `feat/sp3-11-execution-workflow`: la vista de Execution reúne contexto, invocación, resultado, artifacts y objetos asociados; Knowledge reutiliza los hechos capturados y solicita interpretación humana; Replay/Retest reutiliza por defecto executable, argv, contexto y vínculo de provenance con la Execution de origen. Los cambios deliberados de invocación siguen siendo explícitos, Replay no se ejecuta y Evidence no cambia de estado automáticamente.
+
+El QA técnico de esta corrección es PASS. **HUMAN-QA-05 continúa como FAIL de producto/UX pendiente de revalidación humana**; los PASS técnicos y humanos anteriores se conservan. Desktop muestra feedback persistente dentro de la Execution y permite localizar el Knowledge/Replay recién creado, pero la suficiencia del recorrido solo puede cerrarse con una nueva prueba de usuario.
+
+SP3-12 añade asistencia genérica offline de lectura: hechos de Execution con origen de manifest, niveles funcionales `GENERIC/DOCUMENTED/ADAPTED` y contratos opcionales de documentación local/adapters. No hay proveedor o adapter de producción registrado ni probes automáticos; una herramienta desconocida sigue ejecutándose/capturándose genéricamente y la ayuda documental indica `UNAVAILABLE`. Desktop muestra primero los hechos y permite guardar una nota breve como Knowledge borrador sin recorrer todos sus campos estructurados. Esto está implementado para QA técnico, no aprobado como experiencia de usuario.
+
+SP3-13 reorganiza Desktop para hacer visibles continuidad, actividad, contexto autorizado y resultado de la ejecución recién capturada. La información técnica de artifacts y hechos permanece accesible por detalles progresivos. La reanudación tiene revisión contextual persistente. QA técnico de este incremento es PASS; QA humano sigue pendiente.
+
+SP3-14 prepara Replay/Retest con reutilización de invocación y límite registrado del Scope sin exigir campos avanzados en el camino normal. Las recetas pueden precargar una nueva ejecución, pero nunca la ejecutan; la revisión contextual y la confirmación siguen obligatorias. Hay comparación read-only de metadatos registrados, sin conclusión automática ni vínculo persistido de retest. QA técnico PASS; QA humano pendiente.
+
+SP3-15 integra la entrega desde la Execution abierta: Desktop consulta la política efectiva de Core para ofrecer modos de exportación y elegir el predeterminado, muestra el reconocimiento Plain solo cuando corresponde y conserva el resultado sin tapar la captura. El timestamp queda como paso opcional, explícito y sin red para la verificación; sus opciones de confianza y checks detallados permanecen accesibles. No cambia el contrato criptográfico ni eleva `HISTORICALLY_VALIDATED`. QA técnico de frontera PASS; QA humano integral pendiente.
+
 ## Siguiente paso
 
-Revisar y aprobar esta alineación documental. Después Codex debe inspeccionar el HEAD real desde el que continuará la implementación, contrastarlo con `SPRINT-03-PLAN.md` y ejecutar Sprint 03 sin redefinir el roadmap. Ningún merge a `main` ocurre sin aprobación humana explícita.
+Revalidar HUMAN-QA-05 y el recorrido integral SP3-13…SP3-15 como usuario en Windows: Workspace → contexto autorizado → ejecución → artifacts/ayuda → nota opcional → Replay/Retest → continuidad → exportación → timestamp/verificación. No declarar Usable Alpha PASS sin esa prueba humana. La restricción anterior de no avanzar Export/Encrypted/RFC 3161 antes de HUMAN-QA-05 fue sustituida por la autorización explícita del bloque de integración Desktop; los contratos de seguridad permanecen intactos.
+
+`HISTORICALLY_VALIDATED` permanece bloqueado por gate humano. El contrato de importación continuable se cerró después en SP3-17 y su implementación Plain/Encrypted se describe abajo. Ningún merge a `main` ocurre sin aprobación humana explícita.
+
+## Gate de distribución y clientes limpios — 2026-09-22
+
+Se completó el baseline de preparación para QA de distribución sobre Windows 10 Pro x64, Parrot Security 7.3 x86_64 y Kali 2026.3 x86_64.
+
+Resultado: **BASELINE DE ENTORNO PASS / INSTALACIÓN DE CLIENTE NUEVO NOT TESTED — BLOCKED POR ARTEFACTO DISTRIBUIBLE AUSENTE**.
+
+Los clientes se preservan deliberadamente sin convertirlos en entornos de desarrollo. No se instalarán Rust/Cargo/Node/npm ni se clonará/compilará el repositorio como sustituto de un artefacto de usuario final.
+
+WebView2 está presente en el cliente Windows y WebKitGTK 4.1 en los clientes Linux evaluados. Estas comprobaciones establecen preparación del entorno, no compatibilidad funcional de TATACOA.
+
+Desde el baseline SP3-12 la implementación avanzó incrementalmente por SP3-13, SP3-14 y SP3-15, con QA técnico PASS en sus respectivas fronteras. Este avance no convierte HUMAN-QA-05 ni Sprint 03 en PASS humano.
+
+El siguiente gate de distribución consiste en producir un candidato de Usable Alpha trazable al commit probado, con artefactos adecuados para los targets aprobados y SHA-256 registrado. La política de firma de release continúa siendo una decisión separada y no debe asumirse resuelta.
+
+El candidato debe poder probarse como producto sin entorno de desarrollo: instalación o despliegue según el formato, primer arranque, recorrido funcional, cierre/reapertura y desinstalación cuando aplique.
+
+SP3-16 añade empaquetado local reproducible de candidatos portables Windows x64 separados para Desktop y CLI, con commit de origen y SHA-256. Su existencia habilita el siguiente QA de despliegue en cliente limpio, pero no demuestra aún primer arranque o funcionalidad allí. No hay artefactos Linux nativos desde este host Windows ni política de firma de release aprobada.
+
+La Validación Humana aprobó el siguiente contrato de cierre técnico: importación continuable con paquete original/provenance preservados y sin promoción automática de Evidence; `HISTORICALLY_VALIDATED` bloqueado para esta Alpha; Desktop Windows portable e instalable, Desktop Linux x64 `.deb` y AppImage, y CLI separado en ambas plataformas. Estas decisiones están aprobadas, pero su registro no constituye por sí solo implementación ni QA de los artefactos nuevos.
+
+SP3-18 produjo en WSL2 de build candidatos locales Linux x64 `.deb`, AppImage y CLI `.tar.gz` desde `7b47de9`, con SHA-256 verificados y sin instalar toolchains en Kali/Parrot. Los hashes y límites están en `SPRINT-03-IMPLEMENTATION.md`. QA de cliente limpio Linux continúa NOT TESTED; la importación continuable y Desktop Windows instalable siguen pendientes en este corte.
+
+SP3-19 produjo instalador NSIS Windows x64 desde `3cd976f` con hash verificado y firma ausente declarada. El Desktop portable y CLI separados de SP3-16 siguen disponibles como candidatos anteriores; el set completo debe regenerarse desde el HEAD final después de completar cambios funcionales. Instalación en Windows 10 limpio permanece HUMAN QA pendiente.
+
+SP3-20 implementa importación continuable de Plain v2 en Core, App API, CLI y Desktop con verificación previa, copia recibida intacta y continuidad en pausa. Encrypted v1 recibido requiere aún materialización segura; la validación integral de importación y del producto es HUMAN QA pendiente. Los artefactos de distribución previos a este cambio funcional no son el candidato final y deberán regenerarse.
+
+SP3-21 implementa también importación continuable Encrypted v1: verifica el original y la copia retenida, materializa artifacts autenticados solo en staging y publica un Engagement pausado. El workspace local resultante contiene plaintext y Desktop lo advierte; QA humano de esa experiencia y de perfiles sensibles continúa pendiente. Plain v2 y Encrypted v1 son las versiones importables con contexto tipado completo en esta Alpha; bundles v1 antiguos permanecen verificables, no continuables.
+
+SP3-22 reúne el cierre técnico para generar el set distribuible desde un único HEAD local limpio y comprobar hashes y contenido. La generación y sus SHA-256 se conservan como reporte de QA junto a los artefactos; instalar y recorrer el producto en clientes limpios sigue siendo HUMAN QA pendiente. Sprint 03 queda técnicamente preparado para esa validación, sin declaración de PASS humano.
+
+Después se ejecutará la revalidación humana integral del recorrido vigente:
+
+Workspace → contexto autorizado → Execution → Artifact/Evidence → asistencia/comprensión → Knowledge → Replay/Retest → continuidad → exportación → timestamp/verificación → cierre → reapertura/continuación.
+
+`HISTORICALLY_VALIDATED` continúa bloqueado por su gate humano. La importación continuable requiere QA humano integral; su contrato ya está aprobado. Ningún PASS técnico sustituye la Validación Humana y ningún merge a `main`, release o publicación ocurre sin aprobación humana explícita.
+
+### Horizonte posterior a Sprint 03
+
+Se conservan como **HORIZON / RESEARCH**, no como alcance autorizado de implementación:
+
+1. estudiar la extensión de los fundamentos de trazabilidad, provenance, preservación e integridad hacia digital forensics, incident response, investigación y otros trabajos profesionales reproducibles. Las garantías criptográficas actuales no equivalen por sí solas a cadena de custodia, suficiencia forense o admisibilidad legal. Antes de claims o capacidades especializadas se requiere investigación formal de adquisición, provenance, identidad del operador, fuentes de tiempo, almacenamiento, transferencias, cadena de custodia, estándares y aplicabilidad;
+
+2. mantener la Alpha bajo PolyForm Noncommercial 1.0.0 y estudiar posteriormente la evolución comercial según capacidades, soporte, validación y garantías sostenibles. Esta línea no autoriza cambios de licencia, paywalls ni degradación artificial de la Alpha.
+
+Estas líneas no modifican el cierre previsto de Sprint 03.
