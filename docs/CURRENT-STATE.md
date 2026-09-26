@@ -10,6 +10,12 @@
 
 Este documento es la fuente operativa para saber dónde está el proyecto y qué sigue. No sustituye PROJECT, PRD, ROADMAP, ARCHITECTURE ni DECISIONS.
 
+## Alineación conceptual posterior al cierre técnico de SP3
+
+La identidad conceptual fue actualizada y aprobada como **Test · Analyze · Trace · Assure · Contextualize · Observe · Apply** / **Testear · Analizar · Trazar · Asegurar · Contextualizar · Observar · Aplicar**. Son acciones interconectadas del producto, no una secuencia rígida. La definición rectora y sus límites están en `PROJECT.md` y D-053.
+
+Este cambio es documental/conceptual: no modifica contratos técnicos, criptografía, estados de evidencia, QA previo ni alcance implementado de Sprint 03. La **identidad visual, arte y assets de marca permanecen pendientes de exploración y Validación Humana** y deben tratarse como un cambio posterior separado.
+
 ## Baseline
 
 - Sprint 01: implementado y validado dentro de su alcance documentado.
