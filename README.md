@@ -16,7 +16,7 @@ Ayudar a profesionales de seguridad a ejecutar, preservar, comprender, retomar y
 
 Construir un espacio de trabajo local-first para pentesting y evaluación de seguridad que acompañe el ciclo técnico completo —desde el contexto autorizado hasta evidencia, aprendizaje, replay y retest— y permita que el trabajo siga siendo verificable, portable y útil más allá de una sesión, una interfaz o un equipo.
 
-La evolución de TATACOA debe ampliar esta base sin obligar a rediseñar el producto en cada sprint. El destino del producto y sus capacidades objetivo se mantienen en [PROJECT.md](docs/PROJECT.md) y [ROADMAP.md](docs/ROADMAP.md).
+La evolución de TATACOA debe ampliar esta base sin obligar a rediseñar el producto en cada sprint. El destino del producto y sus capacidades objetivo se mantienen en [PROJECT.md](docs/PROJECT.md) y [ROADMAP.md](docs/ROADMAP.md). La identidad visual aprobada se documenta en [VISUAL-IDENTITY.md](docs/VISUAL-IDENTITY.md).
 
 ## Arquitectura de producto
 
