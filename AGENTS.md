@@ -4,7 +4,7 @@
 
 Estas reglas aplican a cualquier agente de IA o automatización que trabaje sobre este repositorio.
 
-T·A·T·A·C·O·A significa **Test · Assess · Trace · Artifacts · Comprehend · Observe · Apply** y es un producto de LUGUISACA para trabajo de seguridad autorizado, evidencia verificable, pruebas reproducibles, continuidad y aprendizaje aplicado.
+T·A·T·A·C·O·A significa **Test · Analyze · Trace · Assure · Contextualize · Observe · Apply** y es un producto de LUGUISACA para trabajo de seguridad autorizado, evidencia verificable, pruebas reproducibles, continuidad y aprendizaje aplicado.
 
 ## Orden obligatorio de contexto
 
