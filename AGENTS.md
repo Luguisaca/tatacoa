@@ -12,7 +12,7 @@ Antes de proponer o implementar cambios sustanciales, el agente debe:
 
 1. inspeccionar rama, HEAD y estado real del repositorio;
 2. leer `README.md`;
-3. leer `docs/PROJECT.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md` y `docs/DECISIONS.md`;
+3. leer `docs/PROJECT.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` y, para cambios de marca/UI/assets, `docs/VISUAL-IDENTITY.md`;
 4. leer `docs/CURRENT-STATE.md`, PRD, seguridad, specs y el plan/documentos del sprint aplicables;
 5. distinguir explícitamente **implementado**, **pendiente de QA**, **aprobado/planificado**, **horizonte** y **decisión pendiente**;
 6. continuar el roadmap vigente en vez de inventar uno nuevo.
