@@ -2,11 +2,11 @@
 
 ## Fecha de corte
 
-2026-09-25
+2026-09-26
 
 ## Baseline integrado actual
 
-`main` integra el cierre técnico de Sprint 03 en `c8c7391`. HUMAN-QA-05 y los gates de QA humano conservan el estado documentado hasta su revalidación formal; esta alineación conceptual se trabaja en `docs/conceptual-identity-alignment` sin modificar esos resultados.
+`main` integra el cierre técnico de Sprint 03 y la alineación conceptual D-053 en `ad8c1c6`. HUMAN-QA-05 y los gates de QA humano del producto conservan el estado documentado hasta su revalidación formal. La identidad visual v1.0 se documenta posteriormente en `docs/visual-identity-v1` sin modificar esos resultados.
 
 Este documento es la fuente operativa para saber dónde está el proyecto y qué sigue. No sustituye PROJECT, PRD, ROADMAP, ARCHITECTURE ni DECISIONS.
 
@@ -14,7 +14,13 @@ Este documento es la fuente operativa para saber dónde está el proyecto y qué
 
 La identidad conceptual fue actualizada y aprobada como **Test · Analyze · Trace · Assure · Contextualize · Observe · Apply** / **Testear · Analizar · Trazar · Asegurar · Contextualizar · Observar · Aplicar**. Son acciones interconectadas del producto, no una secuencia rígida. La definición rectora y sus límites están en `PROJECT.md` y D-053.
 
-Este cambio es documental/conceptual: no modifica contratos técnicos, criptografía, estados de evidencia, QA previo ni alcance implementado de Sprint 03. La **identidad visual, arte y assets de marca permanecen pendientes de exploración y Validación Humana** y deben tratarse como un cambio posterior separado.
+Este cambio conceptual no modifica contratos técnicos, criptografía, estados de evidencia, QA previo ni alcance implementado de Sprint 03.
+
+## Identidad visual v1.0
+
+La dirección **A · ESTRATOS** recibió **Validación Humana PASS el 2026-09-26** y queda congelada por D-054. TATACOA es la marca protagonista; LUGUISACA permanece como firma/origen secundario. El wordmark incorpora la **O topográfica** y el lenguaje visual aprobado usa estratos, topografía, relieve, trazas, paisaje desértico oscuro y el easter egg `T-4-T-4-C-0-4`.
+
+La fuente de verdad visual es `VISUAL-IDENTITY.md`. El **Brand Asset Pack v1** permanece pendiente: deben construirse masters vectoriales y derivados antes de integrar logo/iconos finales en producto, GitHub, web o distribución.
 
 ## Baseline
 
