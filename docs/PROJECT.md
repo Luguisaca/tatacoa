@@ -106,4 +106,4 @@ Permite que un trabajo sobreviva a pausas, cierres y cambios de sesión; facilit
 
 TATACOA tiene éxito cuando una persona puede realizar y retomar una evaluación autorizada conservando contexto, evidencia y conocimiento; y cuando un receptor autorizado puede verificar lo verificable sin tener que “creerle” ciegamente a TATACOA.
 
-La evolución técnica de esta dirección se mantiene en [ROADMAP.md](ROADMAP.md).
+La evolución técnica de esta dirección se mantiene en [ROADMAP.md](ROADMAP.md). La identidad visual aprobada y sus límites se mantienen en [VISUAL-IDENTITY.md](VISUAL-IDENTITY.md).
