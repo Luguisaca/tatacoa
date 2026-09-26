@@ -1,6 +1,8 @@
 # T·A·T·A·C·O·A
 
-**Test · Assess · Trace · Artifacts · Comprehend · Observe · Apply**
+**Test · Analyze · Trace · Assure · Contextualize · Observe · Apply**
+
+**Testear · Analizar · Trazar · Asegurar · Contextualizar · Observar · Aplicar**
 
 TATACOA es un producto de **LUGUISACA — luguisaca.com** para organizar el trabajo real de una evaluación de seguridad autorizada: contexto, ejecuciones, artefactos, evidencia verificable, conocimiento y reproducción/retest, con una arquitectura local-first y Validación Humana como autoridad.
 

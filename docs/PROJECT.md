@@ -8,7 +8,25 @@ Este documento describe el propósito estable de TATACOA. Los sprints implementa
 
 ## Identidad
 
-T·A·T·A·C·O·A significa **Test · Assess · Trace · Artifacts · Comprehend · Observe · Apply**.
+T·A·T·A·C·O·A significa **Test · Analyze · Trace · Assure · Contextualize · Observe · Apply**.
+
+En español: **Testear · Analizar · Trazar · Asegurar · Contextualizar · Observar · Aplicar**.
+
+La expansión expresa acciones conectadas del producto, no fases rígidas ni necesariamente lineales:
+
+- **Test / Testear:** realizar una acción técnica controlada dentro de un contexto autorizado.
+- **Analyze / Analizar:** examinar e interpretar lo obtenido sin convertir automáticamente un resultado en conclusión o evidencia validada.
+- **Trace / Trazar:** mantener procedencia y relaciones entre contexto, acciones, ejecuciones, artifacts, derivados y evidencia.
+- **Assure / Asegurar:** proteger y permitir comprobar las propiedades que TATACOA puede sustentar, especialmente integridad, procedencia y estados de verificación; no implica garantizar verdad, autoría, suficiencia forense o validez legal.
+- **Contextualize / Contextualizar:** relacionar cada acción y resultado con el trabajo, alcance, entorno, objetivo, sesión y propósito que le dan significado.
+- **Observe / Observar:** examinar estados, resultados, comportamientos y evolución durante el trabajo y sus revisiones.
+- **Apply / Aplicar:** reutilizar lo aprendido para continuar, validar, documentar, reproducir o realizar nuevas pruebas y retests autorizados.
+
+Expresión humana del ciclo:
+
+> **Haz el trabajo. Compréndelo. Conserva su trazabilidad. Protege su integridad. Mantén su contexto. Observa lo que ocurre. Aplica lo aprendido.**
+
+> **Do the work. Understand it. Preserve its trace. Protect its integrity. Keep its context. Observe what happens. Apply what you learn.**
 
 TATACOA es un producto de **LUGUISACA — luguisaca.com** para profesionales que realizan evaluaciones de seguridad autorizadas y necesitan preservar no solo resultados, sino también contexto, evidencia, procedencia, decisiones y conocimiento reproducible.
 

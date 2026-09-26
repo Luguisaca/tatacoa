@@ -2,13 +2,19 @@
 
 ## Fecha de corte
 
-2026-09-22
+2026-09-25
 
-## Rama incremental actual
+## Baseline integrado actual
 
-`codex/sp3-22-alpha-qa-candidates`, heredada linealmente de SP3-16…SP3-21. HUMAN-QA-05 permanece FAIL hasta revalidación de usuario.
+`main` integra el cierre técnico de Sprint 03 en `c8c7391`. HUMAN-QA-05 y los gates de QA humano conservan el estado documentado hasta su revalidación formal; esta alineación conceptual se trabaja en `docs/conceptual-identity-alignment` sin modificar esos resultados.
 
 Este documento es la fuente operativa para saber dónde está el proyecto y qué sigue. No sustituye PROJECT, PRD, ROADMAP, ARCHITECTURE ni DECISIONS.
+
+## Alineación conceptual posterior al cierre técnico de SP3
+
+La identidad conceptual fue actualizada y aprobada como **Test · Analyze · Trace · Assure · Contextualize · Observe · Apply** / **Testear · Analizar · Trazar · Asegurar · Contextualizar · Observar · Aplicar**. Son acciones interconectadas del producto, no una secuencia rígida. La definición rectora y sus límites están en `PROJECT.md` y D-053.
+
+Este cambio es documental/conceptual: no modifica contratos técnicos, criptografía, estados de evidencia, QA previo ni alcance implementado de Sprint 03. La **identidad visual, arte y assets de marca permanecen pendientes de exploración y Validación Humana** y deben tratarse como un cambio posterior separado.
 
 ## Baseline
 
