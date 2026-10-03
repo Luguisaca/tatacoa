@@ -1,58 +1,28 @@
-# Contribuir a T·A·T·A·C·O·A
+# Contributing to T·A·T·A·C·O·A
 
-## Principio
+Thank you for your interest in improving TATACOA.
 
-Los cambios deben ser revisables, trazables y coherentes con el alcance autorizado del proyecto. El tamaño del commit debe responder a una unidad lógica de cambio: el código favorece incrementos pequeños; un baseline documental coherente puede agruparse cuando dividirlo reduzca claridad o agilidad.
+## Workflow
 
-## Flujo
+1. Start from an up-to-date `main`.
+2. Create a focused branch for the change.
+3. Keep commits logically scoped and reviewable.
+4. Run the applicable checks locally.
+5. Open a Pull Request against `main`.
+6. Describe what changed, why, how it was validated, and any known security impact.
 
-1. Partir de `main` actualizado.
-2. Crear una rama dedicada al cambio.
-3. Revisar documentación y decisiones aplicables antes de implementar.
-4. Realizar commits por unidades lógicas y revisables.
-5. Ejecutar las comprobaciones aplicables.
-6. Abrir Pull Request hacia `main`.
-7. No hacer merge sin revisión y aprobación de la Validación Humana.
+Suggested branch prefixes include `feat/`, `fix/`, `docs/`, `test/`, `chore/` and `security/`.
 
-## Ramas
+## Validation
 
-Usar nombres descriptivos, por ejemplo:
+For Rust changes, run the checks documented in `README.md`. Do not claim a test or QA result that was not actually executed.
 
-- `feat/<tema>`
-- `fix/<tema>`
-- `docs/<tema>`
-- `test/<tema>`
-- `chore/<tema>`
-- `security/<tema>`
+## Dependencies
 
-Los sprints pueden usar ramas como `feat/sprint-01-foundation` cuando agrupen una fase controlada de trabajo.
+Before adding a dependency, confirm there is a concrete need and consider its maintenance status, provenance, known security issues, license and technical suitability.
 
-## Commits
+## Security
 
-Preferir mensajes en formato:
+Do not disclose vulnerabilities in a public Issue or Pull Request. Follow `SECURITY.md` for private reporting.
 
-`tipo: descripción breve`
-
-Tipos habituales: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `security`.
-
-No mezclar cambios no relacionados en el mismo commit.
-
-## Pull Requests
-
-Cada PR debe explicar qué cambia, por qué cambia, cómo fue validado, impacto de seguridad conocido y pendientes deliberadamente fuera de alcance.
-
-Un PR no debe afirmar PASS de QA si las pruebas correspondientes no fueron ejecutadas.
-
-## Dependencias
-
-Antes de añadir una dependencia debe existir una necesidad concreta. Para componentes sensibles se revisarán como mínimo mantenimiento, procedencia, seguridad conocida, licencia y adecuación técnica.
-
-## Seguridad
-
-No publicar vulnerabilidades del propio proyecto mediante un Issue público cuando exista un canal privado de reporte. Ver `SECURITY.md`.
-
-No incluir secretos, datos reales de clientes ni material fuera del alcance autorizado.
-
-## Autoridad de integración
-
-La aprobación para integrar a `main` corresponde a la Validación Humana. Un agente no debe interpretar una solicitud de revisión como autorización de merge.
+Never include secrets, real client data or material from systems you are not authorized to assess.
