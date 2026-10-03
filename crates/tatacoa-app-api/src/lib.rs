@@ -695,8 +695,7 @@ mod tests {
             Some(LocalDocumentation {
                 executable: executable.to_owned(),
                 title: "Local test documentation".to_owned(),
-                source_path: Path::new(env!("CARGO_MANIFEST_DIR"))
-                    .join("../../README.md"),
+                source_path: Path::new(env!("CARGO_MANIFEST_DIR")).join("../../README.md"),
             })
         }
     }
