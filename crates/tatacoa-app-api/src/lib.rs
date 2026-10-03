@@ -696,7 +696,7 @@ mod tests {
                 executable: executable.to_owned(),
                 title: "Local test documentation".to_owned(),
                 source_path: Path::new(env!("CARGO_MANIFEST_DIR"))
-                    .join("../../docs/specs/ADAPTERS-KNOWLEDGE-REPLAY.md"),
+                    .join("../../README.md"),
             })
         }
     }
