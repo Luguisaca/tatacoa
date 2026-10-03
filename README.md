@@ -16,7 +16,7 @@ CLI and Desktop are first-class clients of the same core. Local operation does n
 
 ## Build and test
 
-TATACOA currently targets Rust 1.98.
+TATACOA currently targets Rust 1.98.1.
 
 ```sh
 cargo fmt --check
@@ -36,7 +36,7 @@ See `SECURITY.md` for vulnerability reporting and assurance boundaries.
 
 ## Project status
 
-TATACOA is pre-release software. Interfaces and formats may evolve before a stable release. Public repository contents describe distributable product behavior; internal engineering history, experiments and private assessment evidence are intentionally not part of this distribution surface.
+TATACOA is pre-release software. Interfaces and formats may evolve before a stable release. This repository contains the distributable product source, public documentation, tests and supporting build assets for the published baseline.
 
 ## License
 
